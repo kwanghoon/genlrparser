@@ -2,13 +2,8 @@
 I0:
 [S' -> .Program, $]
 [Program -> .Decl, $]
-[Decl -> .TypeDeclaration, $]
-[Decl -> .TermDeclaration, $]
-[Decl -> .DefDeclaration, $]
-[TypeDeclaration -> .atType TyDecls, $]
-[TermDeclaration -> .atTerm TmDecls, $]
-[DefDeclaration -> ., $]
-[DefDeclaration -> .atDef DefDecls, $]
+[Decl -> .TypeDeclaration TermDeclaration DefDeclaration, $]
+[TypeDeclaration -> .atType TyDecls, atTerm]
 
 I1:
 [S' -> Program., $]
@@ -17,53 +12,56 @@ I2:
 [Program -> Decl., $]
 
 I3:
-[Decl -> TypeDeclaration., $]
+[Decl -> TypeDeclaration.TermDeclaration DefDeclaration, $]
+[TermDeclaration -> .atTerm TmDecls, atDef]
+[TermDeclaration -> .atTerm TmDecls, $]
 
 I4:
-[Decl -> TermDeclaration., $]
+[TypeDeclaration -> atType.TyDecls, atTerm]
+[TyDecls -> .var : K ., atTerm]
+[TyDecls -> .var : K . TyDecls, atTerm]
 
 I5:
-[Decl -> DefDeclaration., $]
+[Decl -> TypeDeclaration TermDeclaration.DefDeclaration, $]
+[DefDeclaration -> ., $]
+[DefDeclaration -> .atDef DefDecls, $]
 
 I6:
-[TypeDeclaration -> atType.TyDecls, $]
-[TyDecls -> .var : K ., $]
-[TyDecls -> .var : K . TyDecls, $]
-
-I7:
+[TermDeclaration -> atTerm.TmDecls, atDef]
 [TermDeclaration -> atTerm.TmDecls, $]
+[TmDecls -> .var : A ., atDef]
+[TmDecls -> .var : A . TmDecls, atDef]
 [TmDecls -> .var : A ., $]
 [TmDecls -> .var : A . TmDecls, $]
 
+I7:
+[TypeDeclaration -> atType TyDecls., atTerm]
+
 I8:
+[TyDecls -> var.: K ., atTerm]
+[TyDecls -> var.: K . TyDecls, atTerm]
+
+I9:
+[Decl -> TypeDeclaration TermDeclaration DefDeclaration., $]
+
+I10:
 [DefDeclaration -> atDef.DefDecls, $]
 [DefDecls -> .var = M ., $]
 [DefDecls -> .var = M . DefDecls, $]
 
-I9:
-[TypeDeclaration -> atType TyDecls., $]
-
-I10:
-[TyDecls -> var.: K ., $]
-[TyDecls -> var.: K . TyDecls, $]
-
 I11:
+[TermDeclaration -> atTerm TmDecls., atDef]
 [TermDeclaration -> atTerm TmDecls., $]
 
 I12:
+[TmDecls -> var.: A ., atDef]
+[TmDecls -> var.: A . TmDecls, atDef]
 [TmDecls -> var.: A ., $]
 [TmDecls -> var.: A . TmDecls, $]
 
 I13:
-[DefDeclaration -> atDef DefDecls., $]
-
-I14:
-[DefDecls -> var.= M ., $]
-[DefDecls -> var.= M . DefDecls, $]
-
-I15:
-[TyDecls -> var :.K ., $]
-[TyDecls -> var :.K . TyDecls, $]
+[TyDecls -> var :.K ., atTerm]
+[TyDecls -> var :.K . TyDecls, atTerm]
 [K -> .Type, .]
 [K -> .Pi var : A . K, .]
 [K -> .( K ), .]
@@ -81,7 +79,16 @@ I15:
 [A1 -> .A1 var, (]
 [A1 -> .A1 ( M ), (]
 
+I14:
+[DefDeclaration -> atDef DefDecls., $]
+
+I15:
+[DefDecls -> var.= M ., $]
+[DefDecls -> var.= M . DefDecls, $]
+
 I16:
+[TmDecls -> var :.A ., atDef]
+[TmDecls -> var :.A . TmDecls, atDef]
 [TmDecls -> var :.A ., $]
 [TmDecls -> var :.A . TmDecls, $]
 [A -> .Pi var : A . A, .]
@@ -105,28 +112,10 @@ I16:
 [A1 -> .A1 ( M ), (]
 
 I17:
-[DefDecls -> var =.M ., $]
-[DefDecls -> var =.M . DefDecls, $]
-[M -> .Lam var : A . M, .]
-[M -> .M1, .]
-[M1 -> .var, .]
-[M1 -> .( M ), .]
-[M1 -> .M1 var, .]
-[M1 -> .M1 ( M ), .]
-[M1 -> .var, var]
-[M1 -> .( M ), var]
-[M1 -> .M1 var, var]
-[M1 -> .M1 ( M ), var]
-[M1 -> .var, (]
-[M1 -> .( M ), (]
-[M1 -> .M1 var, (]
-[M1 -> .M1 ( M ), (]
+[TyDecls -> var : K.., atTerm]
+[TyDecls -> var : K.. TyDecls, atTerm]
 
 I18:
-[TyDecls -> var : K.., $]
-[TyDecls -> var : K.. TyDecls, $]
-
-I19:
 [K -> A1.arrow K, .]
 [A1 -> A1.var, arrow]
 [A1 -> A1.( M ), arrow]
@@ -135,18 +124,18 @@ I19:
 [A1 -> A1.var, (]
 [A1 -> A1.( M ), (]
 
-I20:
+I19:
 [A1 -> var., arrow]
 [A1 -> var., var]
 [A1 -> var., (]
 
-I21:
+I20:
 [K -> Type., .]
 
-I22:
+I21:
 [K -> Pi.var : A . K, .]
 
-I23:
+I22:
 [K -> (.K ), .]
 [A1 -> (.A ), arrow]
 [A1 -> (.A ), var]
@@ -175,7 +164,27 @@ I23:
 [A1 -> .A1 var, (]
 [A1 -> .A1 ( M ), (]
 
+I23:
+[DefDecls -> var =.M ., $]
+[DefDecls -> var =.M . DefDecls, $]
+[M -> .Lam var : A . M, .]
+[M -> .M1, .]
+[M1 -> .var, .]
+[M1 -> .( M ), .]
+[M1 -> .M1 var, .]
+[M1 -> .M1 ( M ), .]
+[M1 -> .var, var]
+[M1 -> .( M ), var]
+[M1 -> .M1 var, var]
+[M1 -> .M1 ( M ), var]
+[M1 -> .var, (]
+[M1 -> .( M ), (]
+[M1 -> .M1 var, (]
+[M1 -> .M1 ( M ), (]
+
 I24:
+[TmDecls -> var : A.., atDef]
+[TmDecls -> var : A.. TmDecls, atDef]
 [TmDecls -> var : A.., $]
 [TmDecls -> var : A.. TmDecls, $]
 
@@ -226,57 +235,17 @@ I28:
 [A1 -> .A1 ( M ), (]
 
 I29:
-[DefDecls -> var = M.., $]
-[DefDecls -> var = M.. DefDecls, $]
+[TyDecls -> var : K .., atTerm]
+[TyDecls -> var : K ..TyDecls, atTerm]
+[TyDecls -> .var : K ., atTerm]
+[TyDecls -> .var : K . TyDecls, atTerm]
 
 I30:
-[M -> M1., .]
-[M1 -> M1.var, .]
-[M1 -> M1.( M ), .]
-[M1 -> M1.var, var]
-[M1 -> M1.( M ), var]
-[M1 -> M1.var, (]
-[M1 -> M1.( M ), (]
-
-I31:
-[M1 -> var., .]
-[M1 -> var., var]
-[M1 -> var., (]
-
-I32:
-[M1 -> (.M ), .]
-[M1 -> (.M ), var]
-[M1 -> (.M ), (]
-[M -> .Lam var : A . M, )]
-[M -> .M1, )]
-[M1 -> .var, )]
-[M1 -> .( M ), )]
-[M1 -> .M1 var, )]
-[M1 -> .M1 ( M ), )]
-[M1 -> .var, var]
-[M1 -> .( M ), var]
-[M1 -> .M1 var, var]
-[M1 -> .M1 ( M ), var]
-[M1 -> .var, (]
-[M1 -> .( M ), (]
-[M1 -> .M1 var, (]
-[M1 -> .M1 ( M ), (]
-
-I33:
-[M -> Lam.var : A . M, .]
-
-I34:
-[TyDecls -> var : K .., $]
-[TyDecls -> var : K ..TyDecls, $]
-[TyDecls -> .var : K ., $]
-[TyDecls -> .var : K . TyDecls, $]
-
-I35:
 [A1 -> A1 var., arrow]
 [A1 -> A1 var., var]
 [A1 -> A1 var., (]
 
-I36:
+I31:
 [A1 -> A1 (.M ), arrow]
 [A1 -> A1 (.M ), var]
 [A1 -> A1 (.M ), (]
@@ -295,7 +264,7 @@ I36:
 [M1 -> .M1 var, (]
 [M1 -> .M1 ( M ), (]
 
-I37:
+I32:
 [K -> A1 arrow.K, .]
 [K -> .Type, .]
 [K -> .Pi var : A . K, .]
@@ -314,18 +283,18 @@ I37:
 [A1 -> .A1 var, (]
 [A1 -> .A1 ( M ), (]
 
-I38:
+I33:
 [K -> Pi var.: A . K, .]
 
-I39:
+I34:
 [K -> ( K.), .]
 
-I40:
+I35:
 [A1 -> ( A.), arrow]
 [A1 -> ( A.), var]
 [A1 -> ( A.), (]
 
-I41:
+I36:
 [K -> A1.arrow K, )]
 [A -> A1., )]
 [A -> A1.arrow A, )]
@@ -338,20 +307,20 @@ I41:
 [A1 -> A1.var, (]
 [A1 -> A1.( M ), (]
 
-I42:
+I37:
 [A1 -> var., arrow]
 [A1 -> var., )]
 [A1 -> var., var]
 [A1 -> var., (]
 
-I43:
+I38:
 [K -> Type., )]
 
-I44:
+I39:
 [K -> Pi.var : A . K, )]
 [A -> Pi.var : A . A, )]
 
-I45:
+I40:
 [K -> (.K ), )]
 [A1 -> (.A ), arrow]
 [A1 -> (.A ), )]
@@ -381,9 +350,53 @@ I45:
 [A1 -> .A1 var, (]
 [A1 -> .A1 ( M ), (]
 
+I41:
+[DefDecls -> var = M.., $]
+[DefDecls -> var = M.. DefDecls, $]
+
+I42:
+[M -> M1., .]
+[M1 -> M1.var, .]
+[M1 -> M1.( M ), .]
+[M1 -> M1.var, var]
+[M1 -> M1.( M ), var]
+[M1 -> M1.var, (]
+[M1 -> M1.( M ), (]
+
+I43:
+[M1 -> var., .]
+[M1 -> var., var]
+[M1 -> var., (]
+
+I44:
+[M1 -> (.M ), .]
+[M1 -> (.M ), var]
+[M1 -> (.M ), (]
+[M -> .Lam var : A . M, )]
+[M -> .M1, )]
+[M1 -> .var, )]
+[M1 -> .( M ), )]
+[M1 -> .M1 var, )]
+[M1 -> .M1 ( M ), )]
+[M1 -> .var, var]
+[M1 -> .( M ), var]
+[M1 -> .M1 var, var]
+[M1 -> .M1 ( M ), var]
+[M1 -> .var, (]
+[M1 -> .( M ), (]
+[M1 -> .M1 var, (]
+[M1 -> .M1 ( M ), (]
+
+I45:
+[M -> Lam.var : A . M, .]
+
 I46:
+[TmDecls -> var : A .., atDef]
+[TmDecls -> var : A ..TmDecls, atDef]
 [TmDecls -> var : A .., $]
 [TmDecls -> var : A ..TmDecls, $]
+[TmDecls -> .var : A ., atDef]
+[TmDecls -> .var : A . TmDecls, atDef]
 [TmDecls -> .var : A ., $]
 [TmDecls -> .var : A . TmDecls, $]
 
@@ -485,41 +498,14 @@ I54:
 [A1 -> .A1 ( M ), (]
 
 I55:
-[DefDecls -> var = M .., $]
-[DefDecls -> var = M ..DefDecls, $]
-[DefDecls -> .var = M ., $]
-[DefDecls -> .var = M . DefDecls, $]
+[TyDecls -> var : K . TyDecls., atTerm]
 
 I56:
-[M1 -> M1 var., .]
-[M1 -> M1 var., var]
-[M1 -> M1 var., (]
+[A1 -> A1 ( M.), arrow]
+[A1 -> A1 ( M.), var]
+[A1 -> A1 ( M.), (]
 
 I57:
-[M1 -> M1 (.M ), .]
-[M1 -> M1 (.M ), var]
-[M1 -> M1 (.M ), (]
-[M -> .Lam var : A . M, )]
-[M -> .M1, )]
-[M1 -> .var, )]
-[M1 -> .( M ), )]
-[M1 -> .M1 var, )]
-[M1 -> .M1 ( M ), )]
-[M1 -> .var, var]
-[M1 -> .( M ), var]
-[M1 -> .M1 var, var]
-[M1 -> .M1 ( M ), var]
-[M1 -> .var, (]
-[M1 -> .( M ), (]
-[M1 -> .M1 var, (]
-[M1 -> .M1 ( M ), (]
-
-I58:
-[M1 -> ( M.), .]
-[M1 -> ( M.), var]
-[M1 -> ( M.), (]
-
-I59:
 [M -> M1., )]
 [M1 -> M1.var, )]
 [M1 -> M1.( M ), )]
@@ -528,12 +514,12 @@ I59:
 [M1 -> M1.var, (]
 [M1 -> M1.( M ), (]
 
-I60:
+I58:
 [M1 -> var., )]
 [M1 -> var., var]
 [M1 -> var., (]
 
-I61:
+I59:
 [M1 -> (.M ), )]
 [M1 -> (.M ), var]
 [M1 -> (.M ), (]
@@ -552,24 +538,13 @@ I61:
 [M1 -> .M1 var, (]
 [M1 -> .M1 ( M ), (]
 
-I62:
+I60:
 [M -> Lam.var : A . M, )]
 
-I63:
-[M -> Lam var.: A . M, .]
-
-I64:
-[TyDecls -> var : K . TyDecls., $]
-
-I65:
-[A1 -> A1 ( M.), arrow]
-[A1 -> A1 ( M.), var]
-[A1 -> A1 ( M.), (]
-
-I66:
+I61:
 [K -> A1 arrow K., .]
 
-I67:
+I62:
 [K -> Pi var :.A . K, .]
 [A -> .Pi var : A . A, .]
 [A -> .A1, .]
@@ -591,21 +566,21 @@ I67:
 [A1 -> .A1 var, (]
 [A1 -> .A1 ( M ), (]
 
-I68:
+I63:
 [K -> ( K )., .]
 
-I69:
+I64:
 [A1 -> ( A )., arrow]
 [A1 -> ( A )., var]
 [A1 -> ( A )., (]
 
-I70:
+I65:
 [A1 -> A1 var., arrow]
 [A1 -> A1 var., )]
 [A1 -> A1 var., var]
 [A1 -> A1 var., (]
 
-I71:
+I66:
 [A1 -> A1 (.M ), arrow]
 [A1 -> A1 (.M ), )]
 [A1 -> A1 (.M ), var]
@@ -625,7 +600,7 @@ I71:
 [M1 -> .M1 var, (]
 [M1 -> .M1 ( M ), (]
 
-I72:
+I67:
 [K -> A1 arrow.K, )]
 [A -> A1 arrow.A, )]
 [K -> .Type, )]
@@ -652,20 +627,59 @@ I72:
 [A1 -> .A1 var, (]
 [A1 -> .A1 ( M ), (]
 
-I73:
+I68:
 [K -> Pi var.: A . K, )]
 [A -> Pi var.: A . A, )]
 
-I74:
+I69:
 [K -> ( K.), )]
 
-I75:
+I70:
 [A1 -> ( A.), arrow]
 [A1 -> ( A.), )]
 [A1 -> ( A.), var]
 [A1 -> ( A.), (]
 
+I71:
+[DefDecls -> var = M .., $]
+[DefDecls -> var = M ..DefDecls, $]
+[DefDecls -> .var = M ., $]
+[DefDecls -> .var = M . DefDecls, $]
+
+I72:
+[M1 -> M1 var., .]
+[M1 -> M1 var., var]
+[M1 -> M1 var., (]
+
+I73:
+[M1 -> M1 (.M ), .]
+[M1 -> M1 (.M ), var]
+[M1 -> M1 (.M ), (]
+[M -> .Lam var : A . M, )]
+[M -> .M1, )]
+[M1 -> .var, )]
+[M1 -> .( M ), )]
+[M1 -> .M1 var, )]
+[M1 -> .M1 ( M ), )]
+[M1 -> .var, var]
+[M1 -> .( M ), var]
+[M1 -> .M1 var, var]
+[M1 -> .M1 ( M ), var]
+[M1 -> .var, (]
+[M1 -> .( M ), (]
+[M1 -> .M1 var, (]
+[M1 -> .M1 ( M ), (]
+
+I74:
+[M1 -> ( M.), .]
+[M1 -> ( M.), var]
+[M1 -> ( M.), (]
+
+I75:
+[M -> Lam var.: A . M, .]
+
 I76:
+[TmDecls -> var : A . TmDecls., atDef]
 [TmDecls -> var : A . TmDecls., $]
 
 I77:
@@ -731,24 +745,16 @@ I82:
 [A -> Pi var.: A . A, )]
 
 I83:
-[DefDecls -> var = M . DefDecls., $]
+[A1 -> A1 ( M )., arrow]
+[A1 -> A1 ( M )., var]
+[A1 -> A1 ( M )., (]
 
 I84:
-[M1 -> M1 ( M.), .]
-[M1 -> M1 ( M.), var]
-[M1 -> M1 ( M.), (]
-
-I85:
-[M1 -> ( M )., .]
-[M1 -> ( M )., var]
-[M1 -> ( M )., (]
-
-I86:
 [M1 -> M1 var., )]
 [M1 -> M1 var., var]
 [M1 -> M1 var., (]
 
-I87:
+I85:
 [M1 -> M1 (.M ), )]
 [M1 -> M1 (.M ), var]
 [M1 -> M1 (.M ), (]
@@ -767,57 +773,30 @@ I87:
 [M1 -> .M1 var, (]
 [M1 -> .M1 ( M ), (]
 
-I88:
+I86:
 [M1 -> ( M.), )]
 [M1 -> ( M.), var]
 [M1 -> ( M.), (]
 
-I89:
+I87:
 [M -> Lam var.: A . M, )]
 
-I90:
-[M -> Lam var :.A . M, .]
-[A -> .Pi var : A . A, .]
-[A -> .A1, .]
-[A -> .A1 arrow A, .]
-[A1 -> .var, .]
-[A1 -> .( A ), .]
-[A1 -> .A1 var, .]
-[A1 -> .A1 ( M ), .]
-[A1 -> .var, arrow]
-[A1 -> .( A ), arrow]
-[A1 -> .A1 var, arrow]
-[A1 -> .A1 ( M ), arrow]
-[A1 -> .var, var]
-[A1 -> .( A ), var]
-[A1 -> .A1 var, var]
-[A1 -> .A1 ( M ), var]
-[A1 -> .var, (]
-[A1 -> .( A ), (]
-[A1 -> .A1 var, (]
-[A1 -> .A1 ( M ), (]
-
-I91:
-[A1 -> A1 ( M )., arrow]
-[A1 -> A1 ( M )., var]
-[A1 -> A1 ( M )., (]
-
-I92:
+I88:
 [K -> Pi var : A.. K, .]
 
-I93:
+I89:
 [A1 -> A1 ( M.), arrow]
 [A1 -> A1 ( M.), )]
 [A1 -> A1 ( M.), var]
 [A1 -> A1 ( M.), (]
 
-I94:
+I90:
 [K -> A1 arrow K., )]
 
-I95:
+I91:
 [A -> A1 arrow A., )]
 
-I96:
+I92:
 [K -> Pi var :.A . K, )]
 [A -> Pi var :.A . A, )]
 [A -> .Pi var : A . A, .]
@@ -840,14 +819,49 @@ I96:
 [A1 -> .A1 var, (]
 [A1 -> .A1 ( M ), (]
 
-I97:
+I93:
 [K -> ( K )., )]
 
-I98:
+I94:
 [A1 -> ( A )., arrow]
 [A1 -> ( A )., )]
 [A1 -> ( A )., var]
 [A1 -> ( A )., (]
+
+I95:
+[DefDecls -> var = M . DefDecls., $]
+
+I96:
+[M1 -> M1 ( M.), .]
+[M1 -> M1 ( M.), var]
+[M1 -> M1 ( M.), (]
+
+I97:
+[M1 -> ( M )., .]
+[M1 -> ( M )., var]
+[M1 -> ( M )., (]
+
+I98:
+[M -> Lam var :.A . M, .]
+[A -> .Pi var : A . A, .]
+[A -> .A1, .]
+[A -> .A1 arrow A, .]
+[A1 -> .var, .]
+[A1 -> .( A ), .]
+[A1 -> .A1 var, .]
+[A1 -> .A1 ( M ), .]
+[A1 -> .var, arrow]
+[A1 -> .( A ), arrow]
+[A1 -> .A1 var, arrow]
+[A1 -> .A1 ( M ), arrow]
+[A1 -> .var, var]
+[A1 -> .( A ), var]
+[A1 -> .A1 var, var]
+[A1 -> .A1 ( M ), var]
+[A1 -> .var, (]
+[A1 -> .( A ), (]
+[A1 -> .A1 var, (]
+[A1 -> .A1 ( M ), (]
 
 I99:
 [A1 -> A1 ( M )., .]
@@ -881,21 +895,16 @@ I101:
 [A1 -> .A1 ( M ), (]
 
 I102:
-[M1 -> M1 ( M )., .]
-[M1 -> M1 ( M )., var]
-[M1 -> M1 ( M )., (]
-
-I103:
 [M1 -> M1 ( M.), )]
 [M1 -> M1 ( M.), var]
 [M1 -> M1 ( M.), (]
 
-I104:
+I103:
 [M1 -> ( M )., )]
 [M1 -> ( M )., var]
 [M1 -> ( M )., (]
 
-I105:
+I104:
 [M -> Lam var :.A . M, )]
 [A -> .Pi var : A . A, .]
 [A -> .A1, .]
@@ -917,10 +926,7 @@ I105:
 [A1 -> .A1 var, (]
 [A1 -> .A1 ( M ), (]
 
-I106:
-[M -> Lam var : A.. M, .]
-
-I107:
+I105:
 [K -> Pi var : A ..K, .]
 [K -> .Type, .]
 [K -> .Pi var : A . K, .]
@@ -939,15 +945,23 @@ I107:
 [A1 -> .A1 var, (]
 [A1 -> .A1 ( M ), (]
 
-I108:
+I106:
 [A1 -> A1 ( M )., arrow]
 [A1 -> A1 ( M )., )]
 [A1 -> A1 ( M )., var]
 [A1 -> A1 ( M )., (]
 
-I109:
+I107:
 [K -> Pi var : A.. K, )]
 [A -> Pi var : A.. A, )]
+
+I108:
+[M1 -> M1 ( M )., .]
+[M1 -> M1 ( M )., var]
+[M1 -> M1 ( M )., (]
+
+I109:
+[M -> Lam var : A.. M, .]
 
 I110:
 [A -> Pi var : A ..A, .]
@@ -983,26 +997,9 @@ I113:
 [M -> Lam var : A.. M, )]
 
 I114:
-[M -> Lam var : A ..M, .]
-[M -> .Lam var : A . M, .]
-[M -> .M1, .]
-[M1 -> .var, .]
-[M1 -> .( M ), .]
-[M1 -> .M1 var, .]
-[M1 -> .M1 ( M ), .]
-[M1 -> .var, var]
-[M1 -> .( M ), var]
-[M1 -> .M1 var, var]
-[M1 -> .M1 ( M ), var]
-[M1 -> .var, (]
-[M1 -> .( M ), (]
-[M1 -> .M1 var, (]
-[M1 -> .M1 ( M ), (]
-
-I115:
 [K -> Pi var : A . K., .]
 
-I116:
+I115:
 [K -> Pi var : A ..K, )]
 [A -> Pi var : A ..A, )]
 [K -> .Type, )]
@@ -1028,6 +1025,23 @@ I116:
 [A1 -> .( A ), (]
 [A1 -> .A1 var, (]
 [A1 -> .A1 ( M ), (]
+
+I116:
+[M -> Lam var : A ..M, .]
+[M -> .Lam var : A . M, .]
+[M -> .M1, .]
+[M1 -> .var, .]
+[M1 -> .( M ), .]
+[M1 -> .M1 var, .]
+[M1 -> .M1 ( M ), .]
+[M1 -> .var, var]
+[M1 -> .( M ), var]
+[M1 -> .M1 var, var]
+[M1 -> .M1 ( M ), var]
+[M1 -> .var, (]
+[M1 -> .( M ), (]
+[M1 -> .M1 var, (]
+[M1 -> .M1 ( M ), (]
 
 I117:
 [A -> Pi var : A . A., .]
@@ -1072,13 +1086,13 @@ I119:
 [M1 -> .M1 ( M ), (]
 
 I120:
-[M -> Lam var : A . M., .]
-
-I121:
 [K -> Pi var : A . K., )]
 
-I122:
+I121:
 [A -> Pi var : A . A., )]
+
+I122:
+[M -> Lam var : A . M., .]
 
 I123:
 [M -> Lam var : A . M., )]
@@ -1086,36 +1100,34 @@ I123:
 
 0: S' -> Program
 1: Program -> Decl
-2: Decl -> TypeDeclaration
-3: Decl -> TermDeclaration
-4: Decl -> DefDeclaration
-5: TypeDeclaration -> atType TyDecls
-6: TermDeclaration -> atTerm TmDecls
-7: DefDeclaration -> 
-8: DefDeclaration -> atDef DefDecls
-9: TyDecls -> var : K .
-10: TyDecls -> var : K . TyDecls
-11: TmDecls -> var : A .
-12: TmDecls -> var : A . TmDecls
-13: DefDecls -> var = M .
-14: DefDecls -> var = M . DefDecls
-15: K -> Type
-16: K -> Pi var : A . K
-17: K -> ( K )
-18: K -> A1 arrow K
-19: A -> Pi var : A . A
-20: A -> A1
-21: A -> A1 arrow A
-22: A1 -> var
-23: A1 -> ( A )
-24: A1 -> A1 var
-25: A1 -> A1 ( M )
-26: M -> Lam var : A . M
-27: M -> M1
-28: M1 -> var
-29: M1 -> ( M )
-30: M1 -> M1 var
-31: M1 -> M1 ( M )
+2: Decl -> TypeDeclaration TermDeclaration DefDeclaration
+3: TypeDeclaration -> atType TyDecls
+4: TermDeclaration -> atTerm TmDecls
+5: DefDeclaration -> 
+6: DefDeclaration -> atDef DefDecls
+7: TyDecls -> var : K .
+8: TyDecls -> var : K . TyDecls
+9: TmDecls -> var : A .
+10: TmDecls -> var : A . TmDecls
+11: DefDecls -> var = M .
+12: DefDecls -> var = M . DefDecls
+13: K -> Type
+14: K -> Pi var : A . K
+15: K -> ( K )
+16: K -> A1 arrow K
+17: A -> Pi var : A . A
+18: A -> A1
+19: A -> A1 arrow A
+20: A1 -> var
+21: A1 -> ( A )
+22: A1 -> A1 var
+23: A1 -> A1 ( M )
+24: M -> Lam var : A . M
+25: M -> M1
+26: M1 -> var
+27: M1 -> ( M )
+28: M1 -> M1 var
+29: M1 -> M1 ( M )
 
 79 states
 [0]
@@ -1137,295 +1149,298 @@ I123:
 [16]
 [17]
 [18]
-[19]
-[20,26,42]
-[21,43]
-[22]
-[23,45]
+[19,26,37]
+[20,38]
+[21]
+[22,40]
+[23]
 [24]
 [25,52]
 [27,53]
 [28,54]
 [29]
-[30,59]
-[31,60]
-[32,61]
-[33,62]
-[34]
-[35,47,70]
-[36,48,71]
-[37]
-[38]
-[39,74]
-[40,51,75]
+[30,47,65]
+[31,48,66]
+[32]
+[33]
+[34,69]
+[35,51,70]
+[36]
+[39]
 [41]
-[44]
+[42,57]
+[43,58]
+[44,59]
+[45,60]
 [46]
 [49,81]
 [50,82]
 [55]
-[56,86]
-[57,87]
-[58,88]
-[63,89]
-[64]
-[65,77,93]
-[66,94]
+[56,77,89]
+[61,90]
+[62]
+[63,93]
+[64,80,94]
 [67]
-[68,97]
-[69,80,98]
-[72]
-[73]
+[68]
+[71]
+[72,84]
+[73,85]
+[74,86]
+[75,87]
 [76]
-[78,95]
+[78,91]
 [79,101]
-[83]
-[84,103]
-[85,104]
-[90,105]
-[91,99,108]
+[83,99,106]
+[88]
 [92]
-[96]
+[95]
+[96,102]
+[97,103]
+[98,104]
 [100,111]
-[102,112]
-[106,113]
+[105]
 [107]
-[109]
+[108,112]
+[109,113]
 [110,118]
-[114,119]
-[115,121]
-[116]
-[117,122]
-[120,123]
+[114,120]
+[115]
+[116,119]
+[117,121]
+[122,123]
 
-[0]	atType	LALRShift [6]
-[0]	atTerm	LALRShift [7]
-[0]	$	LALRReduce 7
-[0]	atDef	LALRShift [8]
+[0]	atType	LALRShift [4]
 [1]	$	LALRAccept
 [2]	$	LALRReduce 1
-[3]	$	LALRReduce 2
-[4]	$	LALRReduce 3
-[5]	$	LALRReduce 4
-[6]	var	LALRShift [10]
-[7]	var	LALRShift [12]
-[8]	var	LALRShift [14]
-[9]	$	LALRReduce 5
-[10]	:	LALRShift [15]
-[11]	$	LALRReduce 6
+[3]	atTerm	LALRShift [6]
+[4]	var	LALRShift [8]
+[5]	$	LALRReduce 5
+[5]	atDef	LALRShift [10]
+[6]	var	LALRShift [12]
+[7]	atTerm	LALRReduce 3
+[8]	:	LALRShift [13]
+[9]	$	LALRReduce 2
+[10]	var	LALRShift [15]
+[11]	atDef	LALRReduce 4
+[11]	$	LALRReduce 4
 [12]	:	LALRShift [16]
-[13]	$	LALRReduce 8
-[14]	=	LALRShift [17]
-[15]	Type	LALRShift [21,43]
-[15]	Pi	LALRShift [22]
-[15]	(	LALRShift [23,45]
-[15]	var	LALRShift [20,26,42]
+[13]	Type	LALRShift [20,38]
+[13]	Pi	LALRShift [21]
+[13]	(	LALRShift [22,40]
+[13]	var	LALRShift [19,26,37]
+[14]	$	LALRReduce 6
+[15]	=	LALRShift [23]
 [16]	Pi	LALRShift [27,53]
-[16]	var	LALRShift [20,26,42]
+[16]	var	LALRShift [19,26,37]
 [16]	(	LALRShift [28,54]
-[17]	Lam	LALRShift [33,62]
-[17]	var	LALRShift [31,60]
-[17]	(	LALRShift [32,61]
-[18]	.	LALRShift [34]
-[19]	arrow	LALRShift [37]
-[19]	var	LALRShift [35,47,70]
-[19]	(	LALRShift [36,48,71]
-[20,26,42]	arrow	LALRReduce 22
-[20,26,42]	var	LALRReduce 22
-[20,26,42]	(	LALRReduce 22
-[20,26,42]	.	LALRReduce 22
-[20,26,42]	)	LALRReduce 22
-[21,43]	.	LALRReduce 15
-[21,43]	)	LALRReduce 15
-[22]	var	LALRShift [38]
-[23,45]	Type	LALRShift [21,43]
-[23,45]	Pi	LALRShift [44]
-[23,45]	(	LALRShift [23,45]
-[23,45]	var	LALRShift [20,26,42]
+[17]	.	LALRShift [29]
+[18]	arrow	LALRShift [32]
+[18]	var	LALRShift [30,47,65]
+[18]	(	LALRShift [31,48,66]
+[19,26,37]	arrow	LALRReduce 20
+[19,26,37]	var	LALRReduce 20
+[19,26,37]	(	LALRReduce 20
+[19,26,37]	.	LALRReduce 20
+[19,26,37]	)	LALRReduce 20
+[20,38]	.	LALRReduce 13
+[20,38]	)	LALRReduce 13
+[21]	var	LALRShift [33]
+[22,40]	Type	LALRShift [20,38]
+[22,40]	Pi	LALRShift [39]
+[22,40]	(	LALRShift [22,40]
+[22,40]	var	LALRShift [19,26,37]
+[23]	Lam	LALRShift [45,60]
+[23]	var	LALRShift [43,58]
+[23]	(	LALRShift [44,59]
 [24]	.	LALRShift [46]
-[25,52]	.	LALRReduce 20
+[25,52]	.	LALRReduce 18
 [25,52]	arrow	LALRShift [49,81]
-[25,52]	var	LALRShift [35,47,70]
-[25,52]	(	LALRShift [36,48,71]
-[25,52]	)	LALRReduce 20
+[25,52]	var	LALRShift [30,47,65]
+[25,52]	(	LALRShift [31,48,66]
+[25,52]	)	LALRReduce 18
 [27,53]	var	LALRShift [50,82]
 [28,54]	Pi	LALRShift [27,53]
-[28,54]	var	LALRShift [20,26,42]
+[28,54]	var	LALRShift [19,26,37]
 [28,54]	(	LALRShift [28,54]
-[29]	.	LALRShift [55]
-[30,59]	.	LALRReduce 27
-[30,59]	var	LALRShift [56,86]
-[30,59]	(	LALRShift [57,87]
-[30,59]	)	LALRReduce 27
-[31,60]	.	LALRReduce 28
-[31,60]	var	LALRReduce 28
-[31,60]	(	LALRReduce 28
-[31,60]	)	LALRReduce 28
-[32,61]	Lam	LALRShift [33,62]
-[32,61]	var	LALRShift [31,60]
-[32,61]	(	LALRShift [32,61]
-[33,62]	var	LALRShift [63,89]
-[34]	$	LALRReduce 9
-[34]	var	LALRShift [10]
-[35,47,70]	arrow	LALRReduce 24
-[35,47,70]	var	LALRReduce 24
-[35,47,70]	(	LALRReduce 24
-[35,47,70]	.	LALRReduce 24
-[35,47,70]	)	LALRReduce 24
-[36,48,71]	Lam	LALRShift [33,62]
-[36,48,71]	var	LALRShift [31,60]
-[36,48,71]	(	LALRShift [32,61]
-[37]	Type	LALRShift [21,43]
-[37]	Pi	LALRShift [22]
-[37]	(	LALRShift [23,45]
-[37]	var	LALRShift [20,26,42]
-[38]	:	LALRShift [67]
-[39,74]	)	LALRShift [68,97]
-[40,51,75]	)	LALRShift [69,80,98]
-[41]	arrow	LALRShift [72]
-[41]	)	LALRReduce 20
-[41]	var	LALRShift [35,47,70]
-[41]	(	LALRShift [36,48,71]
-[44]	var	LALRShift [73]
-[46]	$	LALRReduce 11
+[29]	atTerm	LALRReduce 7
+[29]	var	LALRShift [8]
+[30,47,65]	arrow	LALRReduce 22
+[30,47,65]	var	LALRReduce 22
+[30,47,65]	(	LALRReduce 22
+[30,47,65]	.	LALRReduce 22
+[30,47,65]	)	LALRReduce 22
+[31,48,66]	Lam	LALRShift [45,60]
+[31,48,66]	var	LALRShift [43,58]
+[31,48,66]	(	LALRShift [44,59]
+[32]	Type	LALRShift [20,38]
+[32]	Pi	LALRShift [21]
+[32]	(	LALRShift [22,40]
+[32]	var	LALRShift [19,26,37]
+[33]	:	LALRShift [62]
+[34,69]	)	LALRShift [63,93]
+[35,51,70]	)	LALRShift [64,80,94]
+[36]	arrow	LALRShift [67]
+[36]	)	LALRReduce 18
+[36]	var	LALRShift [30,47,65]
+[36]	(	LALRShift [31,48,66]
+[39]	var	LALRShift [68]
+[41]	.	LALRShift [71]
+[42,57]	.	LALRReduce 25
+[42,57]	var	LALRShift [72,84]
+[42,57]	(	LALRShift [73,85]
+[42,57]	)	LALRReduce 25
+[43,58]	.	LALRReduce 26
+[43,58]	var	LALRReduce 26
+[43,58]	(	LALRReduce 26
+[43,58]	)	LALRReduce 26
+[44,59]	Lam	LALRShift [45,60]
+[44,59]	var	LALRShift [43,58]
+[44,59]	(	LALRShift [44,59]
+[45,60]	var	LALRShift [75,87]
+[46]	atDef	LALRReduce 9
+[46]	$	LALRReduce 9
 [46]	var	LALRShift [12]
 [49,81]	Pi	LALRShift [27,53]
-[49,81]	var	LALRShift [20,26,42]
+[49,81]	var	LALRShift [19,26,37]
 [49,81]	(	LALRShift [28,54]
 [50,82]	:	LALRShift [79,101]
-[55]	$	LALRReduce 13
-[55]	var	LALRShift [14]
-[56,86]	.	LALRReduce 30
-[56,86]	var	LALRReduce 30
-[56,86]	(	LALRReduce 30
-[56,86]	)	LALRReduce 30
-[57,87]	Lam	LALRShift [33,62]
-[57,87]	var	LALRShift [31,60]
-[57,87]	(	LALRShift [32,61]
-[58,88]	)	LALRShift [85,104]
-[63,89]	:	LALRShift [90,105]
-[64]	$	LALRReduce 10
-[65,77,93]	)	LALRShift [91,99,108]
-[66,94]	.	LALRReduce 18
-[66,94]	)	LALRReduce 18
-[67]	Pi	LALRShift [27,53]
-[67]	var	LALRShift [20,26,42]
-[67]	(	LALRShift [28,54]
-[68,97]	.	LALRReduce 17
-[68,97]	)	LALRReduce 17
-[69,80,98]	arrow	LALRReduce 23
-[69,80,98]	var	LALRReduce 23
-[69,80,98]	(	LALRReduce 23
-[69,80,98]	.	LALRReduce 23
-[69,80,98]	)	LALRReduce 23
-[72]	Type	LALRShift [21,43]
-[72]	Pi	LALRShift [44]
-[72]	(	LALRShift [23,45]
-[72]	var	LALRShift [20,26,42]
-[73]	:	LALRShift [96]
-[76]	$	LALRReduce 12
-[78,95]	.	LALRReduce 21
-[78,95]	)	LALRReduce 21
+[55]	atTerm	LALRReduce 8
+[56,77,89]	)	LALRShift [83,99,106]
+[61,90]	.	LALRReduce 16
+[61,90]	)	LALRReduce 16
+[62]	Pi	LALRShift [27,53]
+[62]	var	LALRShift [19,26,37]
+[62]	(	LALRShift [28,54]
+[63,93]	.	LALRReduce 15
+[63,93]	)	LALRReduce 15
+[64,80,94]	arrow	LALRReduce 21
+[64,80,94]	var	LALRReduce 21
+[64,80,94]	(	LALRReduce 21
+[64,80,94]	.	LALRReduce 21
+[64,80,94]	)	LALRReduce 21
+[67]	Type	LALRShift [20,38]
+[67]	Pi	LALRShift [39]
+[67]	(	LALRShift [22,40]
+[67]	var	LALRShift [19,26,37]
+[68]	:	LALRShift [92]
+[71]	$	LALRReduce 11
+[71]	var	LALRShift [15]
+[72,84]	.	LALRReduce 28
+[72,84]	var	LALRReduce 28
+[72,84]	(	LALRReduce 28
+[72,84]	)	LALRReduce 28
+[73,85]	Lam	LALRShift [45,60]
+[73,85]	var	LALRShift [43,58]
+[73,85]	(	LALRShift [44,59]
+[74,86]	)	LALRShift [97,103]
+[75,87]	:	LALRShift [98,104]
+[76]	atDef	LALRReduce 10
+[76]	$	LALRReduce 10
+[78,91]	.	LALRReduce 19
+[78,91]	)	LALRReduce 19
 [79,101]	Pi	LALRShift [27,53]
-[79,101]	var	LALRShift [20,26,42]
+[79,101]	var	LALRShift [19,26,37]
 [79,101]	(	LALRShift [28,54]
-[83]	$	LALRReduce 14
-[84,103]	)	LALRShift [102,112]
-[85,104]	.	LALRReduce 29
-[85,104]	var	LALRReduce 29
-[85,104]	(	LALRReduce 29
-[85,104]	)	LALRReduce 29
-[90,105]	Pi	LALRShift [27,53]
-[90,105]	var	LALRShift [20,26,42]
-[90,105]	(	LALRShift [28,54]
-[91,99,108]	arrow	LALRReduce 25
-[91,99,108]	var	LALRReduce 25
-[91,99,108]	(	LALRReduce 25
-[91,99,108]	.	LALRReduce 25
-[91,99,108]	)	LALRReduce 25
-[92]	.	LALRShift [107]
-[96]	Pi	LALRShift [27,53]
-[96]	var	LALRShift [20,26,42]
-[96]	(	LALRShift [28,54]
+[83,99,106]	arrow	LALRReduce 23
+[83,99,106]	var	LALRReduce 23
+[83,99,106]	(	LALRReduce 23
+[83,99,106]	.	LALRReduce 23
+[83,99,106]	)	LALRReduce 23
+[88]	.	LALRShift [105]
+[92]	Pi	LALRShift [27,53]
+[92]	var	LALRShift [19,26,37]
+[92]	(	LALRShift [28,54]
+[95]	$	LALRReduce 12
+[96,102]	)	LALRShift [108,112]
+[97,103]	.	LALRReduce 27
+[97,103]	var	LALRReduce 27
+[97,103]	(	LALRReduce 27
+[97,103]	)	LALRReduce 27
+[98,104]	Pi	LALRShift [27,53]
+[98,104]	var	LALRShift [19,26,37]
+[98,104]	(	LALRShift [28,54]
 [100,111]	.	LALRShift [110,118]
-[102,112]	.	LALRReduce 31
-[102,112]	var	LALRReduce 31
-[102,112]	(	LALRReduce 31
-[102,112]	)	LALRReduce 31
-[106,113]	.	LALRShift [114,119]
-[107]	Type	LALRShift [21,43]
-[107]	Pi	LALRShift [22]
-[107]	(	LALRShift [23,45]
-[107]	var	LALRShift [20,26,42]
-[109]	.	LALRShift [116]
+[105]	Type	LALRShift [20,38]
+[105]	Pi	LALRShift [21]
+[105]	(	LALRShift [22,40]
+[105]	var	LALRShift [19,26,37]
+[107]	.	LALRShift [115]
+[108,112]	.	LALRReduce 29
+[108,112]	var	LALRReduce 29
+[108,112]	(	LALRReduce 29
+[108,112]	)	LALRReduce 29
+[109,113]	.	LALRShift [116,119]
 [110,118]	Pi	LALRShift [27,53]
-[110,118]	var	LALRShift [20,26,42]
+[110,118]	var	LALRShift [19,26,37]
 [110,118]	(	LALRShift [28,54]
-[114,119]	Lam	LALRShift [33,62]
-[114,119]	var	LALRShift [31,60]
-[114,119]	(	LALRShift [32,61]
-[115,121]	.	LALRReduce 16
-[115,121]	)	LALRReduce 16
-[116]	Type	LALRShift [21,43]
-[116]	Pi	LALRShift [44]
-[116]	(	LALRShift [23,45]
-[116]	var	LALRShift [20,26,42]
-[117,122]	.	LALRReduce 19
-[117,122]	)	LALRReduce 19
-[120,123]	.	LALRReduce 26
-[120,123]	)	LALRReduce 26
+[114,120]	.	LALRReduce 14
+[114,120]	)	LALRReduce 14
+[115]	Type	LALRShift [20,38]
+[115]	Pi	LALRShift [39]
+[115]	(	LALRShift [22,40]
+[115]	var	LALRShift [19,26,37]
+[116,119]	Lam	LALRShift [45,60]
+[116,119]	var	LALRShift [43,58]
+[116,119]	(	LALRShift [44,59]
+[117,121]	.	LALRReduce 17
+[117,121]	)	LALRReduce 17
+[122,123]	.	LALRReduce 24
+[122,123]	)	LALRReduce 24
 
 [0]	Program	[1]
 [0]	Decl	[2]
 [0]	TypeDeclaration	[3]
-[0]	TermDeclaration	[4]
-[0]	DefDeclaration	[5]
-[6]	TyDecls	[9]
-[7]	TmDecls	[11]
-[8]	DefDecls	[13]
-[15]	K	[18]
-[15]	A1	[19]
+[3]	TermDeclaration	[5]
+[4]	TyDecls	[7]
+[5]	DefDeclaration	[9]
+[6]	TmDecls	[11]
+[10]	DefDecls	[14]
+[13]	K	[17]
+[13]	A1	[18]
 [16]	A	[24]
 [16]	A1	[25,52]
-[17]	M	[29]
-[17]	M1	[30,59]
-[23,45]	K	[39,74]
-[23,45]	A	[40,51,75]
-[23,45]	A1	[41]
-[28,54]	A	[40,51,75]
+[22,40]	K	[34,69]
+[22,40]	A	[35,51,70]
+[22,40]	A1	[36]
+[23]	M	[41]
+[23]	M1	[42,57]
+[28,54]	A	[35,51,70]
 [28,54]	A1	[25,52]
-[32,61]	M	[58,88]
-[32,61]	M1	[30,59]
-[34]	TyDecls	[64]
-[36,48,71]	M	[65,77,93]
-[36,48,71]	M1	[30,59]
-[37]	K	[66,94]
-[37]	A1	[19]
+[29]	TyDecls	[55]
+[31,48,66]	M	[56,77,89]
+[31,48,66]	M1	[42,57]
+[32]	K	[61,90]
+[32]	A1	[18]
+[44,59]	M	[74,86]
+[44,59]	M1	[42,57]
 [46]	TmDecls	[76]
-[49,81]	A	[78,95]
+[49,81]	A	[78,91]
 [49,81]	A1	[25,52]
-[55]	DefDecls	[83]
-[57,87]	M	[84,103]
-[57,87]	M1	[30,59]
-[67]	A	[92]
-[67]	A1	[25,52]
-[72]	K	[66,94]
-[72]	A	[78,95]
-[72]	A1	[41]
+[62]	A	[88]
+[62]	A1	[25,52]
+[67]	K	[61,90]
+[67]	A	[78,91]
+[67]	A1	[36]
+[71]	DefDecls	[95]
+[73,85]	M	[96,102]
+[73,85]	M1	[42,57]
 [79,101]	A	[100,111]
 [79,101]	A1	[25,52]
-[90,105]	A	[106,113]
-[90,105]	A1	[25,52]
-[96]	A	[109]
-[96]	A1	[25,52]
-[107]	K	[115,121]
-[107]	A1	[19]
-[110,118]	A	[117,122]
+[92]	A	[107]
+[92]	A1	[25,52]
+[98,104]	A	[109,113]
+[98,104]	A1	[25,52]
+[105]	K	[114,120]
+[105]	A1	[18]
+[110,118]	A	[117,121]
 [110,118]	A1	[25,52]
-[114,119]	M	[120,123]
-[114,119]	M1	[30,59]
-[116]	K	[115,121]
-[116]	A	[117,122]
-[116]	A1	[41]
+[115]	K	[114,120]
+[115]	A	[117,121]
+[115]	A1	[36]
+[116,119]	M	[122,123]
+[116,119]	M1	[42,57]
+
+
 
 

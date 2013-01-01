@@ -130,7 +130,9 @@ first tbl x = fromJust (lookup x tbl)
 first_ :: [(Symbol, [ExtendedSymbol])] -> [Symbol] -> [ExtendedSymbol]
 first_ tbl []     = []
 first_ tbl (z:zs) = let zRng = first tbl z in
-  if elem Epsilon zRng then union zRng (first_ tbl zs) else zRng
+  if elem Epsilon zRng 
+  then union ((\\) zRng [Epsilon]) (first_ tbl zs)
+  else zRng
                                                             
 extFirst :: [(Symbol, [ExtendedSymbol])] -> ExtendedSymbol -> [ExtendedSymbol]
 extFirst tbl (Symbol x)    = first tbl x
@@ -140,7 +142,9 @@ extFirst tbl (Epsilon)     = error "extFirst_ : Epsilon"
 extFirst_ :: [(Symbol, [ExtendedSymbol])] -> [ExtendedSymbol] -> [ExtendedSymbol]
 extFirst_ tbl []     = []
 extFirst_ tbl (z:zs) = let zRng = extFirst tbl z in
-  if elem Epsilon zRng then union zRng (extFirst_ tbl zs) else zRng
+  if elem Epsilon zRng 
+  then union ((\\) zRng [Epsilon]) (extFirst_ tbl zs)
+  else zRng
   
 --
 calcFirst :: CFG -> [(Symbol, [ExtendedSymbol])]
@@ -545,16 +549,16 @@ q4 = ProductionRule "C" [Terminal "d"]
 --------------------------------------------------------------------------------
 -- [Sample CFG Grammar] : g3 from the LF calculus
 --------------------------------------------------------------------------------
-g3 = CFG "S'" [lfp0,lfp1,lfp2,lfp3,lfp4,lfp5,lfp6,lfp7,lfp8,lfp9,lfp10,lfp11
+g3 = CFG "S'" [lfp0,lfp1,lfp2,lfp5,lfp6,lfp7,lfp8,lfp9,lfp10,lfp11
               ,lfp12,lfp13,lfp14,lfp15,lfp16,lfp17,lfp18,lfp19,lfp20,lfp21
               ,lfp22,lfp23,lfp24,lfp25,lfp26,lfp27,lfp28,lfp29,lfp30,lfp31]
 
 lfp0 = ProductionRule "S'" [Nonterminal "Program"]
 lfp1 = ProductionRule "Program" [Nonterminal "Decl"]
 
-lfp2 = ProductionRule "Decl" [Nonterminal "TypeDeclaration"]
-lfp3 = ProductionRule "Decl" [Nonterminal "TermDeclaration"]
-lfp4 = ProductionRule "Decl" [Nonterminal "DefDeclaration"]
+lfp2 = ProductionRule "Decl" [Nonterminal "TypeDeclaration", 
+                              Nonterminal "TermDeclaration", 
+                              Nonterminal "DefDeclaration"]
 
 lfp5 = ProductionRule "TypeDeclaration" 
        [Terminal "atType", Nonterminal "TyDecls"]
