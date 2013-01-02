@@ -59,6 +59,10 @@ data CFG = CFG String [ProductionRule]
 
 type AUGCFG = CFG
 
+nonterminals augCfg = nub $ [s] ++ [x | ProductionRule x _ <- prules]
+  where
+    CFG s prules = augCfg
+
 data Item = Item ProductionRule Int ExtendedSymbol {- except Epsilon -}
             deriving Eq
                      
@@ -339,13 +343,13 @@ data Action = Shift Int | Reduce Int | Accept | Reject
 type ActionTable = [(Int, ExtendedSymbol, Action)] -- state, terminal, action
 type GotoTable   = [(Int, Symbol, Int)]    -- state, nonterminal, state
 
-lookupActionTable i x [] 
+lookupTable :: (Eq a, Eq b) => a -> b -> [(a,b,c)] -> Maybe c
+lookupTable i x [] 
   = Nothing 
-lookupActionTable i x ((j,y,a):actTbl)
+lookupTable i x ((j,y,a):tbl)
   = if i == j && x == y then Just a 
-    else lookupActionTable i x actTbl
+    else lookupTable i x tbl
     
-
 prActTbl [] = return ()
 prActTbl ((i,x,a):actTbl) = 
   do putStrLn (show i ++ "\t" ++ show x ++ "\t" ++ show a)
@@ -468,7 +472,7 @@ calcLALRParseTable augCfg = (itemss, prules, iss, lalrActTbl, lalrGtTbl)
                  , let lalrAct = actionCheck $
                          nub [ toLalrAction iss a
                              | i <- is
-                             , let r = lookupActionTable i x actTbl
+                             , let r = lookupTable i x actTbl
                              , isJust r
                              , let Just a = r ]  ]
 
@@ -513,6 +517,10 @@ stateCheck iss  = error ("LALR State Conflict: " ++ show iss)
 --------------------------------------------------------------------------------
 -- Utility
 --------------------------------------------------------------------------------
+
+-- cgStates iss
+-- cgNonterminals augCfg
+-- cgGotoTable augCfg
 
 -- C enum type declaration for states
 cgStates iss = cgEnum "STATE" (cgStates' iss)
@@ -587,31 +595,30 @@ cgToState' (i:is) = show i ++  "_" ++ cgToState' is
 -- C enum type declaration for nonterminals
 
 cgNonterminals augCfg = 
-  cgEnum "Nonterminal" (cgNonterminals' nonterminals)
-  where
-    CFG s prules = augCfg
-    nonterminals = nub $ [s] ++ [x | ProductionRule x _ <- prules]
+  cgEnum "Nonterminal" (cgNonterminals' (cgCNames (nonterminals augCfg)))
     
 cgNonterminals' []     = return ()    
 cgNonterminals' [x]    = 
   do putStr "\t"
-     putStr $ cgToCName $ x
+     putStr x
      putStrLn ""
 cgNonterminals' [x1,x2]    = 
   do putStr "\t"
-     putStr $ cgToCName $ x1
+     putStr x1
      putStr ", "
-     putStr $ cgToCName $ x2
+     putStr x2
      putStrLn ""
 cgNonterminals' (x1:x2:xs) = 
   do putStr "\t"
-     putStr $ cgToCName $ x1
+     putStr x1
      putStr ", "
-     putStr $ cgToCName $ x2
+     putStr x2
      putStr ", "
      putStrLn ""
      cgNonterminals' xs
      
+cgCNames nts = map cgToCName nts
+
 cgToCName x = "NONTERMINAL_" ++ cgToCName' x
 
 cgToCName' []     = []      -- CAUTION: Don't use S' with S_ for nonterminals.
@@ -622,6 +629,52 @@ cgEnum name action =
   do putStrLn ("enum " ++ name ++ " {")
      action
      putStrLn "};"
+
+-- C array for goto_table
+cgGotoTable augCfg =
+  do prGotoTableDim (length iss) (length nts)
+     prGotoTableArr iss nts gotoTbl
+  where
+    (_,_,iss,_,gotoTbl) = calcLALRParseTable augCfg
+    nts                 = nonterminals augCfg
+    
+cg_noofstates   = "NOOFSTATES"
+cg_noofnonterms = "NOOFNONTERMINALS"
+  
+prGotoTableDim no_states no_nonterms =    
+  do putStrLn $ "#define " ++ cg_noofstates   ++ " " ++ show no_states
+     putStrLn $ "#define " ++ cg_noofnonterms ++ " " ++ show no_nonterms
+     putStrLn ""
+     
+prGotoTableArr :: [[Int]] -> [String] -> LALRGotoTable -> IO ()
+prGotoTableArr states nonterms gotoTbl = 
+  do putStrLn $ "int goto_table[" ++ cg_noofstates ++ 
+       "][" ++ cg_noofnonterms ++ "] = {"
+     prGotoTableArr' states nonterms gotoTbl
+     putStrLn $ "};"
+
+prGotoTableArr' [i] nonterms gotoTbl = 
+  do putStr "\t"
+     putStr "{"
+     prGotoTableArr'' i nonterms gotoTbl
+     putStrLn "}"
+prGotoTableArr' (i:states) nonterms gotoTbl = 
+  do putStr "\t"
+     putStr "{"
+     prGotoTableArr'' i nonterms gotoTbl
+     putStrLn "},"
+     prGotoTableArr' states nonterms gotoTbl
+     
+prGotoTableArr'' i [x] gotoTbl =
+  case lookupTable i (Nonterminal x) gotoTbl of
+    Nothing -> do putStr $ show (-1)
+    Just k  -> do putStr $ cgToState k
+prGotoTableArr'' i (x:nonterms) gotoTbl =
+  case lookupTable i (Nonterminal x) gotoTbl of
+    Nothing -> do putStr $ show (-1) ++ ","
+                  prGotoTableArr'' i nonterms gotoTbl
+    Just k  -> do putStr $ cgToState k ++ ","
+                  prGotoTableArr'' i nonterms gotoTbl
 
 --------------------------------------------------------------------------------
 -- [Sample CFG Grammar] : g1 from Example 4.33 in the Dragon book (2nd Ed.)
