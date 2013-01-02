@@ -511,6 +511,119 @@ stateCheck [is] = is
 stateCheck iss  = error ("LALR State Conflict: " ++ show iss)
 
 --------------------------------------------------------------------------------
+-- Utility
+--------------------------------------------------------------------------------
+
+-- C enum type declaration for states
+cgStates iss = cgEnum "STATE" (cgStates' iss)
+     
+cgStates' [] = return ()  
+cgStates' [is] = 
+  do putStr "\t"
+     cgState is
+
+cgStates' [is1,is2] = 
+  do putStr "\t"
+     cgState is1
+     putStr ", "
+     cgState is2
+     putStrLn ""
+
+cgStates' [is1,is2,is3] = 
+  do putStr "\t"
+     cgState is1
+     putStr ", "
+     cgState is2
+     putStr ", "
+     cgState is3
+     putStrLn ""
+
+cgStates' [is1,is2,is3,is4] = 
+  do putStr "\t"
+     cgState is1
+     putStr ", "
+     cgState is2
+     putStr ", "
+     cgState is3
+     putStr ", "
+     cgState is4
+     putStrLn ""
+     
+cgStates' [is1,is2,is3,is4,is5] = 
+  do putStr "\t"
+     cgState is1
+     putStr ", "
+     cgState is2
+     putStr ", "
+     cgState is3
+     putStr ", "
+     cgState is4
+     putStr ", "
+     cgState is5
+     putStrLn ""
+     
+cgStates' (is1:is2:is3:is4:is5:iss) =
+  do putStr "\t"
+     cgState is1
+     putStr ", "
+     cgState is2
+     putStr ", "
+     cgState is3
+     putStr ", "
+     cgState is4
+     putStr ", "
+     cgState is5
+     putStrLn ","
+     cgStates' iss
+     
+cgState is = putStr (cgToState is) 
+     
+cgToState is = "S" ++ cgToState' is
+
+cgToState' []     = ""
+cgToState' [i]    = show i
+cgToState' (i:is) = show i ++  "_" ++ cgToState' is
+
+-- C enum type declaration for nonterminals
+
+cgNonterminals augCfg = 
+  cgEnum "Nonterminal" (cgNonterminals' nonterminals)
+  where
+    CFG s prules = augCfg
+    nonterminals = nub $ [s] ++ [x | ProductionRule x _ <- prules]
+    
+cgNonterminals' []     = return ()    
+cgNonterminals' [x]    = 
+  do putStr "\t"
+     putStr $ cgToCName $ x
+     putStrLn ""
+cgNonterminals' [x1,x2]    = 
+  do putStr "\t"
+     putStr $ cgToCName $ x1
+     putStr ", "
+     putStr $ cgToCName $ x2
+     putStrLn ""
+cgNonterminals' (x1:x2:xs) = 
+  do putStr "\t"
+     putStr $ cgToCName $ x1
+     putStr ", "
+     putStr $ cgToCName $ x2
+     putStr ", "
+     putStrLn ""
+     cgNonterminals' xs
+     
+cgToCName x = "NONTERMINAL_" ++ cgToCName' x
+
+cgToCName' []     = []      -- CAUTION: Don't use S' with S_ for nonterminals.
+cgToCName' (c:cs) = 
+  (if c == '\'' then '_' else c) : cgToCName' cs 
+
+cgEnum name action =
+  do putStrLn ("enum " ++ name ++ " {")
+     action
+     putStrLn "};"
+
+--------------------------------------------------------------------------------
 -- [Sample CFG Grammar] : g1 from Example 4.33 in the Dragon book (2nd Ed.)
 --------------------------------------------------------------------------------
 g1 = CFG "E'" [p0,p1,p2,p3,p4,p5,p6]
@@ -612,6 +725,3 @@ lfp29 = ProductionRule "M1" [Terminal "(", Nonterminal "M", Terminal ")"]
 lfp30 = ProductionRule "M1" [Nonterminal "M1", Terminal "var"]
 lfp31 = ProductionRule "M1" [Nonterminal "M1", Terminal "(", Nonterminal "M",
                              Terminal ")"]
-
-
-              
