@@ -698,7 +698,7 @@ cgInStates n ((state,extSym,acts):lalrActTbl) iprules =
   do prTab n
      putStrLn $ "case " ++ cgToState state  ++ ":"
      cgActions (n+1) ((state,extSym,acts):lalrActTbl) iprules
-     prTab n
+     prTab (n+1)
      putStrLn "break;"
      putStrLn ""
 cgInStates n [] iprules
@@ -736,6 +736,8 @@ cgAction n extsym (LALRShift state) iprules =
      prTab (n+1)
      putStrLn $ "push (" ++ cgToState state ++ ");"
      prTab (n+1)
+     putStrLn $ "current_tok += " ++ show (offset extsym) ++ ";"
+     prTab (n+1)
      putStrLn "break;"
      putStrLn ""
      
@@ -772,6 +774,10 @@ cgAction' n extsym y ys i =
      putStrLn "if (0 <= next) push (next); else error = next;"
      prTab (n+1)
      putStrLn "break;"
+     
+-- Attribute of tokens specific to g3
+offset (Symbol (Terminal "var")) = 3
+offset _                         = 1
      
 cgActionCase extsym =
   putStrLn $ "case " ++ cgTerminalName extsym ++ ":"
