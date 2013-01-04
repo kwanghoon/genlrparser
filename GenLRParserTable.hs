@@ -515,7 +515,7 @@ stateCheck [is] = is
 stateCheck iss  = error ("LALR State Conflict: " ++ show iss)
 
 --------------------------------------------------------------------------------
--- Utility
+-- C Code Generation for Parser
 --------------------------------------------------------------------------------
 
 -- cgStates iss
@@ -675,6 +675,126 @@ prGotoTableArr'' i (x:nonterms) gotoTbl =
                   prGotoTableArr'' i nonterms gotoTbl
     Just k  -> do putStr $ cgToState k ++ ","
                   prGotoTableArr'' i nonterms gotoTbl
+                  
+-- Generate C code for an LALR action table
+cgActionsInStates augCfg =
+  do let nTabs = 1
+     prTab nTabs
+     putStrLn "switch( top() )"
+     prTab nTabs
+     putStrLn "{"
+     mapM_ (\t -> cgInStates nTabs t iprules) (groupBy eqState lalrActTbl)
+     prTab nTabs
+     putStrLn "} /* switch ( top() ) */ "
+     
+  where
+    CFG start prules     = augCfg
+    iprules              = zip [0..] prules 
+    (_,_,_,lalrActTbl,_) = calcLALRParseTable augCfg
+    
+    eqState (x1,_,_) (x2,_,_) = x1 == x2
+     
+cgInStates n ((state,extSym,acts):lalrActTbl) iprules =
+  do prTab n
+     putStrLn $ "case " ++ cgToState state  ++ ":"
+     cgActions (n+1) ((state,extSym,acts):lalrActTbl) iprules
+     prTab n
+     putStrLn "break;"
+     putStrLn ""
+cgInStates n [] iprules
+  = return ()
+     
+cgActions n lalrActTbl iprules =
+  do prTab n
+     putStrLn "switch ( toks[current_tok] )"
+     prTab n
+     putStrLn "{"
+     
+     cgActions' n lalrActTbl iprules
+     
+     prTab n
+     putStrLn "default:"
+     prTab (n+1)
+     putStrLn "error = REJECT;"
+     prTab (n+1)
+     putStrLn "break;"
+     putStrLn ""
+     
+     prTab n
+     putStrLn "}"
+  
+cgActions' n [] iprules = return ()
+cgActions' n ((_,extsym,action):extSymActs) iprules =
+  do cgAction n extsym action iprules
+     cgActions' n extSymActs iprules
+
+cgAction n extsym (LALRShift state) iprules =
+  do prTab n
+     cgActionCase extsym
+     prTab (n+1)
+     putStrLn $ "push (" ++ cgTerminalName extsym  ++ ");"
+     prTab (n+1)
+     putStrLn $ "push (" ++ cgToState state ++ ");"
+     prTab (n+1)
+     putStrLn "break;"
+     putStrLn ""
+     
+cgAction n extsym (LALRAccept) iprules =
+  do prTab n 
+     cgActionCase extsym
+     prTab (n+1)
+     putStrLn "error = ACCEPT;"
+     prTab (n+1)
+     putStrLn "break;"
+     
+cgAction n extsym (LALRReduce i) iprules =
+  case maybeprule of
+    Nothing -> error $ "cgActionsInState: Cannot find " ++ show i ++ " prule"
+    Just (ProductionRule y ys) -> cgAction' n extsym y ys i 
+  where
+    maybeprule = lookup i iprules
+     
+cgAction n extsym (LALRReject) iprules =     
+  error "cgActionsInState: LALRReject unexpected"
+     
+cgAction' n extsym y ys i =
+  do prTab n
+     cgActionCase extsym
+     mapM_ (\i -> do { prTab (n+1); putStrLn "pop();" }) [1..length ys * 2]
+     putStrLn ""
+     prTab (n+1)
+     putStrLn "next = top();"
+     prTab (n+1)
+     putStrLn $ "push (" ++ cgToCName y  ++ ");"
+     prTab (n+1)
+     putStrLn $ "next = goto_table[next][" ++ cgToCName y ++ "];"
+     prTab (n+1)
+     putStrLn "if (0 <= next) push (next); else error = next;"
+     prTab (n+1)
+     putStrLn "break;"
+     
+cgActionCase extsym =
+  putStrLn $ "case " ++ cgTerminalName extsym ++ ":"
+
+    
+cgTerminalName extsym = 
+  case extsym of
+    Symbol (Terminal t) -> cgTerminalName' t
+    EndOfSymbol -> cgNameEndOfSymbol
+    _ -> error "cgTerminalName: not a terminal symbol"
+    
+cgTerminalName' t =     
+  case lookup t g3_attrib_terminals of
+    Nothing -> error $ "cgTerminalName: not found " ++ t
+    Just y  -> y
+    
+-- The attribute of $
+cgNameEndOfSymbol = "ENDOFSYMBOL"
+  
+prTab 0 = return ()     
+prTab n = 
+  do putStr "\t"
+     prTab (n-1)
 
 --------------------------------------------------------------------------------
 -- [Sample CFG Grammar] : g1 from Example 4.33 in the Dragon book (2nd Ed.)
@@ -778,3 +898,23 @@ lfp29 = ProductionRule "M1" [Terminal "(", Nonterminal "M", Terminal ")"]
 lfp30 = ProductionRule "M1" [Nonterminal "M1", Terminal "var"]
 lfp31 = ProductionRule "M1" [Nonterminal "M1", Terminal "(", Nonterminal "M",
                              Terminal ")"]
+
+-- The attributes of terminals in g3
+g3_attrib_terminals =
+  [ ("Type",   "TYPE")
+  , ("Pi",     "PI")
+  , ("Lam",    "LAM")
+  , (":",      "COLON")
+  , (".",      "DOT")
+    
+  , ("(",      "OPEN")
+  , (")",      "CLOSE")
+  , ("=",      "EQ")
+  , ("arrow",  "ARROW")
+  , ("atType", "ATTYPE")
+  
+  , ("atTerm", "ATTERM")
+  , ("atDef",  "ATDEF")  
+  , ("var",    "VAR")
+  , ("num",    "NUM")
+  ]
