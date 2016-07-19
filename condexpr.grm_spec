@@ -1,0 +1,62 @@
+
+
+CondExpr := OrExpr
+
+OrExpr  := OrExpr Or AndExpr
+        |  AndExpr
+
+AndEpxr := AndExpr And EqNeqExpr
+        |  EqNeqExpr
+
+
+EqNeqExpr
+        :=  Expr = Expr
+        |   Expr <> Expr
+        |   CompExpr
+
+CompExpr 
+        := Expr < Expr
+        |  Expr <= Expr
+        |  Expr > Expr
+        |  Expr >= Expr
+        |  AtomicExpr
+
+
+AtomicCondExpr 
+        := ( CondExpr )
+        |  "true"
+        |  "false"
+
+========================
+
+Expr  := PMExpr
+
+PMExpr := PMExpr + MDExpr
+       |  PMExpr - MDExpr
+       |  MDExpr
+
+MDExpr := MDExpr * UMExpr
+       |  MDExpr / UMExpr
+       |  UMExpr
+
+UMExpr := - AtomicExpr
+       |  AtomicExpr
+
+AtomicExpr 
+       := ( Expr )
+       | NUM
+       | ID
+       | ID . ID
+       | ID . ID ( Exprs )
+       | ID ( )
+
+
+Exprs :=        // 비어 있는 것
+      |  MoreThanOneExprs
+
+MoreThanOneExprs
+      := Expr
+      |  Expr , MoreThanOneExprs
+
+========================
+

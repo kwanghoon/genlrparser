@@ -13,7 +13,9 @@ ProductionRule "T" [Nonterminal "F"],
 
 ProductionRule "F" [Terminal "(", Nonterminal "E", Terminal ")"],
 
-ProductionRule "F" [Terminal "id"]
+ProductionRule "F" [Terminal "id"],
+
+ProductionRule "F" [Terminal "num"]
 ]
 
 
