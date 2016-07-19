@@ -13,12 +13,21 @@ module GenLRParserTable where
 
 import Data.List
 import Data.Maybe
+import System.Environment (getArgs)
+
+main = do
+  args <- getArgs
+  mapM f args
+  where
+    f file = do
+      grammar <- readFile file
+      prLALRParseTable (calcLALRParseTable (read grammar))
 
 --------------------------------------------------------------------------------
 -- Context Free Grammar
 --------------------------------------------------------------------------------
 data Symbol = Nonterminal String | Terminal String 
-    deriving Eq
+    deriving (Eq, Read)
              
 instance Show Symbol where
   showsPrec p (Nonterminal x) = (++) x
@@ -42,8 +51,8 @@ isExtendedTerminal _                     = False
 isExtendedNonterminal (Symbol (Nonterminal x)) = True  
 isExtendedNonterminal _                        = False
 
-data ProductionRule = ProductionRule String [Symbol]
-         deriving Eq
+data ProductionRule = ProductionRule String [Symbol] 
+         deriving (Eq, Read)
                   
 instance Show ProductionRule where
   showsPrec p (ProductionRule x ys) = (++) x . (++) " -> " . show_ys ys
@@ -54,8 +63,8 @@ show_ys []     = (++) ""
 show_ys [y] = (++) (show y) 
 show_ys (y:ys) = (++) (show y) . (++) " " . show_ys ys
 
-data CFG = CFG String [ProductionRule]
-         deriving Show
+data CFG = CFG String [ProductionRule] 
+         deriving (Show, Read)
 
 type AUGCFG = CFG
 
@@ -904,6 +913,42 @@ lfp29 = ProductionRule "M1" [Terminal "(", Nonterminal "M", Terminal ")"]
 lfp30 = ProductionRule "M1" [Nonterminal "M1", Terminal "var"]
 lfp31 = ProductionRule "M1" [Nonterminal "M1", Terminal "(", Nonterminal "M",
                              Terminal ")"]
+        
+type SemRuleName = String
+data SemanticRule = SemanticRule SemRuleName [Int]
+    
+lfs0 = SemanticRule "DoNothing" []
+lfs1 = SemanticRule "DoNothing" []
+lfs2 = SemanticRule "DoNothing" []
+lfs5 = SemanticRule "DoNothing" []
+lfs6 = SemanticRule "DoNothing" []
+lfs7 = SemanticRule "DoNothing" []
+lfs8 = SemanticRule "DoNothing" []
+
+lfs9 = SemanticRule "DeclK" [1,3]
+lfs10 = SemanticRule "DeclK" [1,3]
+lfs11 = SemanticRule "DeclA" [1,3]
+lfs12 = SemanticRule "DeclA" [1,3]
+lfs13 = SemanticRule "DeclM" [1,3]
+lfs14 = SemanticRule "DeclM" [1,3]
+
+lfs15 = SemanticRule "MkType" []
+lfs16 = SemanticRule "MkPiK" [2,4,6]
+lfs17 = SemanticRule "ReturnK" [2]
+lfs18 = SemanticRule "MkArrowK" [1,3]
+lfs19 = SemanticRule "MkPiA" [2,4,6]
+lfs20 = SemanticRule "ReturnA" [1]
+lfs21 = SemanticRule "MkArrowA" [1,3]
+lfs22 = SemanticRule "MkName" [1]
+lfs23 = SemanticRule "ReturnA" [2]
+lfs24 = SemanticRule "MkAppA" [1,2]
+lfs25 = SemanticRule "MkAppA" [1,3]
+lfs26 = SemanticRule "MkLamM" [2,4,6]
+lfs27 = SemanticRule "ReturnM" [1]
+lfs28 = SemanticRule "MkName" [1]
+lfs29 = SemanticRule "ReturnM" [2]
+lfs30 = SemanticRule "MkAppM" [1,2]
+lfs31 = SemanticRule "MkAppM" [1,3]
 
 -- The attributes of terminals in g3
 g3_attrib_terminals =
