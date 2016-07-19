@@ -1,0 +1,11 @@
+
+CFG "S'" [
+    ProductionRule "S'" [Nonterminal "S"],
+    ProductionRule "S" [Nonterminal "C", Nonterminal "C"],
+    ProductionRule "C" [Terminal "c", Nonterminal "C"],
+    ProductionRule "C" [Terminal "d"]
+]
+
+
+
+
