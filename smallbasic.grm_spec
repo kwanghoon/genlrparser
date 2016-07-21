@@ -18,7 +18,7 @@ Stmt := ID = Expr CR
 
 MoreThanZeroElseIf
      := OptionalElse
-     |  ElseIf ( CondExpr ) Then Stmts MoreThanZeroElseIf
+     |  ElseIf ( CondExpr ) Then CR Stmts MoreThanZeroElseIf
 
 OptionalElse
      := EndIf CR
