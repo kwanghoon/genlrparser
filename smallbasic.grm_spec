@@ -2,34 +2,35 @@
 
 ========================
 
-Stmt := ID = Expr CR
-     |  If ( CondExpr ) Then CR Stmts MoreThanZeroElseIf  
+Stmt := CR   // Empty statement
+     |  ID = Expr
+     |  If ( CondExpr ) Then CR Stmts CR MoreThanZeroElseIf  
 
               // If ( CondExpr ) Then CR Stmts 
               //   { ElseIf ( CondExpr ) Then Stmts }* 
-              //   { Else CR Stmts } EndIf CR
+              //   { Else CR Stmts } EndIf
 
-     |  While ( CondExpr ) Then CR Stmts EndWhile CR
-     |  ID : CR
-     |  Goto ID CR
-     |  For ID = Expr To Expr OptStep CR Stmts EndFor CR
-     |  Sub ID CR Stmts EndSub CR
+     |  While ( CondExpr ) Then CR Stmts CR EndWhile
+     |  ID :
+     |  Goto ID
+     |  For ID = Expr To Expr OptStep CR Stmts CR EndFor
+     |  Sub ID CR Stmts CR EndSub
      |  Expr
 
 MoreThanZeroElseIf
      := OptionalElse
-     |  ElseIf ( CondExpr ) Then CR Stmts MoreThanZeroElseIf
+     |  ElseIf ( CondExpr ) Then CR Stmts CR MoreThanZeroElseIf
 
 OptionalElse
-     := EndIf CR
-     |  Else CR Stmts EndIf CR
+     := EndIf
+     |  Else CR Stmts CR EndIf
 
 Stmts
-     := CR                  // 빈 라인
+     := 
      |  MoreThanOneStmt
 
 MoreThanOneStmt
-     := Stmt CR
+     := Stmt
      |  Stmt CR MoreThanOneStmt
 
 OptStep 
@@ -51,8 +52,6 @@ AndEpxr := AndExpr And EqNeqExpr
 EqNeqExpr
         :=  Expr = Expr
         |   Expr <> Expr
-        |   CompExpr = CompExpr
-        |   CompExpr <> CompExpr
         |   CompExpr
 
 CompExpr 
