@@ -64,6 +64,7 @@ CompExpr
 
 AtomicCondExpr 
         := ( CondExpr )
+        |  ID
         |  "true"
         |  "false"
 
