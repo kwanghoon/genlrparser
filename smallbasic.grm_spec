@@ -1,104 +1,107 @@
 
+Prog    // { Stmt { CR Stmt }* }
+  := 
+  |   MoreThanOneStmt
 
-========================
+=========================================================
 
-Stmt := CR   // Empty statement
-     |  ID = Expr
-     |  If ( CondExpr ) Then CR Stmts CR MoreThanZeroElseIf  
+Stmt
+  := ExprStatement
+  |  While ( Expr ) Then CRStmtCRs EndWhile
+  |  ID :
+  |  Goto ID
+  |  For ID = Expr To Expr OptStep CRStmtCRs EndFor
+  |  Sub ID CRStmtCRs EndSub
+  |  If ( Expr ) Then CRStmtCRs MoreThanZeroElseIf  
 
-              // If ( CondExpr ) Then CR Stmts 
-              //   { ElseIf ( CondExpr ) Then Stmts }* 
-              //   { Else CR Stmts } EndIf
-
-     |  While ( CondExpr ) Then CR Stmts CR EndWhile
-     |  ID :
-     |  Goto ID
-     |  For ID = Expr To Expr OptStep CR Stmts CR EndFor
-     |  Sub ID CR Stmts CR EndSub
-     |  Expr
+      // If ( Expr ) Then Stmts 
+      //   { ElseIf ( Expr ) Then Stmts }* 
+      //   { Else Stmts } EndIf
 
 MoreThanZeroElseIf
-     := OptionalElse
-     |  ElseIf ( CondExpr ) Then CR Stmts CR MoreThanZeroElseIf
+  := OptionalElse
+  |  ElseIf ( Expr ) Then CRStmtCRs MoreThanZeroElseIf
 
 OptionalElse
-     := EndIf
-     |  Else CR Stmts CR EndIf
+  := EndIf
+  |  Else CRStmtCRs EndIf
 
-Stmts
-     := 
-     |  MoreThanOneStmt
+ExprStatement
+  := ID = Expr
+  |  ID . ID ( Exprs )
+  |  ID ( )
 
-MoreThanOneStmt
-     := Stmt
-     |  Stmt CR MoreThanOneStmt
+CRStmtCRs    // CR { Stmt CR }*
+  := CR
+  |  CR MoreThanOneStmt CR
+
+MoreThanOneStmt    // Stmt { CR Stmt }*
+  := Stmt
+  |  Stmt CR MoreThanOneStmt
 
 OptStep 
-     :=
-     |  Step Expr
+  :=
+  |  Step Expr
 
+=========================================================
 
-========================
+Expr
+  := CondExpr
 
-CondExpr := OrExpr
+Exprs
+  :=
+  |  Expr
+  |  Expr , Exprs
 
-OrExpr  := OrExpr Or AndExpr
-        |  AndExpr
+CondExpr
+  := OrExpr
 
-AndEpxr := AndExpr And EqNeqExpr
-        |  EqNeqExpr
+OrExpr 
+  := OrExpr Or AndExpr
+  |  AndExpr
+
+AndEpxr
+  := AndExpr And EqNeqExpr
+  |  EqNeqExpr
 
 
 EqNeqExpr
-        :=  Expr = Expr
-        |   Expr <> Expr
-        |   CompExpr
+  :=  EqNeqExpr = CompExpr
+  |   EqNeqExpr <> CompExpr
+  |   CompExpr
 
 CompExpr 
-        := Expr < Expr
-        |  Expr <= Expr
-        |  Expr > Expr
-        |  Expr >= Expr
-        |  AtomicCondExpr
+  := CompExpr <  AdditiveExpr
+  |  CompExpr <= AdditiveExpr
+  |  CompExpr >  AdditiveExpr
+  |  CompExpr >= AdditiveExpr
+  |  AdditiveExpr
 
+=========================================================
 
-AtomicCondExpr 
-        := ( CondExpr )
-        |  ID
-        |  "true"
-        |  "false"
+AdditiveExpr 
+  := AdditiveExpr + MultiplicativeExpr
+  |  AdditiveExpr - MultiplicativeExpr
+  |  MultiplicativeExpr
 
-========================
+MultiplicativeExpr 
+  := MultiplicativeExpr * UnaryExpr
+  |  MultiplicativeExpr / UnaryExpr
+  |  UnaryExpr
 
-Expr  := PMExpr
-      |  CondExpr
+UnaryExpr 
+  := - Primary
+  |  Primary
 
-PMExpr := PMExpr + MDExpr
-       |  PMExpr - MDExpr
-       |  MDExpr
+Primary
+  := NUM
+  |  "true"
+  |  "false"
+  |  ( Expr )
+  |  ID
+  |  ID . ID
+  |  ID . ID ( Exprs )
+  |  ID ( )
 
-MDExpr := MDExpr * UMExpr
-       |  MDExpr / UMExpr
-       |  UMExpr
-
-UMExpr := - AtomicExpr
-       |  AtomicExpr
-
-AtomicExpr 
-       := ( Expr )
-       | NUM
-       | ID
-       | ID . ID
-       | ID . ID ( Exprs )
-       | ID ( )
-
-
-Exprs :=        // 비어 있는 것
-      |  MoreThanOneExprs
-
-MoreThanOneExprs
-      := Expr
-      |  Expr , MoreThanOneExprs
-
-========================
+=========================================================
 
