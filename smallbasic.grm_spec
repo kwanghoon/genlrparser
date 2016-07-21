@@ -2,21 +2,35 @@
 
 ========================
 
-Stmt := ID = Expr
-     |  If ( CondExpr ) Then
-     |  EndIf
-     |  Else
-     |  ElseIf ( CondExpr ) Then
-     |  While ( CondExpr ) Then
-     |  EndWhile
-     |  ID :
-     |  Goto ID
-     |  For ID = Expr To Expr OptStep
-     |  EndFor
-     |  Sub ID
-     |  EndSub
+Stmt := ID = Expr CR
+     |  If ( CondExpr ) Then CR Stmts MoreThanZeroElseIf  
+
+              // If ( CondExpr ) Then CR Stmts 
+              //   { ElseIf ( CondExpr ) Then Stmts }* 
+              //   { Else CR Stmts } EndIf CR
+
+     |  While ( CondExpr ) Then CR Stmts EndWhile CR
+     |  ID : CR
+     |  Goto ID CR
+     |  For ID = Expr To Expr OptStep CR Stmts EndFor CR
+     |  Sub ID CR Stmts EndSub CR
      |  Expr
 
+MoreThanZeroElseIf
+     := OptionalElse
+     |  ElseIf ( CondExpr ) Then Stmts MoreThanZeroElseIf
+
+OptionalElse
+     := EndIf CR
+     |  Else CR Stmts EndIf CR
+
+Stmts
+     := CR                  // 빈 라인
+     |  MoreThanOneStmt
+
+MoreThanOneStmt
+     := Stmt CR
+     |  Stmt CR MoreThanOneStmt
 
 OptStep 
      :=
@@ -37,6 +51,8 @@ AndEpxr := AndExpr And EqNeqExpr
 EqNeqExpr
         :=  Expr = Expr
         |   Expr <> Expr
+        |   CompExpr = CompExpr
+        |   CompExpr <> CompExpr
         |   CompExpr
 
 CompExpr 
@@ -44,7 +60,7 @@ CompExpr
         |  Expr <= Expr
         |  Expr > Expr
         |  Expr >= Expr
-        |  AtomicExpr
+        |  AtomicCondExpr
 
 
 AtomicCondExpr 
