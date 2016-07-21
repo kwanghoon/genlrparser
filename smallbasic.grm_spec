@@ -71,6 +71,7 @@ AtomicCondExpr
 ========================
 
 Expr  := PMExpr
+      |  CondExpr
 
 PMExpr := PMExpr + MDExpr
        |  PMExpr - MDExpr
