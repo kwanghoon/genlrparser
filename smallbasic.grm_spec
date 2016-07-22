@@ -32,8 +32,11 @@ ExprStatement
   |  ID ( )
 
 CRStmtCRs    // CR { Stmt CR }*
-  := CR
-  |  CR MoreThanOneStmt CR
+  := CR TheRest
+
+TheRest
+  := 
+  |  Stmt CR TheRest
 
 MoreThanOneStmt    // Stmt { CR Stmt }*
   := Stmt
@@ -50,8 +53,11 @@ Expr
 
 Exprs
   :=
-  |  Expr
-  |  Expr , Exprs
+  |  MoreThanOneExpr
+
+MoreThanOneExpr
+  := Expr
+  |  Expr , MoreThanOneExpr
 
 CondExpr
   := OrExpr
