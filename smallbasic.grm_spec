@@ -1,7 +1,6 @@
 
 Prog    // { Stmt { CR Stmt }* }
-  := 
-  |   MoreThanOneStmt
+  := MoreThanOneStmt
 
 =========================================================
 
