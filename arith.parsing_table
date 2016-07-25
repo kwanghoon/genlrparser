@@ -1,3 +1,11 @@
+0: E' -> E
+1: E -> E + T
+2: E -> T
+3: T -> T * F
+4: T -> F
+5: F -> ( E )
+6: F -> id
+7: F -> num
 
 
 13 states
