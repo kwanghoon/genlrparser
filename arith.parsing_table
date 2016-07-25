@@ -1,0 +1,72 @@
+
+
+13 states
+[0]
+[1]
+[2,10]
+[3,11]
+[4,12]
+[5,13]
+[6,14]
+[7,17]
+[8,19]
+[9,20]
+[15,21]
+[16,22]
+[18,23]
+
+[0]	(	LALRShift [4,12]
+[0]	id	LALRShift [5,13]
+[0]	num	LALRShift [6,14]
+[1]	$	LALRAccept
+[1]	+	LALRShift [7,17]
+[2,10]	$	LALRReduce 2
+[2,10]	+	LALRReduce 2
+[2,10]	*	LALRShift [8,19]
+[2,10]	)	LALRReduce 2
+[3,11]	$	LALRReduce 4
+[3,11]	+	LALRReduce 4
+[3,11]	*	LALRReduce 4
+[3,11]	)	LALRReduce 4
+[4,12]	(	LALRShift [4,12]
+[4,12]	id	LALRShift [5,13]
+[4,12]	num	LALRShift [6,14]
+[5,13]	$	LALRReduce 6
+[5,13]	+	LALRReduce 6
+[5,13]	*	LALRReduce 6
+[5,13]	)	LALRReduce 6
+[6,14]	$	LALRReduce 7
+[6,14]	+	LALRReduce 7
+[6,14]	*	LALRReduce 7
+[6,14]	)	LALRReduce 7
+[7,17]	(	LALRShift [4,12]
+[7,17]	id	LALRShift [5,13]
+[7,17]	num	LALRShift [6,14]
+[8,19]	(	LALRShift [4,12]
+[8,19]	id	LALRShift [5,13]
+[8,19]	num	LALRShift [6,14]
+[9,20]	)	LALRShift [18,23]
+[9,20]	+	LALRShift [7,17]
+[15,21]	$	LALRReduce 1
+[15,21]	+	LALRReduce 1
+[15,21]	*	LALRShift [8,19]
+[15,21]	)	LALRReduce 1
+[16,22]	$	LALRReduce 3
+[16,22]	+	LALRReduce 3
+[16,22]	*	LALRReduce 3
+[16,22]	)	LALRReduce 3
+[18,23]	$	LALRReduce 5
+[18,23]	+	LALRReduce 5
+[18,23]	*	LALRReduce 5
+[18,23]	)	LALRReduce 5
+
+[0]	E	[1]
+[0]	T	[2,10]
+[0]	F	[3,11]
+[4,12]	E	[9,20]
+[4,12]	T	[2,10]
+[4,12]	F	[3,11]
+[7,17]	T	[15,21]
+[7,17]	F	[3,11]
+[8,19]	F	[16,22]
+[()]
