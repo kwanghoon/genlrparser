@@ -1,0 +1,62 @@
+0: Prog -> MoreThanOneStmt
+1: Stmt -> ExprStatement
+2: Stmt -> While ( Expr ) Then CRStmtCRs EndWhile
+3: Stmt -> ID :
+4: Stmt -> Goto ID
+5: Stmt -> For ID = Expr To Expr OptStep CRStmtCRs EndFor
+6: Stmt -> Sub ID Args CRStmtCRs EndSub
+7: Stmt -> If ( Expr ) Then CRStmtCRs MoreThanZeroElseIf
+8: MoreThanZeroElseIf -> OptionalElse
+9: MoreThanZeroElseIf -> ElseIf ( Expr ) Then CRStmtCRs MoreThanZeroElseIf
+10: OptionalElse -> EndIf
+11: OptionalElse -> Else CRStmtCRs EndIf
+12: ExprStatement -> ID = Expr
+13: ExprStatement -> ID . ID ( Exprs )
+14: ExprStatement -> ID ( Exprs )
+15: CRStmtCRs -> CR TheRest
+16: TheRest -> 
+17: TheRest -> Stmt CR TheRest
+18: MoreThanOneStmt -> Stmt
+19: MoreThanOneStmt -> Stmt CR MoreThanOneStmt
+20: OptStep -> 
+21: OptStep -> Step Expr
+22: Expr -> CondExpr
+23: Exprs -> 
+24: Exprs -> MoreThanOneExpr
+25: MoreThanOneExpr -> Expr
+26: MoreThanOneExpr -> Expr , MoreThanOneExpr
+27: CondExpr -> OrExpr
+28: OrExpr -> OrExpr Or AndExpr
+29: OrExpr -> AndExpr
+30: AndExpr -> AndExpr And EqNeqExpr
+31: AndExpr -> EqNeqExpr
+32: EqNeqExpr -> EqNeqExpr = CompExpr
+33: EqNeqExpr -> EqNeqExpr <> CompExpr
+34: EqNeqExpr -> CompExpr
+35: CompExpr -> CompExpr < AdditiveExpr
+36: CompExpr -> CompExpr <= AdditiveExpr
+37: CompExpr -> CompExpr > AdditiveExpr
+38: CompExpr -> CompExpr >= AdditiveExpr
+39: CompExpr -> AdditiveExpr
+40: AdditiveExpr -> AdditiveExpr + MultiplicativeExpr
+41: AdditiveExpr -> AdditiveExpr - MultiplicativeExpr
+42: AdditiveExpr -> MultiplicativeExpr
+43: MultiplicativeExpr -> MultiplicativeExpr * UnaryExpr
+44: MultiplicativeExpr -> MultiplicativeExpr / UnaryExpr
+45: MultiplicativeExpr -> UnaryExpr
+46: UnaryExpr -> - Primary
+47: UnaryExpr -> Primary
+48: Primary -> NUM
+49: Primary -> true
+50: Primary -> false
+51: Primary -> ( Expr )
+52: Primary -> ID
+53: Primary -> ID . ID
+54: Primary -> ID . ID ( Exprs )
+55: Primary -> ID ( Exprs )
+56: Args -> 
+57: Args -> ( IDs )
+58: IDs -> 
+59: IDs -> MoreThanOneID
+60: MoreThanOneID -> ID
+61: MoreThanOneID -> ID , MoreThanOneID

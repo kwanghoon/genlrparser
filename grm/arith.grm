@@ -1,0 +1,26 @@
+
+CFG "E'" [
+
+ProductionRule "E'" [Nonterminal "E"],
+
+ProductionRule "E" [Nonterminal "E", Terminal "+", Nonterminal "T"],
+
+ProductionRule "E" [Nonterminal "T"],
+
+ProductionRule "T" [Nonterminal "T", Terminal "*", Nonterminal "F"],
+
+ProductionRule "T" [Nonterminal "F"],
+
+ProductionRule "F" [Terminal "(", Nonterminal "E", Terminal ")"],
+
+ProductionRule "F" [Terminal "id"],
+
+ProductionRule "F" [Terminal "num"]
+]
+
+
+
+
+
+
+

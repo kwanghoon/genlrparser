@@ -1,0 +1,112 @@
+
+Prog    // { Stmt { CR Stmt }* }
+  := MoreThanOneStmt
+
+=========================================================
+
+Stmt
+  := ExprStatement
+  |  While ( Expr ) Then CRStmtCRs EndWhile
+  |  ID :
+  |  Goto ID
+  |  For ID = Expr To Expr OptStep CRStmtCRs EndFor
+  |  Sub ID CRStmtCRs EndSub
+  |  If ( Expr ) Then CRStmtCRs MoreThanZeroElseIf  
+
+      // If ( Expr ) Then Stmts 
+      //   { ElseIf ( Expr ) Then Stmts }* 
+      //   { Else Stmts } EndIf
+
+MoreThanZeroElseIf
+  := OptionalElse
+  |  ElseIf ( Expr ) Then CRStmtCRs MoreThanZeroElseIf
+
+OptionalElse
+  := EndIf
+  |  Else CRStmtCRs EndIf
+
+ExprStatement
+  := ID = Expr
+  |  ID . ID ( Exprs )
+  |  ID ( )
+
+CRStmtCRs    // CR { Stmt CR }*
+  := CR TheRest
+
+TheRest
+  := 
+  |  Stmt CR TheRest
+
+MoreThanOneStmt    // Stmt { CR Stmt }*
+  := Stmt
+  |  Stmt CR MoreThanOneStmt
+
+OptStep 
+  :=
+  |  Step Expr
+
+=========================================================
+
+Expr
+  := CondExpr
+
+Exprs
+  :=
+  |  MoreThanOneExpr
+
+MoreThanOneExpr
+  := Expr
+  |  Expr , MoreThanOneExpr
+
+CondExpr
+  := OrExpr
+
+OrExpr 
+  := OrExpr Or AndExpr
+  |  AndExpr
+
+AndEpxr
+  := AndExpr And EqNeqExpr
+  |  EqNeqExpr
+
+
+EqNeqExpr
+  :=  EqNeqExpr = CompExpr
+  |   EqNeqExpr <> CompExpr
+  |   CompExpr
+
+CompExpr 
+  := CompExpr <  AdditiveExpr
+  |  CompExpr <= AdditiveExpr
+  |  CompExpr >  AdditiveExpr
+  |  CompExpr >= AdditiveExpr
+  |  AdditiveExpr
+
+=========================================================
+
+AdditiveExpr 
+  := AdditiveExpr + MultiplicativeExpr
+  |  AdditiveExpr - MultiplicativeExpr
+  |  MultiplicativeExpr
+
+MultiplicativeExpr 
+  := MultiplicativeExpr * UnaryExpr
+  |  MultiplicativeExpr / UnaryExpr
+  |  UnaryExpr
+
+UnaryExpr 
+  := - Primary
+  |  Primary
+
+Primary
+  := NUM
+  |  "true"
+  |  "false"
+  |  ( Expr )
+  |  ID
+  |  ID . ID
+  |  ID . ID ( Exprs )
+  |  ID ( )
+
+=========================================================
+
