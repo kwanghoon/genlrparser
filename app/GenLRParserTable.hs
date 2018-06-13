@@ -72,14 +72,15 @@ nonterminals augCfg = nub $ [s] ++ [x | ProductionRule x _ <- prules]
   where
     CFG s prules = augCfg
 
-data Item = Item ProductionRule Int ExtendedSymbol {- except Epsilon -}
+-- LR(1) item
+data Item = Item ProductionRule Int [ExtendedSymbol] {- except Epsilon -}
             deriving Eq
                      
 type Items  = [Item]
 type Itemss = [Items]
 
 instance Show Item where
-  showsPrec p (Item (ProductionRule x syms) j esym)
+  showsPrec p (Item (ProductionRule x syms) j [esym])
     = (++) "[" 
       . (++) x
       . (++) " -> "
@@ -261,7 +262,7 @@ closure augCfg items =
                        
                   
 closure' fstTbl prules cls [] b = (b, cls)
-closure' fstTbl prules cls (Item (ProductionRule x alphaBbeta) d a:items) b = 
+closure' fstTbl prules cls (Item (ProductionRule x alphaBbeta) d [a]:items) b = 
   if _Bbeta /= []
   then f cls b prules
   else closure' fstTbl prules cls items b
@@ -280,13 +281,13 @@ closure' fstTbl prules cls (Item (ProductionRule x alphaBbeta) d a:items) b =
     -- loop over terminal symbols
     g cls b r rs [] = f cls b rs
     g cls b r rs (Symbol (Terminal t) : fstSyms) =
-      let item = Item r 0 (Symbol (Terminal t))
+      let item = Item r 0 [Symbol (Terminal t)]
       in  if elem item cls 
           then g cls b r rs fstSyms 
           else g (cls++[item]) True r rs fstSyms
     g cls b r rs (Symbol (Nonterminal t) : fstSyms) = g cls b r rs fstSyms
     g cls b r rs (EndOfSymbol : fstSyms) = 
-      let item = Item r 0 EndOfSymbol
+      let item = Item r 0 [EndOfSymbol]
       in  if elem item cls 
           then g cls b r rs fstSyms 
           else g (cls++[item]) True r rs fstSyms
@@ -297,11 +298,12 @@ calcItems :: AUGCFG -> Itemss
 calcItems augCfg = calcItems' augCfg syms iss0
   where 
     CFG _S prules = augCfg
-    i0   = Item (head prules) 0 EndOfSymbol  -- The 1st rule : S' -> S.
+    i0   = Item (head prules) 0 [EndOfSymbol]  -- The 1st rule : S' -> S.
     is0  = closure augCfg [i0]
     iss0 = [ is0 ]
 
     syms = (\\) (symbols augCfg) [Nonterminal _S]
+    -- syms = [ sym | sym <- symbols augCfg, sym /= Nonterminal _S]
   
 calcItems' augCfg syms currIss  =
   if isUpdated
@@ -419,7 +421,7 @@ calcParseTable augCfg = (items, prules, actionTable, gotoTable)
              then ([(from, Symbol h, Shift to) ], [])
              else ([]                    , [(from, h, to)])
       | item1 <- items
-      , Item (ProductionRule y ys) j a <- item1
+      , Item (ProductionRule y ys) j [a] <- item1
       , let from = indexItem items item1
       , let ri   = indexPrule augCfg (ProductionRule y ys)
       , let ys' = drop j ys
