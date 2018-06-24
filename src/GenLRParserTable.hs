@@ -5,8 +5,10 @@
 --
 -- Usage:
 --  $ ghci GenLRParserTable
---  *GenLRParserTable> prParseTable (calcLR1ParseTable g1)
---  *GenLRParserTable> prLALRParseTable (calcLALRParseTable g1)
+--  *Main> prParseTable (calcLR1ParseTable g1)
+--  *Main> prLALRParseTable (calcLALRParseTable g1)
+--
+--  * let (items,_,_,_) =calcLR0ParseTable g1 in prItem
 --------------------------------------------------------------------------------
 
 module GenLRParserTable where
@@ -288,7 +290,14 @@ goto augCfg items x = closure augCfg itemsOverX
 -- Canonical LR Parser
 --------------------------------------------------------------------------------
 calcLR0ParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
-calcLR0ParseTable augCfg = ([], [], [], [])
+calcLR0ParseTable augCfg = (items, prules, [], [])
+  where
+    CFG _S' prules = augCfg 
+    items = calcLR0Items augCfg 
+    syms = (\\) (symbols augCfg) [Nonterminal _S']
+
+    terminalSyms    = [Terminal x    | Terminal x    <- syms]
+    nonterminalSyms = [Nonterminal x | Nonterminal x <- syms]
 
 calcLR1ParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
 calcLR1ParseTable augCfg = (items, prules, actionTable, gotoTable)
