@@ -160,3 +160,15 @@ g3_attrib_terminals =
   , ("var",    "VAR")
   , ("num",    "NUM")
   ]
+
+
+
+g4 :: CFG
+g4 = CFG "S'" [ g4_0, g4_s1, g4_s2, g4_l1, g4_l2, g4_r ]
+  where
+    g4_0 = ProductionRule "S'" [Nonterminal "S"]
+    g4_s1 = ProductionRule "S" [ Nonterminal "L", Terminal "=", Nonterminal "R" ]
+    g4_s2 = ProductionRule "S" [ Nonterminal "R" ]
+    g4_l1 = ProductionRule "L" [ Terminal "*", Nonterminal "R" ]
+    g4_l2 = ProductionRule "L" [ Terminal "id" ]
+    g4_r = ProductionRule "R" [ Nonterminal "L" ]
