@@ -26,7 +26,11 @@ _main = do
   where
     f file = do
       grammar <- readFile file
-      prLALRParseTable (calcLALRParseTable (read grammar))
+      -- prLALRParseTable (calcLALRParseTable (read grammar))
+      let (items,_,lkhtbl,gotos) = calcLR0ParseTable (read grammar) 
+      prItems items
+      prGtTbl gotos
+      prLkhTable lkhtbl
     
 --
 indexPrule :: AUGCFG -> ProductionRule -> Int
