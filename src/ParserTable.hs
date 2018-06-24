@@ -10,6 +10,14 @@ type Items  = [Item]
 type Itemss = [Items]
 
 instance Show Item where
+  showsPrec p (Item (ProductionRule x syms) j [])
+    = (++) "[" 
+      . (++) x
+      . (++) " -> "
+      . show_ys (take j syms)
+      . (++) "." 
+      . show_ys (drop j syms)
+      . (++) "]"
   showsPrec p (Item (ProductionRule x syms) j [esym])
     = (++) "[" 
       . (++) x

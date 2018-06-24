@@ -5,7 +5,7 @@
 --
 -- Usage:
 --  $ ghci GenLRParserTable
---  *GenLRParserTable> prParseTable (calcParseTable g1)
+--  *GenLRParserTable> prParseTable (calcLR1ParseTable g1)
 --  *GenLRParserTable> prLALRParseTable (calcLALRParseTable g1)
 --------------------------------------------------------------------------------
 
@@ -179,7 +179,7 @@ closure augCfg items =
                        
                   
 closure' fstTbl prules cls [] b = (b, cls)
-closure' fstTbl prules cls (Item (ProductionRule x alphaBbeta) d [a]:items) b = 
+closure' fstTbl prules cls (Item (ProductionRule x alphaBbeta) d lookahead:items) b = 
   if _Bbeta /= []
   then f cls b prules
   else closure' fstTbl prules cls items b
@@ -192,8 +192,15 @@ closure' fstTbl prules cls (Item (ProductionRule x alphaBbeta) d [a]:items) b =
     f cls b [] = closure' fstTbl prules cls items b
     f cls b (r@(ProductionRule y gamma):rs) = 
       if _B == Nonterminal y
-      then g cls b r rs (extFirst_ fstTbl (map Symbol beta ++ [a]))
+      then (if lookahead == [] 
+            then flrzero cls b r rs -- closure for LR(0)
+            else g cls b r rs (extFirst_ fstTbl (map Symbol beta ++ lookahead))) -- closure for LR(1)
       else f cls b rs
+
+    flrzero cls b r rs = 
+      let item = Item r 0 []
+      in  if elem item cls then f cls b rs 
+          else f (cls ++ [item]) True rs
 
     -- loop over terminal symbols
     g cls b r rs [] = f cls b rs
@@ -211,8 +218,19 @@ closure' fstTbl prules cls (Item (ProductionRule x alphaBbeta) d [a]:items) b =
     g cls b r rs (Epsilon : fstSyms) = error "closure: Epsilon"
     
 --    
-calcItems :: AUGCFG -> Itemss
-calcItems augCfg = calcItems' augCfg syms iss0
+calcLR0Items :: AUGCFG -> Itemss
+calcLR0Items augCfg = calcItems' augCfg syms iss0
+  where 
+    CFG _S prules = augCfg
+    i0   = Item (head prules) 0 []  -- The 1st rule : S' -> S.
+    is0  = closure augCfg [i0]
+    iss0 = [ is0 ]
+
+    syms = (\\) (symbols augCfg) [Nonterminal _S]
+    -- syms = [ sym | sym <- symbols augCfg, sym /= Nonterminal _S]
+
+calcLR1Items :: AUGCFG -> Itemss
+calcLR1Items augCfg = calcItems' augCfg syms iss0
   where 
     CFG _S prules = augCfg
     i0   = Item (head prules) 0 [EndOfSymbol]  -- The 1st rule : S' -> S.
@@ -269,11 +287,14 @@ goto augCfg items x = closure augCfg itemsOverX
 --------------------------------------------------------------------------------
 -- Canonical LR Parser
 --------------------------------------------------------------------------------
-calcParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
-calcParseTable augCfg = (items, prules, actionTable, gotoTable)
+calcLR0ParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
+calcLR0ParseTable augCfg = ([], [], [], [])
+
+calcLR1ParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
+calcLR1ParseTable augCfg = (items, prules, actionTable, gotoTable)
   where
     CFG _S' prules = augCfg
-    items = calcItems augCfg
+    items = calcLR1Items augCfg
     syms  = (\\) (symbols augCfg) [Nonterminal _S']
     
     terminalSyms    = [Terminal x    | Terminal x    <- syms]
@@ -361,7 +382,7 @@ calcLALRParseTable :: AUGCFG ->
                       , LALRGotoTable)
 calcLALRParseTable augCfg = (itemss, prules, iss, lalrActTbl, lalrGtTbl)
   where
-    (itemss, prules, actTbl, gtTbl) = calcParseTable augCfg
+    (itemss, prules, actTbl, gtTbl) = calcLR1ParseTable augCfg
     itemss' = nubBy eqCore itemss
     iss     = [ [i | (i, items) <- zip [0..] itemss, eqCore items items']
               | items' <- itemss'] 
