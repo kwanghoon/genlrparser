@@ -8,7 +8,7 @@
 --  *Main> prParseTable (calcLR1ParseTable g1)
 --  *Main> prLALRParseTable (calcLALRParseTable g1)
 --
---  * let (items,_,_,gotos) = calcLR0ParseTable g1 in do { prItems items; prGtTbl gotos }
+--  * let (items,_,lkhtbl,gotos) = calcLR0ParseTable g1 in do { prItems items; prGtTbl gotos; prLkhTable lkhtbl }
 --------------------------------------------------------------------------------
 
 module GenLRParserTable where
@@ -58,7 +58,9 @@ symbols (CFG start prules)
 
 --
 first :: [(Symbol, [ExtendedSymbol])] -> Symbol -> [ExtendedSymbol]
-first tbl x = fromJust (lookup x tbl)
+first tbl x = case (lookup x tbl) of
+  Nothing -> if x == Terminal "" then [Symbol x] else error (show x ++ " not in " ++ show tbl)
+  Just y -> y
 
 first_ :: [(Symbol, [ExtendedSymbol])] -> [Symbol] -> [ExtendedSymbol]
 first_ tbl []     = []
@@ -289,11 +291,11 @@ goto augCfg items x = closure augCfg itemsOverX
 --------------------------------------------------------------------------------
 -- Canonical LR Parser
 --------------------------------------------------------------------------------
-calcLR0ParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
-calcLR0ParseTable augCfg = (items, prules, [], gotoTable)
+-- calcLR0ParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
+calcLR0ParseTable augCfg = (lr0items, prules, lkhTable, gotoTable)
   where
     CFG _S' prules = augCfg 
-    items = calcLR0Items augCfg 
+    lr0items = calcLR0Items augCfg 
     syms = (\\) (symbols augCfg) [Nonterminal _S']
 
     terminalSyms    = [Terminal x    | Terminal x    <- syms]
@@ -301,16 +303,52 @@ calcLR0ParseTable augCfg = (items, prules, [], gotoTable)
 
     gotoTable = nub
       [ (from, h, to)
-      | item1 <- items
+      | item1 <- lr0items
       , Item (ProductionRule y ys) j lookahead <- item1
-      , let from = indexItem items item1
+      , let from = indexItem lr0items item1
       , let ri   = indexPrule augCfg (ProductionRule y ys)
       , let ys' = drop j ys
       , let h = head ys'
-      , let to = indexItem items (goto augCfg item1 h)
+      , let to = indexItem lr0items (goto augCfg item1 h)
       , ys' /= []
       , isTerminal h == False
       ]
+
+    sharp = Terminal ""  -- a special terminal symbol
+    sharpSymbol = Symbol sharp
+
+    lkhTable = 
+      [ ( [ (Item prule (dot+1) [], lookahead1)
+          | Item prule dot lookahead1 <- lr1item, lookahead1 /= [sharpSymbol] ]
+        , [ (Item pruleyys dot0 [], Item prule (dot+1) [])
+          | Item prule dot lookahead1 <- lr1item, lookahead1 == [sharpSymbol] ]
+        )
+      | lr0item <- lr0items
+      , Item pruleyys dot0 lookahead0 <- lr0item 
+      , dot0 /= 0   -- a kernel item
+      , let lr1item = closure augCfg [Item pruleyys dot0 [sharpSymbol]]
+      ]
+
+prLkhTable [] = return ()
+prLkhTable ((spontaneous, propagate):lkhTable) = do 
+  prSpontaneous spontaneous
+  prPropagate propagate
+  prLkhTable lkhTable
+
+prSpontaneous [] = return ()
+prSpontaneous ((item, [lookahead]):spontaneous) = do 
+  putStr (show item)
+  putStr ", "
+  putStrLn (show lookahead)
+  prSpontaneous spontaneous
+
+prPropagate [] = return ()
+prPropagate ((from, to):propagate) = do 
+  putStr (show from)
+  putStr " -prop-> "
+  putStr (show to) 
+  putStrLn ""
+  prPropagate propagate
 
 calcLR1ParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
 calcLR1ParseTable augCfg = (items, prules, actionTable, gotoTable)
