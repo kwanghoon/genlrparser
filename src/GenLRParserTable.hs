@@ -8,7 +8,7 @@
 --  *Main> prParseTable (calcLR1ParseTable g1)
 --  *Main> prLALRParseTable (calcLALRParseTable g1)
 --
---  * let (items,_,_,_) =calcLR0ParseTable g1 in prItem
+--  * let (items,_,_,gotos) = calcLR0ParseTable g1 in do { prItems items; prGtTbl gotos }
 --------------------------------------------------------------------------------
 
 module GenLRParserTable where
@@ -290,7 +290,7 @@ goto augCfg items x = closure augCfg itemsOverX
 -- Canonical LR Parser
 --------------------------------------------------------------------------------
 calcLR0ParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
-calcLR0ParseTable augCfg = (items, prules, [], [])
+calcLR0ParseTable augCfg = (items, prules, [], gotoTable)
   where
     CFG _S' prules = augCfg 
     items = calcLR0Items augCfg 
@@ -298,6 +298,19 @@ calcLR0ParseTable augCfg = (items, prules, [], [])
 
     terminalSyms    = [Terminal x    | Terminal x    <- syms]
     nonterminalSyms = [Nonterminal x | Nonterminal x <- syms]
+
+    gotoTable = nub
+      [ (from, h, to)
+      | item1 <- items
+      , Item (ProductionRule y ys) j lookahead <- item1
+      , let from = indexItem items item1
+      , let ri   = indexPrule augCfg (ProductionRule y ys)
+      , let ys' = drop j ys
+      , let h = head ys'
+      , let to = indexItem items (goto augCfg item1 h)
+      , ys' /= []
+      , isTerminal h == False
+      ]
 
 calcLR1ParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
 calcLR1ParseTable augCfg = (items, prules, actionTable, gotoTable)
