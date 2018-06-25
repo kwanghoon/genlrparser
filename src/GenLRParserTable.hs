@@ -8,7 +8,10 @@
 --  *Main> prParseTable (calcLR1ParseTable g1)
 --  *Main> prLALRParseTable (calcLALRParseTable g1)
 --
---  * let (items,_,lkhtbl,gotos) = calcLR0ParseTable g1 in do { prItems items; prGtTbl gotos; prLkhTable lkhtbl }
+--  * let (items,_,lkhtbl,gotos) = calcLR0ParseTable g1 
+--    in do { prItems items; prGtTbl gotos; prLkhTable lkhtbl }
+--
+--  * closure g4 [Item (ProductionRule "S'" [Nonterminal "S"]) 0 [Symbol (Terminal "")]]
 --------------------------------------------------------------------------------
 
 module GenLRParserTable where
@@ -28,9 +31,19 @@ _main = do
       grammar <- readFile file
       -- prLALRParseTable (calcLALRParseTable (read grammar))
       let (items,_,lkhtbl,gotos) = calcLR0ParseTable (read grammar) 
+      let (lkhtbl1,lkhtbl2) = lkhtbl
       prItems items
       prGtTbl gotos
-      prLkhTable lkhtbl
+      prSpontaneous lkhtbl1
+      prPropagate lkhtbl2 
+
+__main g = do
+  let (items,_,lkhtbl,gotos) = calcLR0ParseTable g
+  let (lkhtbl1,lkhtbl2) = lkhtbl
+  prItems items
+  prGtTbl gotos
+  prSpontaneous lkhtbl1
+  prPropagate lkhtbl2 
     
 --
 indexPrule :: AUGCFG -> ProductionRule -> Int
@@ -322,15 +335,23 @@ calcLR0ParseTable augCfg = (lr0items, prules, lkhTable, gotoTable)
     sharpSymbol = Symbol sharp
 
     lkhTable = 
+      let (ass, bss) = unzip lkhTable' in (nub (concat ass), nub (concat bss))
+
+    lkhTable' =
+      [ ( [ (Item (head prules) 0 [], [EndOfSymbol])], []) ] 
+      ++
       [ ( [ (Item prule (dot+1) [], lookahead1)
-          | Item prule dot lookahead1 <- lr1item, lookahead1 /= [sharpSymbol] ]
+          | Item prule dot lookahead1 <- lr1item
+          , lookahead1 /= [sharpSymbol] ]
+
         , [ (Item pruleyys dot0 [], Item prule (dot+1) [])
-          | Item prule dot lookahead1 <- lr1item, lookahead1 == [sharpSymbol] ]
+          | Item prule dot lookahead1 <- lr1item
+          , lookahead1 == [sharpSymbol] ]
         )
       | lr0item <- lr0items
       , Item pruleyys dot0 lookahead0 <- lr0item 
-      , dot0 /= 0   -- a kernel item
       , let lr1item = closure augCfg [Item pruleyys dot0 [sharpSymbol]]
+      , dot0 /= 0 || head prules == pruleyys
       ]
 
 prLkhTable [] = return ()
