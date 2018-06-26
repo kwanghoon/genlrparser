@@ -30,26 +30,26 @@ _main = do
     f file = do
       grammar <- readFile file
       let cfg = read grammar :: CFG
-      let sprime = startNonterminal cfg 
-      -- prLALRParseTable (calcLALRParseTable (read grammar))
-      let (items,_,lkhtbl,gotos) = calcLR0ParseTable cfg
-      let (lkhtbl1,lkhtbl2) = lkhtbl
-      prItems items
-      prGtTbl gotos
-      prSpontaneous lkhtbl1
-      prPropagate lkhtbl2 
+      -- let sprime = startNonterminal cfg 
+      prParseTable (calcEfficientLALRParseTable cfg)
+      -- let (items,_,lkhtbl,gotos) = calcEfficientLALRParseTable cfg
+      -- let (lkhtbl1,lkhtbl2) = lkhtbl
+      -- prItems items
+      -- prGtTbl gotos
+      -- prSpontaneous lkhtbl1
+      -- prPropagate lkhtbl2 
 
 __main g = do
-  let (items,_,lkhtbl,gotos) = calcLR0ParseTable g
-  let kernelitems = map (filter (isKernel (startNonterminal g))) items
-  let (lkhtbl1,lkhtbl2) = lkhtbl
-  prItems items
-  prGtTbl gotos
-  prItems kernelitems
-  prSpontaneous lkhtbl1
-  prPropagate lkhtbl2 
-  putStrLn ""
-  prItems (computeLookaheads lkhtbl1 lkhtbl2 kernelitems)
+  prParseTable (calcEfficientLALRParseTable g)
+  -- let kernelitems = map (filter (isKernel (startNonterminal g))) items
+  -- let (lkhtbl1,lkhtbl2) = lkhtbl
+  -- prItems items
+  -- prGtTbl gotos
+  -- prItems kernelitems
+  -- prSpontaneous lkhtbl1
+  -- prPropagate lkhtbl2 
+  -- putStrLn ""
+  -- prItems (computeLookaheads lkhtbl1 lkhtbl2 kernelitems)
   -- let f (x,y) = do { putStrLn (show x); prItem y; putStrLn "" }
   -- mapM_ f $ [ (item, closure g [Item prule dot [sharpSymbol]])
   --           | items <- kernelitems
@@ -324,8 +324,8 @@ goto augCfg items x = closure augCfg itemsOverX
 sharp = Terminal "#"  -- a special terminal symbol
 sharpSymbol = Symbol sharp
 
--- calcLR0ParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
-calcLR0ParseTable augCfg = (lr0items, prules, lkhTable, gotoTable)
+calcEfficientLALRParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
+calcEfficientLALRParseTable augCfg = (lr1items, prules, actionTable, gotoTable) -- (lr0items, prules, lkhTable, gotoTable)
   where
     CFG _S' prules = augCfg 
     lr0items = calcLR0Items augCfg 
@@ -335,7 +335,7 @@ calcLR0ParseTable augCfg = (lr0items, prules, lkhTable, gotoTable)
     terminalSyms    = [Terminal x    | Terminal x    <- syms]
     nonterminalSyms = [Nonterminal x | Nonterminal x <- syms]
 
-    gotoTable = nub
+    lr0GotoTable = nub
       [ (from, h, to)
       | item1 <- lr0items
       , Item (ProductionRule y ys) j lookahead <- item1
@@ -366,7 +366,7 @@ calcLR0ParseTable augCfg = (lr0items, prules, lkhTable, gotoTable)
       , let therestrhs = drop dot1 rhs 
       , therestrhs /= []
       , let symbolx = head therestrhs
-      , let toIndexes = [t | (f,x,t) <- gotoTable, f==fromIndex, x==symbolx ]
+      , let toIndexes = [t | (f,x,t) <- lr0GotoTable, f==fromIndex, x==symbolx ]
       , toIndexes /= []
       , let toIndex = head toIndexes
       , let gotoIX = lr0kernelitems !! toIndex
@@ -378,6 +378,11 @@ calcLR0ParseTable augCfg = (lr0items, prules, lkhTable, gotoTable)
 
     lr1kernelitems = computeLookaheads (fst lkhTable) (snd lkhTable) 
                       (map (filter (isKernel (startNonterminal augCfg))) lr0items)
+
+    lr1items = map (closure augCfg) lr1kernelitems
+
+    (actionTable, gotoTable) = calcLR1ActionGotoTable augCfg lr1items
+
 
 
 type Lookahead = [ExtendedSymbol] 
@@ -488,10 +493,16 @@ calcLR1ParseTable augCfg = (items, prules, actionTable, gotoTable)
   where
     CFG _S' prules = augCfg
     items = calcLR1Items augCfg
-    syms  = (\\) (symbols augCfg) [Nonterminal _S']
+    (actionTable, gotoTable) = calcLR1ActionGotoTable augCfg items 
+
+calcLR1ActionGotoTable augCfg items = (actionTable, gotoTable)
+  where
+    CFG _S' prules = augCfg
+    -- items = calcLR1Items augCfg
+    -- syms  = (\\) (symbols augCfg) [Nonterminal _S']
     
-    terminalSyms    = [Terminal x    | Terminal x    <- syms]
-    nonterminalSyms = [Nonterminal x | Nonterminal x <- syms]
+    -- terminalSyms    = [Terminal x    | Terminal x    <- syms]
+    -- nonterminalSyms = [Nonterminal x | Nonterminal x <- syms]
     
     f :: [(ActionTable,GotoTable)] -> (ActionTable, GotoTable)
     f l = case unzip l of (fst,snd) -> (g [] (concat fst), h [] (concat snd))
