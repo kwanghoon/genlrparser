@@ -47,6 +47,8 @@ data CFG = CFG String [ProductionRule]
 
 type AUGCFG = CFG
 
+startNonterminal (CFG s prules) = s 
+
 nonterminals augCfg = nub $ [s] ++ [x | ProductionRule x _ <- prules]
   where
     CFG s prules = augCfg

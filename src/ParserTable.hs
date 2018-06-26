@@ -47,6 +47,11 @@ prItems' n (is:iss) =
      prItem is
      prItems' (n+1) iss
 
+
+isKernel :: String -> Item -> Bool
+isKernel startnonterminal (Item (ProductionRule lhs rhs) dot lookahead) =
+  dot /= 0 || startnonterminal == lhs
+
 -- LR(1) Table             
 data Action = Shift Int | Reduce Int | Accept | Reject
             deriving (Show, Eq)
