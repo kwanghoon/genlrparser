@@ -300,12 +300,12 @@ elemItems is0 (is:iss) = eqItems is0 is || elemItems is0 iss
 eqItems :: Items -> Items -> Bool                         
 eqItems is1 is2 = (\\) is1 is2 == [] && (\\) is2 is1 == []
 
-indexItem :: Itemss -> Items -> Int
-indexItem items item = indexItem' items item 0
+indexItem :: String -> Itemss -> Items -> Int
+indexItem loc items item = indexItem' loc items item 0
 
-indexItem' (item1:items) item2 n
-  = if eqItems item1 item2 then n else indexItem' items item2 (n+1)
-indexItem' [] item n = error ("indexItem: not found " ++ show item)
+indexItem' loc (item1:items) item2 n
+  = if eqItems item1 item2 then n else indexItem' loc items item2 (n+1)
+indexItem' loc [] item n = error ("indexItem: not found " ++ show item ++ " at " ++ loc)
 
 goto :: AUGCFG -> Items -> Symbol -> Items
 goto augCfg items x = closure augCfg itemsOverX
@@ -339,11 +339,11 @@ calcEfficientLALRParseTable augCfg = (lr1items, prules, actionTable, gotoTable) 
       [ (from, h, to)
       | item1 <- lr0items
       , Item (ProductionRule y ys) j lookahead <- item1
-      , let from = indexItem lr0items item1
+      , let from = indexItem "lr0GotoTable(from)" lr0items item1
       , let ri   = indexPrule augCfg (ProductionRule y ys)
       , let ys' = drop j ys
       , let h = head ys'
-      , let to = indexItem lr0items (goto augCfg item1 h)
+      , let to = indexItem "lr0GotoTable(to)" lr0items (goto augCfg item1 h)
       , ys' /= []
       -- , isTerminal h == False
       ]
@@ -542,11 +542,11 @@ calcLR1ActionGotoTable augCfg items = (actionTable, gotoTable)
              else ([]                    , [(from, h, to)])
       | item1 <- items
       , Item (ProductionRule y ys) j [a] <- item1
-      , let from = indexItem items item1
+      , let from = indexItem "lr1ActionGotoTable(from)"  items item1
       , let ri   = indexPrule augCfg (ProductionRule y ys)
       , let ys' = drop j ys
       , let h = head ys'
-      , let to = indexItem items (goto augCfg item1 h)
+      , let to = indexItem "lr1ActionGotoTable(to)" items (goto augCfg item1 h)
       ]
       
 prParseTable (items, prules, actTbl, gtTbl) =
