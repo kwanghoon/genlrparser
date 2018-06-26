@@ -48,7 +48,12 @@ __main g = do
   prItems kernelitems
   prSpontaneous lkhtbl1
   prPropagate lkhtbl2 
+  putStrLn ""
   prItems (computeLookaheads lkhtbl1 lkhtbl2 kernelitems)
+  -- let f (x,y) = do { putStrLn (show x); prItem y; putStrLn "" }
+  -- mapM_ f $ [ (item, closure g [Item prule dot [sharpSymbol]])
+  --           | items <- kernelitems
+  --           , item@(Item prule dot _) <- items ]
     
 --
 indexPrule :: AUGCFG -> ProductionRule -> Int
@@ -81,7 +86,10 @@ symbols (CFG start prules)
 --
 first :: [(Symbol, [ExtendedSymbol])] -> Symbol -> [ExtendedSymbol]
 first tbl x = case (lookup x tbl) of
-  Nothing -> if x == Terminal "" then [Symbol x] else error (show x ++ " not in " ++ show tbl)
+  Nothing -> [Symbol x]
+  -- Nothing -> if x == Terminal "#" 
+  --             then [Symbol x] 
+  --             else error (show x ++ " not in " ++ show tbl)
   Just y -> y
 
 first_ :: [(Symbol, [ExtendedSymbol])] -> [Symbol] -> [ExtendedSymbol]
@@ -313,11 +321,15 @@ goto augCfg items x = closure augCfg itemsOverX
 --------------------------------------------------------------------------------
 -- Canonical LR Parser
 --------------------------------------------------------------------------------
+sharp = Terminal "#"  -- a special terminal symbol
+sharpSymbol = Symbol sharp
+
 -- calcLR0ParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
 calcLR0ParseTable augCfg = (lr0items, prules, lkhTable, gotoTable)
   where
     CFG _S' prules = augCfg 
     lr0items = calcLR0Items augCfg 
+    lr0kernelitems = map (filter (isKernel (startNonterminal augCfg))) lr0items
     syms = (\\) (symbols augCfg) [Nonterminal _S']
 
     terminalSyms    = [Terminal x    | Terminal x    <- syms]
@@ -333,11 +345,8 @@ calcLR0ParseTable augCfg = (lr0items, prules, lkhTable, gotoTable)
       , let h = head ys'
       , let to = indexItem lr0items (goto augCfg item1 h)
       , ys' /= []
-      , isTerminal h == False
+      -- , isTerminal h == False
       ]
-
-    sharp = Terminal ""  -- a special terminal symbol
-    sharpSymbol = Symbol sharp
 
     lkhTable = 
       let (ass, bss) = unzip lkhTable' in (nub (concat ass), nub (concat bss))
@@ -345,19 +354,27 @@ calcLR0ParseTable augCfg = (lr0items, prules, lkhTable, gotoTable)
     lkhTable' =
       [ ( [ (Item (head prules) 0 [], [EndOfSymbol])], []) ] 
       ++
-      [ ( [ (Item prule (dot+1) [], lookahead1)
-          | Item prule dot lookahead1 <- lr1item
-          , lookahead1 /= [sharpSymbol] ]
-
-        , [ (Item pruleyys dot0 [], Item prule (dot+1) [])
-          | Item prule dot lookahead1 <- lr1item
-          , lookahead1 == [sharpSymbol] ]
+      [ ( [ (Item prule2 dot2 [], lookahead1) 
+          | lookahead1 /= [sharpSymbol] ]
+        , [ (Item pruleyys dot0 [], fromIndex, Item prule2 dot2 [], toIndex) 
+          | lookahead1 == [sharpSymbol] ]
         )
-      | lr0item <- lr0items
-      , item@(Item pruleyys dot0 lookahead0) <- lr0item 
-      , let lr1item = closure augCfg [Item pruleyys dot0 [sharpSymbol]]
-      , isKernel _S' item
+      | (fromIndex, lr0kernelitem) <- zip [0..] lr0kernelitems
+      , item@(Item pruleyys dot0 _) <- lr0kernelitem 
+      , let lr1items = closure augCfg [Item pruleyys dot0 [sharpSymbol]]
+      , Item prule1@(ProductionRule lhs rhs) dot1 lookahead1 <- lr1items
+      , let therestrhs = drop dot1 rhs 
+      , therestrhs /= []
+      , let symbolx = head therestrhs
+      , let toIndexes = [t | (f,x,t) <- gotoTable, f==fromIndex, x==symbolx ]
+      , toIndexes /= []
+      , let toIndex = head toIndexes
+      , let gotoIX = lr0kernelitems !! toIndex
+      , Item prule2 dot2 lookahead2 <- gotoIX
       ]
+
+    head_ i [] = error ("head_: " ++ show i)
+    head_ i (x:xs) = x
 
     lr1kernelitems = computeLookaheads (fst lkhTable) (snd lkhTable) 
                       (map (filter (isKernel (startNonterminal augCfg))) lr0items)
@@ -365,7 +382,7 @@ calcLR0ParseTable augCfg = (lr0items, prules, lkhTable, gotoTable)
 
 type Lookahead = [ExtendedSymbol] 
 type SpontaneousLookahead = [(Item, Lookahead)]
-type PropagateLookahead = [(Item, Item)]
+type PropagateLookahead = [(Item, Int, Item, Int)]
 
 computeLookaheads :: SpontaneousLookahead -> PropagateLookahead -> Itemss -> Itemss
 computeLookaheads splk prlk lr0kernelitemss = lr1kernelitemss
@@ -377,7 +394,7 @@ computeLookaheads splk prlk lr0kernelitemss = lr1kernelitemss
       | itemlks <- lr1kernelitemlkss ]
 
     initLr1kernelitemlkss = init lr0kernelitemss
-    lr1kernelitemlkss = prop initLr1kernelitemlkss
+    lr1kernelitemlkss = snd (unzip (prop (zip [0..] initLr1kernelitemlkss)))
 
     init [] = []
     init (items:itemss) = init' items : init itemss 
@@ -391,22 +408,25 @@ computeLookaheads splk prlk lr0kernelitemss = lr1kernelitemss
       then init'' itembase (lookaheads ++ [lookahead]) splkitems 
       else init'' itembase lookaheads splkitems 
 
-    prop lr1kernelitemlkss = 
-      let itemToLks = collect lr1kernelitemlkss prlk 
-          (changed, lr1kernelitemlkss') = 
-             copy lr1kernelitemlkss itemToLks
-      in  if changed then prop lr1kernelitemlkss'
-          else lr1kernelitemlkss
+    prop ilr1kernelitemlkss = 
+      let itemToLks = collect ilr1kernelitemlkss prlk 
+          (changed, ilr1kernelitemlkss') = 
+             copy ilr1kernelitemlkss itemToLks
+      in  if changed then prop ilr1kernelitemlkss'
+          else ilr1kernelitemlkss
 
-    collect lr1kernelitemlkss [] = []
-    collect lr1kernelitemlkss (itemFromTo:itemFromTos) = 
-      let (itemFrom, itemTo) = itemFromTo 
-          lookaheads = collect' itemFrom [] lr1kernelitemlkss 
-      in (itemTo, lookaheads) : collect lr1kernelitemlkss itemFromTos
+    collect ilr1kernelitemlkss [] = []
+    collect ilr1kernelitemlkss (itemFromTo:itemFromTos) = 
+      let (itemFrom, fromIndex, itemTo, toIndex) = itemFromTo 
+          lookaheads = collect' itemFrom fromIndex [] ilr1kernelitemlkss 
+      in (itemTo, toIndex, lookaheads) : collect ilr1kernelitemlkss itemFromTos
 
-    collect' itemFrom lookaheads [] = lookaheads
-    collect' itemFrom lookaheads (itemlks:itemlkss) = 
-      collect' itemFrom (collect'' itemFrom lookaheads itemlks) itemlkss
+    collect' itemFrom fromIndex lookaheads [] = lookaheads
+    collect' itemFrom fromIndex lookaheads ((index, iitemlks):iitemlkss) = 
+      if fromIndex == index 
+      then collect' itemFrom fromIndex 
+            (collect'' itemFrom lookaheads iitemlks) iitemlkss
+      else collect' itemFrom fromIndex lookaheads iitemlkss
 
     collect'' itemFrom lookaheads [] = lookaheads
     collect'' itemFrom lookaheads ((Item prule dot _, lks):itemlks) = 
@@ -415,28 +435,30 @@ computeLookaheads splk prlk lr0kernelitemss = lr1kernelitemss
                         then lks else []
       in collect'' itemFrom (lookaheads ++ lookaheads') itemlks
       
-    copy itemlkss [] = (False, itemlkss)
-    copy itemlkss (itemToLookahead:itemToLookaheads) = 
-      let (changed1, itemlkss1) = copy' itemlkss itemToLookahead
-          (changed2, itemlkss2) = copy itemlkss1 itemToLookaheads 
-      in  (changed1 || changed2, itemlkss2) 
+    copy iitemlkss [] = (False, iitemlkss)
+    copy iitemlkss (itemToLookahead:itemToLookaheads) = 
+      let (changed1, iitemlkss1) = copy' iitemlkss itemToLookahead
+          (changed2, iitemlkss2) = copy iitemlkss1 itemToLookaheads 
+      in  (changed1 || changed2, iitemlkss2) 
 
     copy' [] itemToLookahead = (False, [])
-    copy' (itemlks:itemlkss) itemToLookahead = 
-      let (changed1, itemlks1) = copy'' itemlks itemToLookahead 
-          (changed2, itemlkss2) = copy' itemlkss itemToLookahead
-      in  (changed1 || changed2, itemlks1:itemlkss2)
+    copy' ((index,itemlks):iitemlkss) itemToLookahead = 
+      let (changed1, itemlks1) = copy'' index itemlks itemToLookahead 
+          (changed2, itemlkss2) = copy' iitemlkss itemToLookahead
+      in  (changed1 || changed2, (index,itemlks1):itemlkss2)
 
-    copy'' [] itemToLookahead = (False, [])
-    copy'' (itemlk:itemlks) itemToLookahead = 
-      let (Item prule1 dot1 _, lookahead1) = itemToLookahead
+    copy'' index [] itemToLookahead = (False, [])
+    copy'' index (itemlk:itemlks) itemToLookahead = 
+      let (Item prule1 dot1 _, toIndex, lookahead1) = itemToLookahead
           (Item prule2 dot2 l2, lookahead2) = itemlk  
           lookahead2' = 
-            if prule1 == prule2 && dot1 == dot2 && lookahead1 \\ lookahead2 /= []
+            if prule1 == prule2 && dot1 == dot2 
+              && index == toIndex
+              && lookahead1 \\ lookahead2 /= []
               then nub (lookahead1 ++ lookahead2) else lookahead2
           changed1 = lookahead2' /= lookahead2
           itemlk1 = (Item prule2 dot2 l2, lookahead2')
-          (changed2, itemlks2) = copy'' itemlks itemToLookahead
+          (changed2, itemlks2) = copy'' index itemlks itemToLookahead
       in (changed1 || changed2, itemlk1:itemlks2) 
 
 
@@ -454,10 +476,10 @@ prSpontaneous ((item, [lookahead]):spontaneous) = do
   prSpontaneous spontaneous
 
 prPropagate [] = return ()
-prPropagate ((from, to):propagate) = do 
-  putStr (show from)
+prPropagate ((from, fromIndex, to, toIndex):propagate) = do 
+  putStr (show from ++ " at " ++ show fromIndex)
   putStr " -prop-> "
-  putStr (show to) 
+  putStr (show to ++ " at " ++ show toIndex) 
   putStrLn ""
   prPropagate propagate
 
