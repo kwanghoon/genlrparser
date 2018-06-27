@@ -1,0 +1,42 @@
+CFG "S'" [
+ProductionRule "S'" [Nonterminal "Program"],
+ProductionRule "Program" [Nonterminal "Decl"],
+
+ProductionRule "Decl" [Nonterminal "TypeDeclaration", Nonterminal "TermDeclaration", Nonterminal "DefDeclaration"],
+
+ProductionRule "TypeDeclaration" [Terminal "atType", Nonterminal "TyDecls"],
+ProductionRule "TermDeclaration"  [Terminal "atTerm", Nonterminal "TmDecls"],
+ProductionRule "DefDeclaration" [],
+ProductionRule "DefDeclaration"  [Terminal "atDef", Nonterminal "DefDecls"],
+       
+ProductionRule "TyDecls"  [Terminal "var", Terminal ":", Nonterminal "K", Terminal "." ],
+ProductionRule "TyDecls"  [Terminal "var", Terminal ":", Nonterminal "K", Terminal ".", Nonterminal "TyDecls" ],
+       
+ProductionRule "TmDecls"  [Terminal "var", Terminal ":", Nonterminal "A", Terminal "." ],
+ProductionRule "TmDecls"  [Terminal "var", Terminal ":", Nonterminal "A", Terminal ".", Nonterminal "TmDecls" ],
+       
+ProductionRule "DefDecls"  [Terminal "var", Terminal "=", Nonterminal "M", Terminal "." ],
+ProductionRule "DefDecls" [Terminal "var", Terminal "=", Nonterminal "M", Terminal ".", Nonterminal "DefDecls" ],
+       
+ProductionRule "K" [Terminal "Type"],
+ProductionRule "K" [Terminal "Pi", Terminal "var", Terminal ":", Nonterminal "A", Terminal ".", Nonterminal "K"],
+ProductionRule "K" [Terminal "(", Nonterminal "K", Terminal ")"],
+ProductionRule "K" [Nonterminal "A1", Terminal "arrow", Nonterminal "K"],
+
+ProductionRule "A" [Terminal "Pi", Terminal "var", Terminal ":", Nonterminal "A", Terminal ".", Nonterminal "A"],
+ProductionRule "A" [Nonterminal "A1"],
+ProductionRule "A" [Nonterminal "A1", Terminal "arrow", Nonterminal "A"],
+
+ProductionRule "A1" [Terminal "var"],
+ProductionRule "A1" [Terminal "(", Nonterminal "A", Terminal ")"],
+ProductionRule "A1" [Nonterminal "A1", Terminal "var"],
+ProductionRule "A1" [Nonterminal "A1", Terminal "(", Nonterminal "M", Terminal ")"],
+        
+ProductionRule "M" [Terminal "Lam", Terminal "var", Terminal ":", Nonterminal "A", Terminal ".", Nonterminal "M"],
+ProductionRule "M" [Nonterminal "M1"],
+
+ProductionRule "M1" [Terminal "var"],
+ProductionRule "M1" [Terminal "(", Nonterminal "M", Terminal ")"],
+ProductionRule "M1" [Nonterminal "M1", Terminal "var"],
+ProductionRule "M1" [Nonterminal "M1", Terminal "(", Nonterminal "M", Terminal ")"]
+]                             
