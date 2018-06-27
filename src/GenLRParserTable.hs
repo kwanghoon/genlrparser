@@ -29,32 +29,54 @@ _main = do
   where
     f file = do
       grammar <- readFile file
+      putStrLn grammar
       let cfg = read grammar :: CFG
-      -- let sprime = startNonterminal cfg 
-      prParseTable (calcEfficientLALRParseTable cfg)
-      -- let (items,_,lkhtbl,gotos) = calcEfficientLALRParseTable cfg
-      -- let (lkhtbl1,lkhtbl2) = lkhtbl
-      -- prItems items
-      -- prGtTbl gotos
-      -- prSpontaneous lkhtbl1
-      -- prPropagate lkhtbl2 
+      prParseTable $ (\(a1,a2,a3,a4,a5)->(a1,a2,a3,a4)) (calcEfficientLALRParseTable cfg)
 
 __main g = do
-  prParseTable (calcEfficientLALRParseTable g)
-  -- let kernelitems = map (filter (isKernel (startNonterminal g))) items
-  -- let (lkhtbl1,lkhtbl2) = lkhtbl
-  -- prItems items
-  -- prGtTbl gotos
-  -- prItems kernelitems
-  -- prSpontaneous lkhtbl1
-  -- prPropagate lkhtbl2 
-  -- putStrLn ""
-  -- prItems (computeLookaheads lkhtbl1 lkhtbl2 kernelitems)
-  -- let f (x,y) = do { putStrLn (show x); prItem y; putStrLn "" }
-  -- mapM_ f $ [ (item, closure g [Item prule dot [sharpSymbol]])
-  --           | items <- kernelitems
-  --           , item@(Item prule dot _) <- items ]
-    
+  prParseTable $ (\(a1,a2,a3,a4,a5)->(a1,a2,a3,a4)) (calcEfficientLALRParseTable g)
+
+__mainDebug g = do
+  let (_,_,_,_,(items,lkhtbl1,splk',lkhtbl2,gotos)) = calcEfficientLALRParseTable g
+  let kernelitems = map (filter (isKernel (startNonterminal g))) items
+  prItems items
+  prGtTbl gotos
+  prItems kernelitems
+  putStrLn "closure with #"
+  let f (i, x,y) = do { putStrLn (show i ++ " : " ++ show x); prItem y; putStrLn "" }
+  mapM_ f $ [ (index, item, closure g [Item prule dot [sharpSymbol]])
+            | (index,items) <- zip [0..] kernelitems
+            , item@(Item prule dot _) <- items ]
+  putStrLn "Splk'"
+  prSplk' splk'
+  putStrLn "Splk:"
+  prSpontaneous lkhtbl1
+  putStrLn "Prop:"
+  prPropagate lkhtbl2 
+  putStrLn ""
+  prItems (computeLookaheads lkhtbl1 lkhtbl2 kernelitems)
+
+prSplk' [] = return ()
+prSplk' ((index0,index2,item0,item0closure,item1,item2):splk') = do
+  putStrLn "item0:"
+  putStrLn (show index0)
+  putStrLn (show item0)
+  putStrLn "closure(item0,#):"
+  prItem item0closure
+  putStrLn "item1:"
+  putStrLn (show item1)
+  putStrLn (show index2)
+  putStrLn "item2:"
+  putStrLn (show item2)
+  ch <- getChar
+  prSplk' splk'
+
+__mainLr1 g = do
+  prParseTable (calcLR1ParseTable g)
+
+__mainLalr1 g = do   
+  prLALRParseTable (calcLALRParseTable g)
+
 --
 indexPrule :: AUGCFG -> ProductionRule -> Int
 indexPrule augCfg prule = indexPrule' prules prule 0
@@ -324,8 +346,9 @@ goto augCfg items x = closure augCfg itemsOverX
 sharp = Terminal "#"  -- a special terminal symbol
 sharpSymbol = Symbol sharp
 
-calcEfficientLALRParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
-calcEfficientLALRParseTable augCfg = (lr1items, prules, actionTable, gotoTable) -- (lr0items, prules, lkhTable, gotoTable)
+-- calcEfficientLALRParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
+calcEfficientLALRParseTable augCfg = 
+  (lr1items, prules, actionTable, gotoTable, (lr0items, splk, splk'', prop, lr0GotoTable))
   where
     CFG _S' prules = augCfg 
     lr0items = calcLR0Items augCfg 
@@ -335,8 +358,21 @@ calcEfficientLALRParseTable augCfg = (lr1items, prules, actionTable, gotoTable) 
     terminalSyms    = [Terminal x    | Terminal x    <- syms]
     nonterminalSyms = [Nonterminal x | Nonterminal x <- syms]
 
-    lr0GotoTable = nub
-      [ (from, h, to)
+    lr0GotoTable = calcLr0GotoTable augCfg lr0items
+
+    splk = (Item (head prules) 0 [], 0, [EndOfSymbol]) : (map (\(a1,a2,a3,a4)->(a1,a2,a3)) splk')
+    splk' = calcSplk augCfg lr0kernelitems lr0GotoTable
+    splk'' = map (\(a1,a2,a3,a4)->a4) splk'
+    prop = calcProp augCfg lr0kernelitems lr0GotoTable
+
+    lr1kernelitems = computeLookaheads splk prop lr0kernelitems
+
+    lr1items = map (closure augCfg) lr1kernelitems
+
+    (actionTable, gotoTable) = calcEfficientLALRActionGotoTable augCfg lr1items
+
+calcLr0GotoTable augCfg lr0items =
+  nub [ (from, h, to)
       | item1 <- lr0items
       , Item (ProductionRule y ys) j lookahead <- item1
       , let from = indexItem "lr0GotoTable(from)" lr0items item1
@@ -345,48 +381,110 @@ calcEfficientLALRParseTable augCfg = (lr1items, prules, actionTable, gotoTable) 
       , let h = head ys'
       , let to = indexItem "lr0GotoTable(to)" lr0items (goto augCfg item1 h)
       , ys' /= []
-      -- , isTerminal h == False
+      ] 
+    
+calcSplk augCfg lr0kernelitems lr0GotoTable = 
+  [ (Item prule2 dot2 [], toIndex, lookahead1, (fromIndex, toIndex, item0, lr1items, item1, item2)) 
+  | (fromIndex, lr0kernelitem) <- zip [0..] lr0kernelitems  -- take item for each LR(0) kernels
+  , item0@(Item prule0 dot0 _) <- lr0kernelitem 
+  
+  , let lr1items = closure augCfg [Item prule0 dot0 [sharpSymbol]] -- Take its LR(1) closure with #
+  , item1@(Item prule1@(ProductionRule lhs rhs) dot1 lookahead1) <- lr1items
+  , lookahead1 /= [sharpSymbol]
+
+  , let therestrhs = drop dot1 rhs 
+  , therestrhs /= []
+  , let symbolx = head therestrhs
+  , let toIndexes = [t | (f,x,t) <- lr0GotoTable, f==fromIndex, x==symbolx ]
+  , toIndexes /= []
+  , let toIndex = head toIndexes
+
+  , let gotoIX = lr0kernelitems !! toIndex -- for each item in GoTo(I,X)
+  , item2@(Item prule2 dot2 lookahead2) <- gotoIX
+  , prule1 == prule2
+  ]  
+
+calcProp augCfg lr0kernelitems lr0GotoTable = 
+  [ (Item prule0 dot0 [], fromIndex, Item prule2 dot2 [], toIndex) 
+  | (fromIndex, lr0kernelitem) <- zip [0..] lr0kernelitems  -- take item for each LR(0) kernels
+  , Item prule0 dot0 _ <- lr0kernelitem 
+  
+  , let lr1items = closure augCfg [Item prule0 dot0 [sharpSymbol]] -- Take its LR(1) closure with #
+  , Item prule1@(ProductionRule lhs rhs) dot1 lookahead1 <- lr1items
+  , lookahead1 == [sharpSymbol]
+
+  , let therestrhs = drop dot1 rhs 
+  , therestrhs /= []
+  , let symbolx = head therestrhs
+  , let toIndexes = [t | (f,x,t) <- lr0GotoTable, f==fromIndex, x==symbolx ]
+  , toIndexes /= []
+  , let toIndex = head toIndexes
+
+  , let gotoIX = lr0kernelitems !! toIndex -- for each item in GoTo(I,X)
+  , Item prule2 dot2 lookahead2 <- gotoIX
+  , prule1 == prule2
+  ]     
+
+calcEfficientLALRActionGotoTable augCfg items = (actionTable, gotoTable)
+  where
+    CFG _S' prules = augCfg
+    -- items = calcLR1Items augCfg
+    -- syms  = (\\) (symbols augCfg) [Nonterminal _S']
+    
+    -- terminalSyms    = [Terminal x    | Terminal x    <- syms]
+    -- nonterminalSyms = [Nonterminal x | Nonterminal x <- syms]
+    
+    f :: [(ActionTable,GotoTable)] -> (ActionTable, GotoTable)
+    f l = case unzip l of (fst,snd) -> (g [] (concat fst), h [] (concat snd))
+                          
+    g actTbl [] = actTbl
+    g actTbl ((i,x,a):triples) = 
+      let bs = [a' == a | (i',x',a') <- actTbl, i' == i && x' == x ] in
+      if length bs == 0
+      then g (actTbl ++ [(i,x,a)]) triples
+      else if and bs 
+           then g actTbl triples 
+           else error ("Conflict: " 
+                       ++ show (i,x,a) 
+                       ++ " " 
+                       ++ show actTbl)
+                
+    h :: GotoTable -> GotoTable -> GotoTable
+    h gtTbl [] = gtTbl
+    h gtTbl ((i,x,j):triples) =
+      let bs = [j' == j | (i',x',j') <- gtTbl, i' == i && x' == x ] in
+      if length bs == 0
+      then h (gtTbl ++ [(i,x,j)]) triples
+      else if and bs
+           then h gtTbl triples
+           else error ("Conflict: "
+                       ++ show (i,x,j)
+                       ++ " "
+                       ++ show gtTbl)
+    
+    mkLr0 (Item prule dot _) = Item prule dot [] 
+
+    itemsInLr0 = map (nub . map mkLr0) items 
+
+    (actionTable, gotoTable) = f
+      [ if ys' == []
+        then if y == _S' && a == EndOfSymbol
+             then ([(from, a, Accept)   ], []) 
+             else ([(from, a, Reduce ri)], [])
+        else if isTerminal h 
+             then ([(from, Symbol h, Shift to) ], [])
+             else ([]                    , [(from, h, to)])
+      | (from,item1) <- zip [0..] items -- Optimization: (from,item1) <- zip [0..] items
+      , Item (ProductionRule y ys) j [a] <- item1
+      -- , let from = indexItem "lr1ActionGotoTable(from)"  items item1
+      , let ri   = indexPrule augCfg (ProductionRule y ys)
+      , let ys' = drop j ys
+      , let h = head ys'
+      , let to = indexItem "lr1ActionGotoTable(to)" itemsInLr0 (goto augCfg (nub $ map mkLr0 item1) h)
       ]
-
-    lkhTable = 
-      let (ass, bss) = unzip lkhTable' in (nub (concat ass), nub (concat bss))
-
-    lkhTable' =
-      [ ( [ (Item (head prules) 0 [], [EndOfSymbol])], []) ] 
-      ++
-      [ ( [ (Item prule2 dot2 [], lookahead1) 
-          | lookahead1 /= [sharpSymbol] ]
-        , [ (Item pruleyys dot0 [], fromIndex, Item prule2 dot2 [], toIndex) 
-          | lookahead1 == [sharpSymbol] ]
-        )
-      | (fromIndex, lr0kernelitem) <- zip [0..] lr0kernelitems
-      , item@(Item pruleyys dot0 _) <- lr0kernelitem 
-      , let lr1items = closure augCfg [Item pruleyys dot0 [sharpSymbol]]
-      , Item prule1@(ProductionRule lhs rhs) dot1 lookahead1 <- lr1items
-      , let therestrhs = drop dot1 rhs 
-      , therestrhs /= []
-      , let symbolx = head therestrhs
-      , let toIndexes = [t | (f,x,t) <- lr0GotoTable, f==fromIndex, x==symbolx ]
-      , toIndexes /= []
-      , let toIndex = head toIndexes
-      , let gotoIX = lr0kernelitems !! toIndex
-      , Item prule2 dot2 lookahead2 <- gotoIX
-      ]
-
-    head_ i [] = error ("head_: " ++ show i)
-    head_ i (x:xs) = x
-
-    lr1kernelitems = computeLookaheads (fst lkhTable) (snd lkhTable) 
-                      (map (filter (isKernel (startNonterminal augCfg))) lr0items)
-
-    lr1items = map (closure augCfg) lr1kernelitems
-
-    (actionTable, gotoTable) = calcLR1ActionGotoTable augCfg lr1items
-
-
 
 type Lookahead = [ExtendedSymbol] 
-type SpontaneousLookahead = [(Item, Lookahead)]
+type SpontaneousLookahead = [(Item, Int, Lookahead)]
 type PropagateLookahead = [(Item, Int, Item, Int)]
 
 computeLookaheads :: SpontaneousLookahead -> PropagateLookahead -> Itemss -> Itemss
@@ -398,20 +496,20 @@ computeLookaheads splk prlk lr0kernelitemss = lr1kernelitemss
           | (Item prule dot _, lookaheads) <- itemlks ]
       | itemlks <- lr1kernelitemlkss ]
 
-    initLr1kernelitemlkss = init lr0kernelitemss
-    lr1kernelitemlkss = snd (unzip (prop (zip [0..] initLr1kernelitemlkss)))
+    initLr1kernelitemlkss = init (zip [0..] lr0kernelitemss)
+    lr1kernelitemlkss = snd (unzip (prop initLr1kernelitemlkss))
 
     init [] = []
-    init (items:itemss) = init' items : init itemss 
+    init ((index,items):iitemss) = (index, init' index items) : init iitemss 
     
-    init' [] = []
-    init' (item:items) = (item, init'' item [] splk ) : init' items
+    init' index [] = []
+    init' index (item:items) = (item, init'' index item [] splk ) : init' index items
 
-    init'' itembase lookaheads [] = lookaheads 
-    init'' itembase lookaheads ((splkitem,lookahead):splkitems) = 
-      if itembase == splkitem 
-      then init'' itembase (lookaheads ++ [lookahead]) splkitems 
-      else init'' itembase lookaheads splkitems 
+    init'' index itembase lookaheads [] = lookaheads 
+    init'' index itembase lookaheads ((splkitem,loc,lookahead):splkitems) = 
+      if index == loc && itembase == splkitem 
+      then init'' index itembase (lookaheads ++ [lookahead]) splkitems 
+      else init'' index itembase lookaheads splkitems 
 
     prop ilr1kernelitemlkss = 
       let itemToLks = collect ilr1kernelitemlkss prlk 
@@ -474,8 +572,8 @@ prLkhTable ((spontaneous, propagate):lkhTable) = do
   prLkhTable lkhTable
 
 prSpontaneous [] = return ()
-prSpontaneous ((item, [lookahead]):spontaneous) = do 
-  putStr (show item)
+prSpontaneous ((item, loc, [lookahead]):spontaneous) = do 
+  putStr (show item ++ " at " ++ show loc)
   putStr ", "
   putStrLn (show lookahead)
   prSpontaneous spontaneous
@@ -488,6 +586,7 @@ prPropagate ((from, fromIndex, to, toIndex):propagate) = do
   putStrLn ""
   prPropagate propagate
 
+-----
 calcLR1ParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
 calcLR1ParseTable augCfg = (items, prules, actionTable, gotoTable)
   where
@@ -531,7 +630,7 @@ calcLR1ActionGotoTable augCfg items = (actionTable, gotoTable)
                        ++ show (i,x,j)
                        ++ " "
                        ++ show gtTbl)
-    
+
     (actionTable, gotoTable) = f
       [ if ys' == []
         then if y == _S' 
@@ -540,10 +639,10 @@ calcLR1ActionGotoTable augCfg items = (actionTable, gotoTable)
         else if isTerminal h 
              then ([(from, Symbol h, Shift to) ], [])
              else ([]                    , [(from, h, to)])
-      | item1 <- items
+      | item1 <- items -- Optimization: (from,item1) <- zip [0..] items
       , Item (ProductionRule y ys) j [a] <- item1
       , let from = indexItem "lr1ActionGotoTable(from)"  items item1
-      , let ri   = indexPrule augCfg (ProductionRule y ys)
+      , let ri   = indexPrule augCfg (ProductionRule y ys)  -- Can be optimzied?
       , let ys' = drop j ys
       , let h = head ys'
       , let to = indexItem "lr1ActionGotoTable(to)" items (goto augCfg item1 h)

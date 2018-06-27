@@ -75,9 +75,9 @@ ProductionRule "Primary" [Terminal "STR"],
 ProductionRule "Primary" [Terminal "(", Nonterminal "Expr", Terminal ")"],
 ProductionRule "Primary" [Terminal "ID"],
 ProductionRule "Primary" [Terminal "ID", Terminal ".", Terminal "ID"],
-ProductionRule "Primary" [Terminal "ID", Terminal ".", Terminal "ID", Terminal "(", Nonterminal "Exprs", Terminal ")"]
-ProductionRule "Primary" [Terminal "ID", Nonteriminal "Idxs"],
+ProductionRule "Primary" [Terminal "ID", Terminal ".", Terminal "ID", Terminal "(", Nonterminal "Exprs", Terminal ")"],
+ProductionRule "Primary" [Terminal "ID", Nonterminal "Idxs"],
 
-ProductionRule "Idxs" [Terminal "[", Nonteriminal "Expr", Terminal "]"],
-ProductionRule "Idxs" [Terminal "[", Nonteriminal "Expr", Terminal "]", Nonterminal "Idxs"]
+ProductionRule "Idxs" [Terminal "[", Nonterminal "Expr", Terminal "]"],
+ProductionRule "Idxs" [Terminal "[", Nonterminal "Expr", Terminal "]", Nonterminal "Idxs"]
 ]
