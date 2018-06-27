@@ -3,22 +3,24 @@ CFG "Prog"
 
 ProductionRule "Prog" [Nonterminal "MoreThanOneStmt"],
 ProductionRule "Stmt" [Nonterminal "ExprStatement"],
-ProductionRule "Stmt" [Terminal "While", Terminal "(", Nonterminal "Expr", Terminal ")", Terminal "Then", Nonterminal "CRStmtCRs", Terminal "EndWhile"],
+ProductionRule "Stmt" [Terminal "While", Nonterminal "Expr", Nonterminal "CRStmtCRs", Terminal "EndWhile"],
 ProductionRule "Stmt" [Terminal "ID", Terminal ":"],
 ProductionRule "Stmt" [Terminal "Goto", Terminal "ID"],
 ProductionRule "Stmt" [Terminal "For", Terminal "ID", Terminal "=", Nonterminal "Expr", Terminal "To", Nonterminal "Expr", Nonterminal "OptStep", Nonterminal "CRStmtCRs", Terminal "EndFor"],
 ProductionRule "Stmt" [Terminal "Sub", Terminal "ID", Nonterminal "CRStmtCRs", Terminal "EndSub"],
-ProductionRule "Stmt" [Terminal "If", Terminal "(", Nonterminal "Expr", Terminal ")", Terminal "Then", Nonterminal "CRStmtCRs", Nonterminal "MoreThanZeroElseIf"],
+ProductionRule "Stmt" [Terminal "If", Nonterminal "Expr", Terminal "Then", Nonterminal "CRStmtCRs", Nonterminal "MoreThanZeroElseIf"],
 
 ProductionRule "MoreThanZeroElseIf" [Nonterminal "OptionalElse"],
-ProductionRule "MoreThanZeroElseIf" [Terminal "ElseIf", Terminal "(", Nonterminal "Expr", Terminal ")", Terminal "Then", Nonterminal "CRStmtCRs", Nonterminal "MoreThanZeroElseIf"],
+ProductionRule "MoreThanZeroElseIf" [Terminal "ElseIf", Nonterminal "Expr", Terminal "Then", Nonterminal "CRStmtCRs", Nonterminal "MoreThanZeroElseIf"],
 
 ProductionRule "OptionalElse" [Terminal "EndIf"],
 ProductionRule "OptionalElse" [Terminal "Else", Nonterminal "CRStmtCRs", Terminal "EndIf"],
 
 ProductionRule "ExprStatement" [Terminal "ID", Terminal "=", Nonterminal "Expr"],
+ProductionRule "ExprStatement" [Terminal "ID", Terminal ".", Terminal "ID", Terminal "=", Nonterminal "Expr"],
 ProductionRule "ExprStatement" [Terminal "ID", Terminal ".", Terminal "ID", Terminal "(", Nonterminal "Exprs", Terminal ")"],
 ProductionRule "ExprStatement" [Terminal "ID", Terminal "(", Terminal ")"],
+ProductionRule "ExprStatement" [Terminal "ID", Nonterminal "Idxs", Terminal "=", Nonterminal "Expr"],
 
 ProductionRule "CRStmtCRs" [Terminal "CR", Nonterminal "TheRest"],
 
@@ -69,10 +71,13 @@ ProductionRule "UnaryExpr" [Terminal "-", Nonterminal "Primary"],
 ProductionRule "UnaryExpr" [Nonterminal "Primary"],
 
 ProductionRule "Primary" [Terminal "NUM"],
-ProductionRule "Primary" [Terminal "true"],
-ProductionRule "Primary" [Terminal "false"],
+ProductionRule "Primary" [Terminal "STR"],
 ProductionRule "Primary" [Terminal "(", Nonterminal "Expr", Terminal ")"],
 ProductionRule "Primary" [Terminal "ID"],
 ProductionRule "Primary" [Terminal "ID", Terminal ".", Terminal "ID"],
 ProductionRule "Primary" [Terminal "ID", Terminal ".", Terminal "ID", Terminal "(", Nonterminal "Exprs", Terminal ")"]
+ProductionRule "Primary" [Terminal "ID", Nonteriminal "Idxs"],
+
+ProductionRule "Idxs" [Terminal "[", Nonteriminal "Expr", Terminal "]"],
+ProductionRule "Idxs" [Terminal "[", Nonteriminal "Expr", Terminal "]", Nonterminal "Idxs"]
 ]
