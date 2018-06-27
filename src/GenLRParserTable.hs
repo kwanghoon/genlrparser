@@ -25,36 +25,36 @@ import ParserTable
 
 _main = do
   args <- getArgs
-  mapM f args
+  mapM_ f args
   where
     f file = do
       grammar <- readFile file
-      putStrLn grammar
+      -- putStrLn grammar
       let cfg = read grammar :: CFG
       prParseTable $ (\(a1,a2,a3,a4,a5)->(a1,a2,a3,a4)) (calcEfficientLALRParseTable cfg)
 
 __main g = do
   prParseTable $ (\(a1,a2,a3,a4,a5)->(a1,a2,a3,a4)) (calcEfficientLALRParseTable g)
 
-__mainDebug g = do
-  let (_,_,_,_,(items,lkhtbl1,splk',lkhtbl2,gotos)) = calcEfficientLALRParseTable g
-  let kernelitems = map (filter (isKernel (startNonterminal g))) items
-  prItems items
-  prGtTbl gotos
-  prItems kernelitems
-  putStrLn "closure with #"
-  let f (i, x,y) = do { putStrLn (show i ++ " : " ++ show x); prItem y; putStrLn "" }
-  mapM_ f $ [ (index, item, closure g [Item prule dot [sharpSymbol]])
-            | (index,items) <- zip [0..] kernelitems
-            , item@(Item prule dot _) <- items ]
-  putStrLn "Splk'"
-  prSplk' splk'
-  putStrLn "Splk:"
-  prSpontaneous lkhtbl1
-  putStrLn "Prop:"
-  prPropagate lkhtbl2 
-  putStrLn ""
-  prItems (computeLookaheads lkhtbl1 lkhtbl2 kernelitems)
+-- __mainDebug g = do
+--   let (_,_,_,_,(items,lkhtbl1,splk',lkhtbl2,gotos)) = calcEfficientLALRParseTable g
+--   let kernelitems = map (filter (isKernel (startNonterminal g))) items
+--   prItems items
+--   prGtTbl gotos
+--   prItems kernelitems
+--   putStrLn "closure with #"
+--   let f (i, x,y) = do { putStrLn (show i ++ " : " ++ show x); prItem y; putStrLn "" }
+--   mapM_ f $ [ (index, item, closure g [Item prule dot [sharpSymbol]])
+--             | (index,items) <- zip [0..] kernelitems
+--             , item@(Item prule dot _) <- items ]
+--   putStrLn "Splk'"
+--   prSplk' splk'
+--   putStrLn "Splk:"
+--   prSpontaneous lkhtbl1
+--   putStrLn "Prop:"
+--   prPropagate lkhtbl2 
+--   putStrLn ""
+--   prItems (computeLookaheads lkhtbl1 lkhtbl2 kernelitems)
 
 prSplk' [] = return ()
 prSplk' ((index0,index2,item0,item0closure,item1,item2):splk') = do
@@ -348,7 +348,7 @@ sharpSymbol = Symbol sharp
 
 -- calcEfficientLALRParseTable :: AUGCFG -> (Itemss, ProductionRules, ActionTable, GotoTable)
 calcEfficientLALRParseTable augCfg = 
-  (lr1items, prules, actionTable, gotoTable, (lr0items, splk, splk'', prop, lr0GotoTable))
+  (lr1items, prules, actionTable, gotoTable, ()) -- (lr0items, splk, splk'', prop, lr0GotoTable))
   where
     CFG _S' prules = augCfg 
     lr0items = calcLR0Items augCfg 
