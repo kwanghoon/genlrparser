@@ -1,8 +1,10 @@
-CFG "L" [
-    ProductionRule "L" [Terminal "lam", Terminal "loc", Terminal "id", Terminal ".", Nonterminal "L"],
+CFG "L'" [
+    ProductionRule "L'" [Nonterminal "L"],
     ProductionRule "L" [Nonterminal "E"],
-    ProductionRule "E" [Terminal "(", Nonterminal "L", Terminal ")"],
-    ProductionRule "E" [Terminal "id"],
-    ProductionRule "E" [Terminal "num"],
-    ProductionRule "E" [Nonterminal "E", Nonterminal "E"]
+    ProductionRule "L" [Terminal "lam", Terminal "loc", Terminal "id", Terminal ".", Nonterminal "L"],
+    ProductionRule "E" [Nonterminal "E", Nonterminal "T"],
+    ProductionRule "E" [Nonterminal "T"],
+    ProductionRule "T" [Terminal "id"],
+    ProductionRule "T" [Terminal "num"],
+    ProductionRule "T" [Terminal "(", Nonterminal "L", Terminal ")"]
 ]
