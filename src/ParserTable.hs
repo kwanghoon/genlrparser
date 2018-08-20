@@ -2,6 +2,8 @@ module ParserTable where
 
 import CFG
 
+import System.IO
+
 -- LR(1) item
 data Item = Item ProductionRule Int [ExtendedSymbol] {- except Epsilon -}
             deriving Eq
@@ -29,23 +31,23 @@ instance Show Item where
       . (++) (show esym)
       . (++) "]"
       
-prItem :: Items -> IO ()
-prItem xs = do prItem' xs
-               putStrLn ""
+prItem :: Handle -> Items -> IO ()
+prItem h xs = do  prItem' h xs
+                  hPutStrLn h ""
   where
-    prItem' []     = return ()
-    prItem' (x:xs) = do putStrLn (show x)
-                        prItem' xs
+    prItem' h []     = return ()
+    prItem' h (x:xs) = do hPutStrLn h (show x)
+                          prItem' h xs
     
   
-prItems :: Itemss -> IO ()
-prItems xs = prItems' 0 xs
+prItems :: Handle -> Itemss -> IO ()
+prItems h xs = prItems' h 0 xs
 
-prItems' n []       = return ()
-prItems' n (is:iss) =
-  do putStrLn ("I" ++ show n ++ ":")
-     prItem is
-     prItems' (n+1) iss
+prItems' h n []       = return ()
+prItems' h n (is:iss) =
+  do hPutStrLn h ("I" ++ show n ++ ":")
+     prItem h is
+     prItems' h (n+1) iss
 
 
 isKernel :: String -> Item -> Bool
@@ -66,15 +68,15 @@ lookupTable i x ((j,y,a):tbl)
   = if i == j && x == y then Just a 
     else lookupTable i x tbl
     
-prActTbl [] = return ()
-prActTbl ((i,x,a):actTbl) = 
-  do putStrLn (show i ++ "\t" ++ show x ++ "\t" ++ show a)
-     prActTbl actTbl
+prActTbl h [] = return ()
+prActTbl h ((i,x,a):actTbl) = 
+  do hPutStrLn h (show i ++ "\t" ++ show x ++ "\t" ++ show a)
+     prActTbl h actTbl
      
-prGtTbl [] = return ()     
-prGtTbl ((i,x,j):gtTbl) =
-  do putStrLn (show i ++ "\t" ++ show x ++ "\t" ++ show j)
-     prActTbl gtTbl
+prGtTbl h [] = return ()     
+prGtTbl h ((i,x,j):gtTbl) =
+  do hPutStrLn h (show i ++ "\t" ++ show x ++ "\t" ++ show j)
+     prActTbl h gtTbl
 
 
 -- LALR(1) Table

@@ -22,19 +22,58 @@ import System.Environment (getArgs)
 
 import CFG
 import ParserTable
+import CmdArgs 
 
+import System.IO
+
+{-
+
+가능한 명령 인자 형식
+$ main.exe rpc.grm 
+$ main.exe rpc.grm smallbasic.grm      (grm 파일이 둘 이상이면 -output 옵션을 사용 불가)
+$ main.exe rpc.grm -output prod_rules.txt action_table.txt goto_table.txt  
+$ main.exe -output prod_rules.txt action_table.txt goto_table.txt  rpc.grm
+
+-}
 _main = do
   args <- getArgs
-  mapM_ f args
+  let cmd = getCmd args 
+  case cmd of 
+    CmdError msg -> putStrLn msg
+    CmdGrmFiles fileNames -> mapM_ (f stdout) fileNames 
+    CmdGrmWithOption (Just fileName) prod_rule action_tbl goto_tbl -> 
+      writeParseTable fileName prod_rule action_tbl goto_tbl
+
   where
-    f file = do
+    f h file = do
       grammar <- readFile file
       -- putStrLn grammar
       let cfg = read grammar :: CFG
-      prParseTable $ (\(a1,a2,a3,a4,a5)->(a1,a2,a3,a4)) (calcEfficientLALRParseTable cfg)
+
+      prParseTable stdout $ (\(a1,a2,a3,a4,a5)->(a1,a2,a3,a4)) (calcEfficientLALRParseTable cfg)
+
+    writeParseTable file prod_rule action_tbl goto_tbl =
+      do
+        grammar <- readFile file
+        let cfg = read grammar :: CFG
+        let (items, prules, actTbl, gtTbl) =
+              (\(a1,a2,a3,a4,a5)->(a1,a2,a3,a4))
+                (calcEfficientLALRParseTable cfg) 
+
+        h_pr <- openFile prod_rule WriteMode
+        h_acttbl <- openFile action_tbl WriteMode 
+        h_gototbl <- openFile goto_tbl WriteMode
+
+        prPrules h_pr prules
+        prActTbl h_acttbl actTbl
+        prGtTbl h_gototbl gtTbl
+
+        hClose h_pr
+        hClose h_acttbl 
+        hClose h_gototbl 
 
 __main g = do
-  prParseTable $ (\(a1,a2,a3,a4,a5)->(a1,a2,a3,a4)) (calcEfficientLALRParseTable g)
+  prParseTable stdout $ (\(a1,a2,a3,a4,a5)->(a1,a2,a3,a4)) (calcEfficientLALRParseTable g)
 
 -- __mainDebug g = do
 --   let (_,_,_,_,(items,lkhtbl1,splk',lkhtbl2,gotos)) = calcEfficientLALRParseTable g
@@ -62,7 +101,7 @@ prSplk' ((index0,index2,item0,item0closure,item1,item2):splk') = do
   putStrLn (show index0)
   putStrLn (show item0)
   putStrLn "closure(item0,#):"
-  prItem item0closure
+  prItem stdout item0closure
   putStrLn "item1:"
   putStrLn (show item1)
   putStrLn (show index2)
@@ -72,10 +111,10 @@ prSplk' ((index0,index2,item0,item0closure,item1,item2):splk') = do
   prSplk' splk'
 
 __mainLr1 g = do
-  prParseTable (calcLR1ParseTable g)
+  prParseTable stdout (calcLR1ParseTable g)
 
 __mainLalr1 g = do   
-  prLALRParseTable (calcLALRParseTable g)
+  prLALRParseTable stdout (calcLALRParseTable g)
 
 --
 indexPrule :: AUGCFG -> ProductionRule -> Int
@@ -87,12 +126,12 @@ indexPrule' []     prule n = error ("indexPrule: not found " ++ show prule)
 indexPrule' (r:rs) prule n = 
   if r == prule then n else indexPrule' rs prule (n+1)
                             
-prPrules ps = prPrules' ps 0
+prPrules h ps = prPrules' h ps 0
 
-prPrules' [] n = return ()
-prPrules' (prule:prules) n = 
-  do putStrLn (show n ++ ": " ++ show prule)
-     prPrules' prules (n+1)
+prPrules' h [] n = return ()
+prPrules' h (prule:prules) n = 
+  do hPutStrLn h (show n ++ ": " ++ show prule)
+     prPrules' h prules (n+1)
       
 --------------------------------------------------------------------------------
 -- Utility
@@ -648,33 +687,33 @@ calcLR1ActionGotoTable augCfg items = (actionTable, gotoTable)
       , let to = indexItem "lr1ActionGotoTable(to)" items (goto augCfg item1 h)
       ]
       
-prParseTable (items, prules, actTbl, gtTbl) =
-  do putStrLn (show (length items) ++ " states")
-     prItems items
-     putStrLn ""
-     prPrules prules
-     putStrLn ""
-     prActTbl actTbl
-     putStrLn ""
-     prGtTbl gtTbl
+prParseTable h (items, prules, actTbl, gtTbl) =
+  do hPutStrLn h (show (length items) ++ " states")
+     prItems h items
+     hPutStrLn h ""
+     prPrules h prules
+     hPutStrLn h ""
+     prActTbl h actTbl
+     hPutStrLn h ""
+     prGtTbl h gtTbl
      
-prLALRParseTable (items, prules, iss, lalrActTbl, lalrGtTbl) =
-  do putStrLn (show (length items) ++ " states")
-     prItems items
-     putStrLn ""
-     prPrules prules
-     putStrLn ""
-     putStrLn (show (length iss) ++ " states")
-     prStates iss
-     putStrLn ""
-     prActTbl lalrActTbl
-     putStrLn ""
-     prGtTbl lalrGtTbl
+prLALRParseTable h (items, prules, iss, lalrActTbl, lalrGtTbl) =
+  do hPutStrLn h (show (length items) ++ " states")
+     prItems h items
+     hPutStrLn h ""
+     prPrules h prules
+     hPutStrLn h ""
+     hPutStrLn h (show (length iss) ++ " states")
+     prStates h iss
+     hPutStrLn h ""
+     prActTbl h lalrActTbl
+     hPutStrLn h ""
+     prGtTbl h lalrGtTbl
      
-prStates [] = return ()     
-prStates (is:iss) =
-  do putStrLn (show is)
-     prStates iss
+prStates h [] = return ()     
+prStates h (is:iss) =
+  do hPutStrLn h (show is)
+     prStates h iss
      
 --------------------------------------------------------------------------------
 -- LALR Parser 
