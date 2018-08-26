@@ -37,12 +37,14 @@ $ main.exe -output prod_rules.txt action_table.txt goto_table.txt  rpc.grm
 -}
 _main = do
   args <- getArgs
+  -- mapM_ putStrLn args
   let cmd = getCmd args 
   case cmd of 
     CmdError msg -> putStrLn msg
     CmdGrmFiles fileNames -> mapM_ (f stdout) fileNames 
-    CmdGrmWithOption (Just fileName) prod_rule action_tbl goto_tbl -> 
+    CmdGrmWithOption (Just fileName) prod_rule action_tbl goto_tbl -> do
       writeParseTable fileName prod_rule action_tbl goto_tbl
+      putStrLn "Done"
 
   where
     f h file = do
@@ -70,7 +72,7 @@ _main = do
 
         hClose h_pr
         hClose h_acttbl 
-        hClose h_gototbl 
+        hClose h_gototbl
 
 __main g = do
   prParseTable stdout $ (\(a1,a2,a3,a4,a5)->(a1,a2,a3,a4)) (calcEfficientLALRParseTable g)
