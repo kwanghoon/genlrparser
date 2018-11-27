@@ -75,6 +75,8 @@ ProductionRule "ExprLogical" [Nonterminal "ExprLogical", Terminal "&&", Nontermi
 
 ProductionRule "ExprLogical" [Nonterminal "ExprLogical", Terminal "||", Nonterminal "ExprPrime" ],
 
+ProductionRule "ExprPrime" [Nonterminal "Expr", Terminal ".", Terminal "identifier"],
+
 ProductionRule "ExprPrime" [Terminal "identifier"],
 
 ProductionRule "ExprPrime" [Terminal "number_literal"],
