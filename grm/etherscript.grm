@@ -39,41 +39,65 @@ ProductionRule "Type" [Terminal "uint"],
 
 ProductionRule "Type" [Terminal "address"],
 
-ProductionRule "ExprUnaryPlusMinus" [Terminal "+", Nonterminal "ExprUnaryPlusMinus" ],
 
-ProductionRule "ExprUnaryPlusMinus" [Terminal "+", Nonterminal "ExprLogicalNot" ],
+ProductionRule "Expr" [Nonterminal "ExprAssign" ],
 
-ProductionRule "ExprUnaryPlusMinus" [Terminal "-", Nonterminal "ExprUnaryPlusMinus" ],
 
-ProductionRule "ExprUnaryPlusMinus" [Terminal "-", Nonterminal "ExprLogicalNot" ],
+ProductionRule "ExprAssign" [Terminal "identifier", Terminal "=", Nonterminal "ExprAssign" ],
 
-ProductionRule "ExprLogicalNot" [Terminal "!", Nonterminal "ExprLogicalNot" ],
+ProductionRule "ExprAssign" [Nonterminal "ExprLogicalOr" ],
 
-ProductionRule "ExprLogicalNot" [Terminal "!", Nonterminal "ExprMultiplication" ],
 
-ProductionRule "ExprMultiplication" [ Nonterminal "ExprMultiplication", Terminal "*", Nonterminal "ExprAddition" ],
+ProductionRule "ExprLogicalOr" [Nonterminal "ExprLogicalOr", Terminal "||", Nonterminal "ExprLogicalAnd" ],
 
-ProductionRule "ExprMultiplication" [ Nonterminal "ExprMultiplication", Terminal "/", Nonterminal "ExprAddition" ],
+ProductionRule "ExprLogicalOr" [Nonterminal "ExprLogicalAnd" ],
 
-ProductionRule "ExprAddition" [ Nonterminal "ExprAddition", Terminal "+", Nonterminal "ExprInequal" ],
 
-ProductionRule "ExprAddition" [ Nonterminal "ExprAddition", Terminal "-", Nonterminal "ExprInequal" ],
+ProductionRule "ExprLogicalAnd" [Nonterminal "ExprLogicalAnd", Terminal "&&", Nonterminal "ExprEqual" ],
 
-ProductionRule "ExprInequal" [ Nonterminal "ExprInequal", Terminal "<", Nonterminal "ExprEqual" ],
+ProductionRule "ExprLogicalAnd" [Nonterminal "ExprEqual" ],
 
-ProductionRule "ExprInequal" [ Nonterminal "ExprInequal", Terminal ">", Nonterminal "ExprEqual" ],
 
-ProductionRule "ExprInequal" [ Nonterminal "ExprInequal", Terminal "<=", Nonterminal "ExprEqual" ],
+ProductionRule "ExprEqual" [ Nonterminal "ExprEqual", Terminal "==", Nonterminal "ExprInequal" ],
 
-ProductionRule "ExprInequal" [ Nonterminal "ExprInequal", Terminal ">=", Nonterminal "ExprEqual" ],
+ProductionRule "ExprEqual" [ Nonterminal "ExprEqual", Terminal "!=", Nonterminal "ExprInequal" ],
 
-ProductionRule "ExprEqual" [ Nonterminal "ExprEqual", Terminal "==", Nonterminal "ExprLogical" ],
+ProductionRule "ExprEqual" [ Nonterminal "ExprInequal" ],
 
-ProductionRule "ExprEqual" [ Nonterminal "ExprEqual", Terminal "!=", Nonterminal "ExprLogical" ],
 
-ProductionRule "ExprLogical" [Nonterminal "ExprLogical", Terminal "&&", Nonterminal "ExprPrime" ],
+ProductionRule "ExprInequal" [ Nonterminal "ExprInequal", Terminal "<", Nonterminal "ExprAddition" ],
 
-ProductionRule "ExprLogical" [Nonterminal "ExprLogical", Terminal "||", Nonterminal "ExprPrime" ],
+ProductionRule "ExprInequal" [ Nonterminal "ExprInequal", Terminal ">", Nonterminal "ExprAddition" ],
+
+ProductionRule "ExprInequal" [ Nonterminal "ExprInequal", Terminal "<=", Nonterminal "ExprAddition" ],
+
+ProductionRule "ExprInequal" [ Nonterminal "ExprInequal", Terminal ">=", Nonterminal "ExprAddition" ],
+
+ProductionRule "ExprInequal" [ Nonterminal "ExprAddition" ],
+
+
+ProductionRule "ExprAddition" [ Nonterminal "ExprAddition", Terminal "+", Nonterminal "ExprMultiplication" ],
+
+ProductionRule "ExprAddition" [ Nonterminal "ExprAddition", Terminal "-", Nonterminal "ExprMultiplication" ],
+
+ProductionRule "ExprAddition" [ Nonterminal "ExprMultiplication" ],
+
+
+ProductionRule "ExprMultiplication" [ Nonterminal "ExprMultiplication", Terminal "*", Nonterminal "ExprLogicalNot" ],
+
+ProductionRule "ExprMultiplication" [ Nonterminal "ExprMultiplication", Terminal "/", Nonterminal "ExprLogicalNot" ],
+
+ProductionRule "ExprMultiplication" [ Nonterminal "ExprLogicalNot" ],
+
+
+ProductionRule "ExprUnaryArithLogical" [Terminal "!", Nonterminal "ExprUnaryArithLogical" ],
+
+ProductionRule "ExprUnaryArithLogical" [Terminal "+", Nonterminal "ExprUnaryArithLogical" ],
+
+ProductionRule "ExprUnaryArithLogical" [Terminal "-", Nonterminal "ExprUnaryArithLogical" ],
+
+ProductionRule "ExprUnaryArithLogical" [Nonterminal "ExprPrime" ],
+
 
 ProductionRule "ExprPrime" [Nonterminal "Expr", Terminal ".", Terminal "identifier"],
 
