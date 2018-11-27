@@ -4,6 +4,8 @@ ProductionRule "Program'" [Nonterminal "Program"],
 
 ProductionRule "Program" [Nonterminal "Statement", Nonterminal "Program"],
 
+ProductionRule "Program" [Nonterminal "Statement"],
+
 ProductionRule "Statement" 
     [Terminal "account", Terminal "{", Nonterminal "Properties", Terminal "}", 
         Terminal "identifier", Terminal ";"],
