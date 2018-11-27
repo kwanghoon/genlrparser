@@ -1,0 +1,86 @@
+CFG "Program'" [
+
+ProductionRule "Program'" [Nonterminal "Program"],
+
+ProductionRule "Program" [Nonterminal "Statement", Nonterminal "Program"],
+
+ProductionRule "Statement" 
+    [Terminal "account", Terminal "{", Nonterminal "Properties", Terminal "}", 
+        Terminal "identifier", Terminal ";"],
+
+ProductionRule "Statement"
+    [Nonterminal "OptLhs", Terminal "identifier", Terminal ".", Nonterminal "OptIdentifier", 
+        Terminal "(", Nonterminal "Exprs", Terminal ")",
+        Terminal "{", Nonterminal "Properties", Terminal "}", Terminal ";"],
+
+ProductionRule "OptLhs" [ Nonterminal "Type", Terminal "identifier", Terminal "=" ],
+
+ProductionRule "OptLhs" [  ],
+
+ProductionRule "OptIdentifier" [ Terminal "identifier" ],
+
+ProductionRule "OptIdentifier" [ ],
+
+ProductionRule "Properties" [ Nonterminal "Property" ],
+
+ProductionRule "Properties" [ Nonterminal "Property", Terminal ",", Nonterminal "Properties" ],
+
+ProductionRule "Property" [ Terminal "balance", Terminal ":", Nonterminal "Expr" ],
+
+ProductionRule "Property" [ Terminal "by", Terminal ":", Terminal "identifier" ],
+
+ProductionRule "Property" [ Terminal "contract", Terminal ":", Terminal "identifier" ],
+
+ProductionRule "Property" [ Terminal "value", Terminal ":", Terminal "identifier" ],
+
+ProductionRule "Type" [Terminal "bool"],
+
+ProductionRule "Type" [Terminal "uint"],
+
+ProductionRule "Type" [Terminal "address"],
+
+ProductionRule "ExprUnaryPlusMinus" [Terminal "+", NonTerminal "ExprUnaryPlusMinus" ],
+
+ProductionRule "ExprUnaryPlusMinus" [Terminal "+", NonTerminal "ExprLogicalNot" ],
+
+ProductionRule "ExprUnaryPlusMinus" [Terminal "-", NonTerminal "ExprUnaryPlusMinus" ],
+
+ProductionRule "ExprUnaryPlusMinus" [Terminal "-", NonTerminal "ExprLogicalNot" ],
+
+ProductionRule "ExprLogicalNot" [Terminal "!", NonTerminal "ExprLogicalNot" ],
+
+ProductionRule "ExprLogicalNot" [Terminal "!", NonTerminal "ExprMultiplication" ],
+
+ProductionRule "ExprMultiplication" [ Nonterminal "ExprMultiplication", Terminal "*", Nonterminal "ExprAddition" ],
+
+ProductionRule "ExprMultiplication" [ Nonterminal "ExprMultiplication", Terminal "/", Nonterminal "ExprAddition" ],
+
+ProductionRule "ExprAddition" [ Nonterminal "ExprAddition", Terminal "+", Nonterminal "ExprInequal" ],
+
+ProductionRule "ExprAddition" [ Nonterminal "ExprAddition", Terminal "-", Nonterminal "ExprInequal" ],
+
+ProductionRule "ExprInequal" [ Nonterminal "ExprInequal", Terminal "<", Nonterminal "ExprEqual" ],
+
+ProductionRule "ExprInequal" [ Nonterminal "ExprInequal", Terminal ">", Nonterminal "ExprEqual" ],
+
+ProductionRule "ExprInequal" [ Nonterminal "ExprInequal", Terminal "<=", Nonterminal "ExprEqual" ],
+
+ProductionRule "ExprInequal" [ Nonterminal "ExprInequal", Terminal ">=", Nonterminal "ExprEqual" ],
+
+ProductionRule "ExprEqual" [ Nonterminal "ExprEqual", Terminal "==", Nonterminal "ExprLogical" ],
+
+ProductionRule "ExprEqual" [ Nonterminal "ExprEqual", Terminal "!=", Nonterminal "ExprLogical" ],
+
+ProductionRule "ExprLogical" [Nonterminal "ExprLogical", Terminal "&&", Nonterminal "ExprPrime" ],
+
+ProductionRule "ExprLogical" [Nonterminal "ExprLogical", Terminal "||", Nonterminal "ExprPrime" ],
+
+ProductionRule "ExprPrime" [Terminal "identifier"],
+
+ProductionRule "ExprPrime" [Terminal "number_literal"],
+
+ProductionRule "ExprPrime" [Terminal "bool_literal"],
+
+ProductionRule "ExprPrime" [Terminal "(", NonTerminal "Expr", Terminal ")"]
+
+]
