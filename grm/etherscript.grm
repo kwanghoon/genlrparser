@@ -39,17 +39,17 @@ ProductionRule "Type" [Terminal "uint"],
 
 ProductionRule "Type" [Terminal "address"],
 
-ProductionRule "ExprUnaryPlusMinus" [Terminal "+", NonTerminal "ExprUnaryPlusMinus" ],
+ProductionRule "ExprUnaryPlusMinus" [Terminal "+", Nonterminal "ExprUnaryPlusMinus" ],
 
-ProductionRule "ExprUnaryPlusMinus" [Terminal "+", NonTerminal "ExprLogicalNot" ],
+ProductionRule "ExprUnaryPlusMinus" [Terminal "+", Nonterminal "ExprLogicalNot" ],
 
-ProductionRule "ExprUnaryPlusMinus" [Terminal "-", NonTerminal "ExprUnaryPlusMinus" ],
+ProductionRule "ExprUnaryPlusMinus" [Terminal "-", Nonterminal "ExprUnaryPlusMinus" ],
 
-ProductionRule "ExprUnaryPlusMinus" [Terminal "-", NonTerminal "ExprLogicalNot" ],
+ProductionRule "ExprUnaryPlusMinus" [Terminal "-", Nonterminal "ExprLogicalNot" ],
 
-ProductionRule "ExprLogicalNot" [Terminal "!", NonTerminal "ExprLogicalNot" ],
+ProductionRule "ExprLogicalNot" [Terminal "!", Nonterminal "ExprLogicalNot" ],
 
-ProductionRule "ExprLogicalNot" [Terminal "!", NonTerminal "ExprMultiplication" ],
+ProductionRule "ExprLogicalNot" [Terminal "!", Nonterminal "ExprMultiplication" ],
 
 ProductionRule "ExprMultiplication" [ Nonterminal "ExprMultiplication", Terminal "*", Nonterminal "ExprAddition" ],
 
@@ -81,6 +81,6 @@ ProductionRule "ExprPrime" [Terminal "number_literal"],
 
 ProductionRule "ExprPrime" [Terminal "bool_literal"],
 
-ProductionRule "ExprPrime" [Terminal "(", NonTerminal "Expr", Terminal ")"]
+ProductionRule "ExprPrime" [Terminal "(", Nonterminal "Expr", Terminal ")"]
 
 ]
