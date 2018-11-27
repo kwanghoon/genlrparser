@@ -8,7 +8,7 @@ ProductionRule "Program" [Nonterminal "Statement"],
 
 ProductionRule "Statement" 
     [Terminal "account", Terminal "{", Nonterminal "Properties", Terminal "}", 
-        Terminal "identifier", Terminal ";"],
+        Terminal "identifier", Nonterminal "OptArgExprs", Terminal ";"],
 
 ProductionRule "Statement"
     [Nonterminal "OptLhs", Terminal "identifier", Terminal ".", Nonterminal "OptIdentifier", 
@@ -40,6 +40,20 @@ ProductionRule "Type" [Terminal "bool"],
 ProductionRule "Type" [Terminal "uint"],
 
 ProductionRule "Type" [Terminal "address"],
+
+
+ProductionRule "OptArgExprs" [],
+
+ProductionRule "OptArgExprs" [ Terminal "(", Nonterminal "Exprs", Terminal ")" ],
+
+
+ProductionRule "Exprs" [],
+
+ProductionRule "Exprs" [ Nonterminal "MoreThanOneExpr" ],
+
+ProductionRule "MoreThanOneExpr" [ Nonterminal "Expr" ],
+
+ProductionRule "MoreThanOneExpr" [ Nonterminal "Expr", Terminal ",", Nonterminal "MoreThanOneExpr" ],
 
 
 ProductionRule "Expr" [Nonterminal "ExprAssign" ],
