@@ -102,11 +102,11 @@ ProductionRule "ExprAddition" [ Nonterminal "ExprAddition", Terminal "-", Nonter
 ProductionRule "ExprAddition" [ Nonterminal "ExprMultiplication" ],
 
 
-ProductionRule "ExprMultiplication" [ Nonterminal "ExprMultiplication", Terminal "*", Nonterminal "ExprLogicalNot" ],
+ProductionRule "ExprMultiplication" [ Nonterminal "ExprMultiplication", Terminal "*", Nonterminal "ExprUnaryArithLogical" ],
 
-ProductionRule "ExprMultiplication" [ Nonterminal "ExprMultiplication", Terminal "/", Nonterminal "ExprLogicalNot" ],
+ProductionRule "ExprMultiplication" [ Nonterminal "ExprMultiplication", Terminal "/", Nonterminal "ExprUnaryArithLogical" ],
 
-ProductionRule "ExprMultiplication" [ Nonterminal "ExprLogicalNot" ],
+ProductionRule "ExprMultiplication" [ Nonterminal "ExprUnaryArithLogical" ],
 
 
 ProductionRule "ExprUnaryArithLogical" [Terminal "!", Nonterminal "ExprUnaryArithLogical" ],
@@ -115,10 +115,14 @@ ProductionRule "ExprUnaryArithLogical" [Terminal "+", Nonterminal "ExprUnaryArit
 
 ProductionRule "ExprUnaryArithLogical" [Terminal "-", Nonterminal "ExprUnaryArithLogical" ],
 
-ProductionRule "ExprUnaryArithLogical" [Nonterminal "ExprPrime" ],
+ProductionRule "ExprUnaryArithLogical" [Nonterminal "PostfixExpression" ],
 
 
-ProductionRule "ExprPrime" [Nonterminal "Expr", Terminal ".", Terminal "identifier"],
+ProductionRule "PostfixExpression" [Nonterminal "PostfixExpression", Terminal ".", Terminal "identifier" ],
+
+ProductionRule "PostfixExpression" [Nonterminal "ExprPrime"],
+
+
 
 ProductionRule "ExprPrime" [Terminal "identifier"],
 
