@@ -35,3 +35,11 @@ LR/LALR 문법 작성하는 요령
 
 
 
+  =>
+
+   action rule을 중복해서 작성하는 문제가 발생
+   따라서 parser 작성은 위와 같이 하되, inline 옵션을 적용해서 shift/reduce conflict를
+   해결하면서도 action rule을 중복해서 작성하는 문제를 해결
+
+
+
