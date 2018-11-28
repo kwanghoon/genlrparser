@@ -34,11 +34,11 @@ ProductionRule "Properties" [ Nonterminal "Property", Terminal ",", Nonterminal 
 
 ProductionRule "Property" [ Terminal "balance", Terminal ":", Nonterminal "Expr" ],
 
-ProductionRule "Property" [ Terminal "by", Terminal ":", Terminal "identifier" ],
+ProductionRule "Property" [ Terminal "by", Terminal ":", Terminal "Expr" ],
 
-ProductionRule "Property" [ Terminal "contract", Terminal ":", Terminal "identifier" ],
+ProductionRule "Property" [ Terminal "contract", Terminal ":", Terminal "Expr" ],
 
-ProductionRule "Property" [ Terminal "value", Terminal ":", Terminal "identifier" ],
+ProductionRule "Property" [ Terminal "value", Terminal ":", Terminal "Expr" ],
 
 ProductionRule "Type" [Terminal "bool"],
 
