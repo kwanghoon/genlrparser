@@ -11,13 +11,18 @@ ProductionRule "Statement"
         Terminal "identifier", Nonterminal "OptArgExprs", Terminal ";"],
 
 ProductionRule "Statement"
-    [Nonterminal "OptLhs", Terminal "identifier", Terminal ".", Nonterminal "OptIdentifier", 
+    [Terminal "identifier", Terminal "=", Terminal "identifier", Terminal ".", Nonterminal "OptIdentifier", 
         Terminal "(", Nonterminal "Exprs", Terminal ")",
-        Terminal "{", Nonterminal "Properties", Terminal "}", Terminal ";"],
+        Terminal "{", Nonterminal "Properties", Terminal "}", Terminal ";" ],
 
-ProductionRule "OptLhs" [ Nonterminal "Type", Terminal "identifier", Terminal "=" ],
+ProductionRule "Statement"
+    [ Terminal "identifier", Terminal ".", Nonterminal "OptIdentifier", 
+        Terminal "(", Nonterminal "Exprs", Terminal ")",
+        Terminal "{", Nonterminal "Properties", Terminal "}", Terminal ";" ],
 
-ProductionRule "OptLhs" [  ],
+ProductionRule "Statement" [ Nonterminal "Type", Terminal "identifier", Terminal ";" ],
+
+ProductionRule "Statement" [ Terminal "assert", Nonterminal "Expr", Terminal ";" ],
 
 ProductionRule "OptIdentifier" [ Terminal "identifier" ],
 
@@ -41,11 +46,9 @@ ProductionRule "Type" [Terminal "uint"],
 
 ProductionRule "Type" [Terminal "address"],
 
-
 ProductionRule "OptArgExprs" [],
 
 ProductionRule "OptArgExprs" [ Terminal "(", Nonterminal "Exprs", Terminal ")" ],
-
 
 ProductionRule "Exprs" [],
 
@@ -55,9 +58,7 @@ ProductionRule "MoreThanOneExpr" [ Nonterminal "Expr" ],
 
 ProductionRule "MoreThanOneExpr" [ Nonterminal "Expr", Terminal ",", Nonterminal "MoreThanOneExpr" ],
 
-
 ProductionRule "Expr" [Nonterminal "ExprAssign" ],
-
 
 ProductionRule "ExprAssign" [Terminal "identifier", Terminal "=", Nonterminal "ExprAssign" ],
 
