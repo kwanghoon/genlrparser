@@ -46,6 +46,8 @@ ProductionRule "Type" [Terminal "uint"],
 
 ProductionRule "Type" [Terminal "address"],
 
+ProductionRule "Type" [Terminal "string"],
+
 ProductionRule "OptArgExprs" [],
 
 ProductionRule "OptArgExprs" [ Terminal "(", Nonterminal "Exprs", Terminal ")" ],
@@ -123,6 +125,8 @@ ProductionRule "ExprPrime" [Terminal "identifier"],
 ProductionRule "ExprPrime" [Terminal "number_literal"],
 
 ProductionRule "ExprPrime" [Terminal "bool_literal"],
+
+ProductionRule "ExprPrime" [Terminal "string_literal"],
 
 ProductionRule "ExprPrime" [Terminal "(", Nonterminal "Expr", Terminal ")"]
 
