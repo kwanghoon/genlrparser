@@ -4,6 +4,11 @@ import Lib
 import GenLRParserTable
 import CommonParserUtil
 
-main :: IO ()
-main = putStrLn "Parser..."
+import Lexer
+import Terminal
 
+main :: IO ()
+main = do
+  putStrLn "Lexer..."
+  terminalList <- lexing lexerSpec "123 + x123 \n * z"
+  mapM_ putStrLn $ map terminalToString terminalList
