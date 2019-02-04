@@ -9,6 +9,8 @@ import Terminal
 
 main :: IO ()
 main = do
-  putStrLn "Lexer..."
+  putStrLn "Lexing..."
   terminalList <- lexing lexerSpec "123 + x123 \n * z"
   mapM_ putStrLn $ map terminalToString terminalList
+  putStrLn "Parsing..."
+  

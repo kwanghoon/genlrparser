@@ -18,14 +18,23 @@ data LexerSpec token =
 
 -- Parser Specification
 type ProdRuleStr = String
-type ParseFun ast = () -> ast
+type ParseFun token ast = Stack token ast -> ast
 
-type ParserSpecList ast = [(ProdRuleStr, ParseFun ast)]
-data ParserSpec ast = ParserSpec (ParserSpecList ast)
+type ParserSpecList token ast = [(ProdRuleStr, ParseFun token ast)]
+data ParserSpec token ast =
+  ParserSpec { startSymbol    :: String,
+               parserSpecList :: ParserSpecList token ast,
+               baseDir        :: String,   -- ex) ./
+               actionTblFile  :: String,   -- ex) actiontable.txt
+               gotoTblFile    :: String,   -- ex) gototable.txt
+               grammarFile    :: String,   -- ex) grammar.txt
+               parserSpecFile :: String    -- ex) mygrammar.grm
+               genparserexe   :: String,   -- ex) genlrparse-exe
+             }
 
 -- Specification
 data Spec token ast =
-  Spec (LexerSpec token) (ParserSpec ast)
+  Spec (LexerSpec token) (ParserSpec token ast)
 
 --------------------------------------------------------------------------------  
 -- The lexing machine
@@ -79,6 +88,26 @@ moveLineCol line col (ch:text)   = moveLineCol line (col+1) text
   
 --------------------------------------------------------------------------------  
 -- The parsing machine
---------------------------------------------------------------------------------  
+--------------------------------------------------------------------------------
+
+data StkElem token ast =
+    StkState Int
+  | StkTerminal (Terminal token)
+  | StkNonterminal ast 
+
+type Stack token ast = [StkElem token ast]
+
+get :: Stack token ast -> Int -> st
+get stack i =
+  case stack !! (i-1) of
+    StkNonterminal ast -> ast
+  | _ -> error $ "get: out of bound: " ++ show i
+
+getText :: Stack token ast -> Int -> String
+getText stack i = 
+  case stack !! (i-1) of
+    StkTerminal (Terminal text _ _ _) -> text
+  | _ -> error $ "getText: out of bound: " ++ show i
+
 parsing x = x
 
