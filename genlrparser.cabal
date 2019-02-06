@@ -2,7 +2,7 @@ name:                genlrparser
 version:             0.1.0.0
 -- synopsis:
 -- description:
-homepage:            https://github.com/githubuser/genlrparser#readme
+homepage:            https://github.com/kwanghoon/genlrparser#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Kwanghoon Choi
@@ -13,14 +13,28 @@ build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
 
+-- library genlr-lib
+--   hs-source-dirs:      src/gentable/
+--   exposed-modules:     Lib, CFG, CmdArgs, ParserTable, GenLRParserTable, SampleGrammar, CodeGenC
+--   build-depends:       base >= 4.7 && < 5
+--   default-language:    Haskell2010
+
+-- library parser-lib
+--   hs-source-dirs:      src/parserlib/
+--   exposed-modules:     TokenInterface, Terminal, CommonParserUtil
+--   build-depends:       base >= 4.7 && < 5
+--                      , regex-tdfa
+--   default-language:    Haskell2010
+
 library
   hs-source-dirs:      src/gentable/ src/parserlib/
   exposed-modules:     Lib, CFG, CmdArgs, ParserTable, GenLRParserTable, SampleGrammar, CodeGenC
                      , TokenInterface, Terminal, CommonParserUtil
   build-depends:       base >= 4.7 && < 5
+--                     , genlr-lib, parser-lib
                      , regex-tdfa
   default-language:    Haskell2010
-
+  
 executable genlrparser-exe
   hs-source-dirs:      app/genlrparser
   main-is:             Main.hs
@@ -30,9 +44,9 @@ executable genlrparser-exe
   default-language:    Haskell2010
 
 executable parser-exe
-  hs-source-dirs:      app/parser
+  hs-source-dirs:      app/parser app/parser/ast
   main-is:             Main.hs
-  other-modules:       Token Lexer
+  other-modules:       Token Lexer Expr Parser
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -O2
   build-depends:       base
                      , genlrparser

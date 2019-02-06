@@ -6,6 +6,7 @@ import CommonParserUtil
 
 import Lexer
 import Terminal
+import Parser
 
 main :: IO ()
 main = do

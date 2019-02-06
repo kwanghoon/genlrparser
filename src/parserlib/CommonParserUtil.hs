@@ -28,8 +28,8 @@ data ParserSpec token ast =
                actionTblFile  :: String,   -- ex) actiontable.txt
                gotoTblFile    :: String,   -- ex) gototable.txt
                grammarFile    :: String,   -- ex) grammar.txt
-               parserSpecFile :: String    -- ex) mygrammar.grm
-               genparserexe   :: String,   -- ex) genlrparse-exe
+               parserSpecFile :: String,   -- ex) mygrammar.grm
+               genparserexe   :: String    -- ex) genlrparse-exe
              }
 
 -- Specification
@@ -97,17 +97,17 @@ data StkElem token ast =
 
 type Stack token ast = [StkElem token ast]
 
-get :: Stack token ast -> Int -> st
+get :: Stack token ast -> Int -> ast
 get stack i =
   case stack !! (i-1) of
     StkNonterminal ast -> ast
-  | _ -> error $ "get: out of bound: " ++ show i
+    _ -> error $ "get: out of bound: " ++ show i
 
 getText :: Stack token ast -> Int -> String
 getText stack i = 
   case stack !! (i-1) of
     StkTerminal (Terminal text _ _ _) -> text
-  | _ -> error $ "getText: out of bound: " ++ show i
+    _ -> error $ "getText: out of bound: " ++ show i
 
 parsing x = x
 
