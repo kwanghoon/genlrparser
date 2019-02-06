@@ -6,6 +6,8 @@ import TokenInterface
 import Text.Regex.TDFA
 import System.Exit
 
+import SaveProdRules
+
 -- Lexer Specification
 type RegExpStr    = String
 type LexFun token = String -> Maybe token 
@@ -109,5 +111,12 @@ getText stack i =
     StkTerminal (Terminal text _ _ _) -> text
     _ -> error $ "getText: out of bound: " ++ show i
 
-parsing x = x
+parsing :: TokenInterface token =>
+           ParserSpec token ast -> [Terminal token] -> IO ()
+parsing parserSpec terminalList = do
+  saveProdRules fileName sSym pSpecList
+  where
+    fileName  = parserSpecFile parserSpec
+    sSym      = startSymbol parserSpec
+    pSpecList = map fst (parserSpecList parserSpec)
 

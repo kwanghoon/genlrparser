@@ -6,7 +6,7 @@ import Expr
 
 
 parserSpec :: ParserSpec Token AST
-parserSpec = ParserSpec Token AST
+parserSpec = ParserSpec
   {
     startSymbol = "SeqExpr'",
     
@@ -21,27 +21,27 @@ parserSpec = ParserSpec Token AST
       ("SeqExpr -> AssignExpr", \rhs -> toAstSeq [fromAstExpr (get rhs 1)]),
       
       ("AssignExpr -> identifier = AssignExpr",
-        \rhs -> toAstExpr (Assign (getText rhs 1) (fromExpr (get rhs 3))) ),
+        \rhs -> toAstExpr (Assign (getText rhs 1) (fromAstExpr (get rhs 3))) ),
       
       ("AssignExpr -> AdditiveExpr", \rhs -> get rhs 1),
 
       ("AdditiveExpr -> AdditiveExpr + MultiplicativeExpr",
         \rhs -> toAstExpr (
-          BinOp Add (fromAstExpr (get rhs 1)) (fromAstExpr (get rhs 3))) ),
+          BinOp Expr.ADD (fromAstExpr (get rhs 1)) (fromAstExpr (get rhs 3))) ),
 
       ("AdditiveExpr -> AdditiveExpr - MultiplicativeExpr",
         \rhs -> toAstExpr (
-          BinOp Sub (fromAstExpr (get rhs 1)) (fromAstExpr (get rhs 3))) ),
+          BinOp Expr.SUB (fromAstExpr (get rhs 1)) (fromAstExpr (get rhs 3))) ),
 
       ("AssignExpr -> MultiplicativeExpr", \rhs -> get rhs 1),
 
       ("MultiplicativeExpr -> MultiplicativeExpr * PrimaryExpr",
         \rhs -> toAstExpr (
-          BinOp Mul (fromAstExpr (get rhs 1)) (fromAstExpr (get rhs 3))) ),
+          BinOp Expr.MUL (fromAstExpr (get rhs 1)) (fromAstExpr (get rhs 3))) ),
 
       ("MultiplicativeExpr -> MultiplicativeExpr / PrimaryExpr",
         \rhs -> toAstExpr (
-          BinOp Div (fromAstExpr (get rhs 1)) (fromAstExpr (get rhs 3))) ),
+          BinOp Expr.DIV (fromAstExpr (get rhs 1)) (fromAstExpr (get rhs 3))) ),
 
       ("MultiplicativeExpr -> PrimaryExpr", \rhs -> get rhs 1),
       
@@ -54,9 +54,9 @@ parserSpec = ParserSpec Token AST
     ],
     
     baseDir = "./",
-    actionTblFile = "actiontable.txt",
-    gotoTblFile = "gototable.txt",
-    grammarFile = "grammar.txt",
+    actionTblFile = "action_table.txt",  
+    gotoTblFile = "goto_table.txt",
+    grammarFile = "prod_rules.txt",
     parserSpecFile = "mygrammar.grm",
     genparserexe = "genlrparser-exe"
   }
