@@ -5,8 +5,11 @@ import TokenInterface
 
 import Text.Regex.TDFA
 import System.Exit
+import System.Process
 
 import SaveProdRules
+import AutomatonType
+import LoadAutomaton
 
 -- Lexer Specification
 type RegExpStr    = String
@@ -92,6 +95,7 @@ moveLineCol line col (ch:text)   = moveLineCol line (col+1) text
 -- The parsing machine
 --------------------------------------------------------------------------------
 
+-- Stack
 data StkElem token ast =
     StkState Int
   | StkTerminal (Terminal token)
@@ -111,12 +115,37 @@ getText stack i =
     StkTerminal (Terminal text _ _ _) -> text
     _ -> error $ "getText: out of bound: " ++ show i
 
+-- Automaton
+
+--
 parsing :: TokenInterface token =>
            ParserSpec token ast -> [Terminal token] -> IO ()
 parsing parserSpec terminalList = do
-  saveProdRules fileName sSym pSpecList
+  -- 1. Save the production rules in the parser spec (Parser.hs).
+  saveProdRules specFileName sSym pSpecList
+
+  -- 2. Run the following command to generate prod_rules/action_table/goto_table files.
+  --     stack exec -- genlrparser-exe mygrammar.grm -output prod_rules.txt action_table.txt goto_table.txt
+  exitCode <- rawSystem "stack"
+    [ "exec", "--",
+      "genlrparser-exe", specFileName, "-output",
+      grammarFileName, actionTblFileName, gotoTblFileName
+    ]
+  case exitCode of
+    ExitFailure code -> exitWith exitCode
+    ExitSuccess -> putStrLn "action table/goto table/grammar files are successfully generated..."
+
+  -- 3. Load automaton files (prod_rules/action_table/goto_table.txt)
+  --
+  (actionTbl, gotoTbl, prodRules) <- loadAutomaton grammarFileName actionTblFileName gotoTblFileName
+  
+  putStrLn "done."
   where
-    fileName  = parserSpecFile parserSpec
+    specFileName      = parserSpecFile parserSpec
+    grammarFileName   = grammarFile    parserSpec
+    actionTblFileName = actionTblFile  parserSpec
+    gotoTblFileName   = gotoTblFile    parserSpec
+    
     sSym      = startSymbol parserSpec
     pSpecList = map fst (parserSpecList parserSpec)
 

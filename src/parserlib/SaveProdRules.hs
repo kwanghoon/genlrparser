@@ -15,7 +15,7 @@ saveProdRules fileName startSymbol prodRuleStrs = do
 toCFG :: String -> [String] -> String {- CFG -}
 toCFG startSymbol prodRuleStrs =
   "CFG " ++ show startSymbol ++
-  " [\n" ++ concatWith (toProdRules prodRuleStrs) ",\n" ++ "\n]"
+  " [\n" ++ concatWith (toProdRules prodRuleStrs) ",\n" ++ "\n ]"
 
 toProdRules :: [String] -> [String] {- [ProductionRule] -}
 toProdRules productionRuleStrs = map (toProdRule lhsStrs) lhsRhsStrss
@@ -26,7 +26,7 @@ toProdRules productionRuleStrs = map (toProdRule lhsStrs) lhsRhsStrss
 toProdRule :: [String] -> [String] -> String {- ProductionRule -}
 toProdRule lhsStrs (lhs:rhsStrs) =
   " ProductionRule " ++ show lhs ++
-  " [" ++ concatWith (map (toSymbol lhsStrs) rhsStrs) " " ++ "]"
+  " [" ++ concatWith (map (toSymbol lhsStrs) rhsStrs) ", " ++ "]"
 
 toSymbol :: [String] -> String -> String {- Symbol -}
 toSymbol lhsStrs sym
@@ -37,17 +37,17 @@ toSymbol lhsStrs sym
 tokenizeLhs :: String -> [String]
 tokenizeLhs str =
   case lex str of
-    []              -> error "No lhs (1)"
-    [("",therest)]  -> error "No lhs (2)" 
+    []              -> error "No lhs found (1)"
+    [("",therest)]  -> error "No lhs found (2)" 
     [(lhs,therest)] -> lhs : tokenizeArrow therest
 
 tokenizeArrow :: String -> [String]
 tokenizeArrow str =
   case lex str of
-    []                     -> error "No arrow (1)"
-    [("",therest)]         -> error "No arrow (2)" 
+    []                     -> error "No arrow found (1)"
+    [("",therest)]         -> error "No arrow found (2)" 
     [(arrow@"->",therest)] -> tokenizeRhs therest
-    [(token,therest)]      -> error ("No arrow: " ++ token)
+    [(token,therest)]      -> error ("No arrow found: " ++ token)
     
 tokenizeRhs :: String  -> [String]
 tokenizeRhs str = 
