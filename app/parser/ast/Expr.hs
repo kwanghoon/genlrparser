@@ -21,4 +21,25 @@ data Expr =
 
 data BinOpKind = ADD | SUB | MUL | DIV
 
+pprintAst :: AST -> String
+pprintAst (ASTSeq exprs) =
+  let insSemicolon []         = ""
+      insSemicolon [str]      = str
+      insSemicolon (str:strs) = str ++ "; " ++ insSemicolon strs
+  in insSemicolon (map pprint exprs)
+    
+pprintAst (ASTExpr expr) = pprint expr
 
+pprint :: Expr -> String
+pprint (Lit i) = show i
+pprint (Var v) = v
+pprint (BinOp Expr.ADD left right) =
+  "(" ++ pprint left ++ " + " ++ pprint right ++ ")"
+pprint (BinOp Expr.SUB left right) =
+  "(" ++ pprint left ++ " - " ++ pprint right ++ ")"
+pprint (BinOp Expr.MUL left right) =
+  "(" ++ pprint left ++ " * " ++ pprint right ++ ")"
+pprint (BinOp Expr.DIV left right) =
+  "(" ++ pprint left ++ " / " ++ pprint right ++ ")"
+pprint (Assign x expr) =   
+  "(" ++ x ++ " = " ++ pprint expr ++ ")"

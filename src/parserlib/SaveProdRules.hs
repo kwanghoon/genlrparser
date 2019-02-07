@@ -5,8 +5,8 @@ import CFG
 
 saveProdRules :: String -> String -> [String] -> IO ()
 saveProdRules fileName startSymbol prodRuleStrs = do
-  putStrLn $ fileName ++ ":"
-  putStrLn grmStr
+  -- putStrLn $ fileName ++ ":"
+  -- putStrLn grmStr
   writeFile fileName $ grmStrLn
   where
     grmStr   = toCFG startSymbol prodRuleStrs

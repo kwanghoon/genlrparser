@@ -33,7 +33,7 @@ parserSpec = ParserSpec
         \rhs -> toAstExpr (
           BinOp Expr.SUB (fromAstExpr (get rhs 1)) (fromAstExpr (get rhs 3))) ),
 
-      ("AssignExpr -> MultiplicativeExpr", \rhs -> get rhs 1),
+      ("AdditiveExpr -> MultiplicativeExpr", \rhs -> get rhs 1),
 
       ("MultiplicativeExpr -> MultiplicativeExpr * PrimaryExpr",
         \rhs -> toAstExpr (

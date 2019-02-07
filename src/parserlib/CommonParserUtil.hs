@@ -11,6 +11,9 @@ import SaveProdRules
 import AutomatonType
 import LoadAutomaton
 
+-- TODO
+--  1. It always generates automation. Fix this.
+
 -- Lexer Specification
 type RegExpStr    = String
 type LexFun token = String -> Maybe token 
@@ -95,31 +98,9 @@ moveLineCol line col (ch:text)   = moveLineCol line (col+1) text
 -- The parsing machine
 --------------------------------------------------------------------------------
 
--- Stack
-data StkElem token ast =
-    StkState Int
-  | StkTerminal (Terminal token)
-  | StkNonterminal ast 
-
-type Stack token ast = [StkElem token ast]
-
-get :: Stack token ast -> Int -> ast
-get stack i =
-  case stack !! (i-1) of
-    StkNonterminal ast -> ast
-    _ -> error $ "get: out of bound: " ++ show i
-
-getText :: Stack token ast -> Int -> String
-getText stack i = 
-  case stack !! (i-1) of
-    StkTerminal (Terminal text _ _ _) -> text
-    _ -> error $ "getText: out of bound: " ++ show i
-
--- Automaton
-
 --
 parsing :: TokenInterface token =>
-           ParserSpec token ast -> [Terminal token] -> IO ()
+           ParserSpec token ast -> [Terminal token] -> IO ast
 parsing parserSpec terminalList = do
   -- 1. Save the production rules in the parser spec (Parser.hs).
   saveProdRules specFileName sSym pSpecList
@@ -133,13 +114,21 @@ parsing parserSpec terminalList = do
     ]
   case exitCode of
     ExitFailure code -> exitWith exitCode
-    ExitSuccess -> putStrLn "action table/goto table/grammar files are successfully generated..."
+    ExitSuccess -> putStrLn ("Successfully generated: " ++
+                     actionTblFileName ++ ", "  ++
+                     gotoTblFileName ++ ", " ++
+                     grammarFileName)
 
   -- 3. Load automaton files (prod_rules/action_table/goto_table.txt)
-  --
-  (actionTbl, gotoTbl, prodRules) <- loadAutomaton grammarFileName actionTblFileName gotoTblFileName
+  (actionTbl, gotoTbl, prodRules) <-
+    loadAutomaton grammarFileName actionTblFileName gotoTblFileName
+
+  -- 4. Run the automaton
+  ast <- runAutomaton actionTbl gotoTbl prodRules pFunList terminalList
   
   putStrLn "done."
+  
+  return ast
   where
     specFileName      = parserSpecFile parserSpec
     grammarFileName   = grammarFile    parserSpec
@@ -148,4 +137,135 @@ parsing parserSpec terminalList = do
     
     sSym      = startSymbol parserSpec
     pSpecList = map fst (parserSpecList parserSpec)
+    pFunList  = map snd (parserSpecList parserSpec)
 
+
+-- Stack
+
+data StkElem token ast =
+    StkState Int
+  | StkTerminal (Terminal token)
+  | StkNonterminal ast String -- String for printing Nonterminal instead of ast
+
+type Stack token ast = [StkElem token ast]
+
+emptyStack = []
+
+get :: Stack token ast -> Int -> ast
+get stack i =
+  case stack !! (i-1) of
+    StkNonterminal ast _ -> ast
+    _ -> error $ "get: out of bound: " ++ show i
+
+getText :: Stack token ast -> Int -> String
+getText stack i = 
+  case stack !! (i-1) of
+    StkTerminal (Terminal text _ _ _) -> text
+    _ -> error $ "getText: out of bound: " ++ show i
+
+push :: a -> [a] -> [a]
+push elem stack = elem:stack
+
+pop :: [a] -> (a, [a])
+pop (elem:stack) = (elem, stack)
+pop []           = error "Attempt to pop from the empty stack"
+
+prStack :: TokenInterface token => Stack token ast -> String
+prStack [] = "end"
+prStack (StkState i : stack) = "S" ++ show i ++ " : " ++ prStack stack
+prStack (StkTerminal (Terminal text _ _ token) : stack) =
+  fromToken token ++ "(" ++ text ++ ")" ++ " : " ++ prStack stack
+prStack (StkNonterminal ast str : stack) = str ++ " : " ++ prStack stack
+
+-- Utility for Automation
+currentState :: Stack token ast -> Int
+currentState (StkState i : stack) = i
+currentState _                    = error "No state found in the stack top"
+
+tokenTextFromTerminal :: TokenInterface token => Terminal token -> String
+tokenTextFromTerminal (Terminal _ _ _ token) = fromToken token
+
+lookupActionTable :: ActionTable -> Int -> String -> Action
+lookupActionTable actionTbl state terminalStr =
+  lookupTable actionTbl (state,terminalStr) "Not found in the action table"
+
+lookupGotoTable :: GotoTable -> Int -> String -> Int
+lookupGotoTable gotoTbl state nonterminalStr =
+  lookupTable gotoTbl (state,nonterminalStr) "Not found in the goto table"
+
+lookupTable :: (Eq a, Show a) => [(a,b)] -> a -> String -> b
+lookupTable tbl key msg =   
+  case [ val | (key', val) <- tbl, key==key' ] of
+    [] -> error $ msg ++ " : " ++ show key
+    (h:_) -> h
+
+
+-- Note: take 1th, 3rd, 5th, ... of 2*len elements from stack and reverse it!
+-- example) revTakeRhs 2 [a1,a2,a3,a4,a5,a6,...]
+--          = [a4, a2]
+revTakeRhs :: Int -> [a] -> [a]
+revTakeRhs 0 stack = []
+revTakeRhs n (_:nt:stack) = revTakeRhs (n-1) stack ++ [nt]
+
+-- Automaton
+
+runAutomaton :: TokenInterface token =>
+  {- static part -}
+  ActionTable -> GotoTable -> ProdRules -> [ParseFun token ast] -> 
+  {- dynamic part -}
+  [Terminal token] ->
+  {- AST -}
+  IO ast
+runAutomaton actionTbl gotoTbl prodRules pFunList terminalList = do
+  let initStack = push (StkState 0) emptyStack
+  run terminalList initStack
+  
+  where
+    {- run :: TokenInterface token => [Terminal token] -> Stack token ast -> IO ast -}
+    run terminalList stack = do
+      let state = currentState stack
+      let text  = tokenTextFromTerminal (head terminalList)
+      let action = lookupActionTable actionTbl state text
+      
+      debug ("\nState " ++ show state)
+      debug ("Token " ++ text)
+      debug ("Stack " ++ prStack stack)
+      
+      case action of
+        Accept -> do
+          debug "Accept"
+          
+          case stack !! 1 of
+            StkNonterminal ast _ -> return ast
+            _ -> fail "Not Stknontermianl on Accept"
+        
+        Shift toState -> do
+          debug ("Shift " ++ show toState)
+          
+          let stack1 = push (StkTerminal (head terminalList)) stack
+          let stack2 = push (StkState toState) stack1
+          run (tail terminalList) stack2
+          
+        Reduce n -> do
+          debug ("Reduce " ++ show n)
+          
+          let prodrule   = prodRules !! n
+          
+          debug ("\t" ++ show prodrule)
+          
+          let builderFun = pFunList  !! n
+          let lhs        = fst prodrule
+          let rhsLength  = length (snd prodrule)
+          let rhsAst = revTakeRhs rhsLength stack
+          let ast = builderFun rhsAst
+          let stack1 = drop (rhsLength*2) stack
+          let topState = currentState stack1
+          let toState = lookupGotoTable gotoTbl topState lhs
+          let stack2 = push (StkNonterminal ast lhs) stack1
+          let stack3 = push (StkState toState) stack2
+          run terminalList stack3
+
+flag = False
+
+debug :: String -> IO ()
+debug msg = if flag then putStrLn msg else return ()

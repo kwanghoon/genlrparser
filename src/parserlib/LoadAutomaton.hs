@@ -107,18 +107,26 @@ tokenizeNumInProdRules str =
   case lex str of 
     [] -> fail "No rule number found (1)"
     [("", therest)] -> fail "No rule number found (2)"
-    [(rulenumColon, therest)] -> do
-      let lhsRhsStrs = tokenizeLhs therest
-      let ruleNumStr = init rulenumColon
-      let colonStr   = last rulenumColon
-      return (read ruleNumStr :: Int, head lhsRhsStrs, tail lhsRhsStrs)
+    [(ruleNumStr, therest)] -> do
+      (lhs, rhs) <- tokenizeColonInProdRules therest
+      return (read ruleNumStr :: Int, lhs, rhs)
 
+tokenizeColonInProdRules :: String -> IO (String, [String])
+tokenizeColonInProdRules str =
+  case lex str of
+    [] -> fail "No colon found (1)"
+    [("", therest)] -> fail "No colon found (2)"
+    [(colon, therest)] -> do
+      let lhsRhs = tokenizeLhs therest
+      return (head lhsRhs, tail lhsRhs)
+    
 
 splitWithCR :: String -> [String]
-splitWithCR str = splitWithCR' "" str
+splitWithCR str =
+  [ line | line <- splitWithCR' "" str, line /= "" ]
 
 splitWithCR' :: String -> String -> [String]
 splitWithCR' app [] = (reverse app) : []
-splitWithCR' app ('\n':therest) = (reverse app) : splitWithCR' app therest
+splitWithCR' app ('\n':therest) = (reverse app) : splitWithCR' "" therest
 splitWithCR' app (ch:therest) = splitWithCR' (ch : app) therest
       
