@@ -37,6 +37,8 @@ executable parser-exe
   build-depends:       base
                      , regex-tdfa
                      , process >= 1.4.3
+                     , hashable
+                     , directory
                      , genlrparser
   default-language:    Haskell2010
 

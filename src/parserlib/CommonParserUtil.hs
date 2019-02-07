@@ -6,6 +6,7 @@ import TokenInterface
 import Text.Regex.TDFA
 import System.Exit
 import System.Process
+import Control.Monad
 
 import SaveProdRules
 import AutomatonType
@@ -103,21 +104,12 @@ parsing :: TokenInterface token =>
            ParserSpec token ast -> [Terminal token] -> IO ast
 parsing parserSpec terminalList = do
   -- 1. Save the production rules in the parser spec (Parser.hs).
-  saveProdRules specFileName sSym pSpecList
+  writtenBool <- saveProdRules specFileName sSym pSpecList
 
-  -- 2. Run the following command to generate prod_rules/action_table/goto_table files.
+  -- 2. If the grammar file is written,
+  --    run the following command to generate prod_rules/action_table/goto_table files.
   --     stack exec -- genlrparser-exe mygrammar.grm -output prod_rules.txt action_table.txt goto_table.txt
-  exitCode <- rawSystem "stack"
-    [ "exec", "--",
-      "genlrparser-exe", specFileName, "-output",
-      grammarFileName, actionTblFileName, gotoTblFileName
-    ]
-  case exitCode of
-    ExitFailure code -> exitWith exitCode
-    ExitSuccess -> putStrLn ("Successfully generated: " ++
-                     actionTblFileName ++ ", "  ++
-                     gotoTblFileName ++ ", " ++
-                     grammarFileName)
+  when writtenBool generateAutomaton
 
   -- 3. Load automaton files (prod_rules/action_table/goto_table.txt)
   (actionTbl, gotoTbl, prodRules) <-
@@ -129,6 +121,7 @@ parsing parserSpec terminalList = do
   putStrLn "done."
   
   return ast
+
   where
     specFileName      = parserSpecFile parserSpec
     grammarFileName   = grammarFile    parserSpec
@@ -139,6 +132,18 @@ parsing parserSpec terminalList = do
     pSpecList = map fst (parserSpecList parserSpec)
     pFunList  = map snd (parserSpecList parserSpec)
 
+    generateAutomaton = do
+      exitCode <- rawSystem "stack"
+                  [ "exec", "--",
+                    "genlrparser-exe", specFileName, "-output",
+                    grammarFileName, actionTblFileName, gotoTblFileName
+                  ]
+      case exitCode of
+        ExitFailure code -> exitWith exitCode
+        ExitSuccess -> putStrLn ("Successfully generated: " ++
+                                 actionTblFileName ++ ", "  ++
+                                 gotoTblFileName ++ ", " ++
+                                 grammarFileName);
 
 -- Stack
 

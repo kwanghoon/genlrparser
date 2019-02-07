@@ -1,13 +1,13 @@
 module SaveProdRules where
 
+import Data.Hashable
 import System.IO
+import System.Directory
 import CFG
 
-saveProdRules :: String -> String -> [String] -> IO ()
+saveProdRules :: String -> String -> [String] -> IO Bool
 saveProdRules fileName startSymbol prodRuleStrs = do
-  -- putStrLn $ fileName ++ ":"
-  -- putStrLn grmStr
-  writeFile fileName $ grmStrLn
+  writeOnceWithHash fileName grmStrLn
   where
     grmStr   = toCFG startSymbol prodRuleStrs
     grmStrLn = grmStr ++ "\n"
@@ -61,3 +61,28 @@ concatWith :: [String] -> String -> String
 concatWith [] sep = ""
 concatWith [a] sep = a
 concatWith (a:b:theRest) sep = a ++ sep ++ concatWith (b:theRest) sep
+
+writeOnceWithHash :: String -> String -> IO Bool
+writeOnceWithHash fileName text = do
+  let hashFileName = fileName ++ ".hash"
+  let newHash = hash text
+  
+  fileExists <- doesFileExist fileName
+  hashExists <- doesFileExist hashFileName
+
+  case fileExists && hashExists of
+    False -> do
+      writeFile fileName text
+      writeFile hashFileName (show newHash)
+      return True
+
+    True  -> do
+      existingHashStr <- readFile hashFileName
+      
+      case newHash == (read existingHashStr :: Int) of
+        True -> return False
+        False -> do
+          writeFile fileName text
+          writeFile hashFileName (show newHash)
+          return True
+    
