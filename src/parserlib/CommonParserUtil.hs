@@ -12,9 +12,6 @@ import SaveProdRules
 import AutomatonType
 import LoadAutomaton
 
--- TODO
---  1. It always generates automation. Fix this.
-
 -- Lexer Specification
 type RegExpStr    = String
 type LexFun token = String -> Maybe token 
