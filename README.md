@@ -8,6 +8,7 @@ A Parser Table Generator
 - Grammar files written in Haskell datatype CFG
 
 How to run:
+~~~~
   $ stack build
   
   $ cat grm/example.grm
@@ -89,6 +90,7 @@ How to run:
   $ stack exec genlrparser grm/example.grm -output prod_rules.txt action_table.txt goto_table.txt
 
   ... to write the automaton printed above in the three text files ...
+~~~~
 
 
 A SWLAB Parser Builder in Haskell
@@ -98,6 +100,7 @@ A SWLAB Parser Builder in Haskell
 
 How to run:
 
+~~~~
   $ stack build
 
   $ ls app/parser/*.hs
@@ -226,6 +229,8 @@ How to run:
   done.
   Pretty Printing...
   (x = 123); (x = (x + 1)); (y = x); (y = (y - ((1 * 2) / 3))); (z = (y = x))
+~~~~
+
 
 
 
