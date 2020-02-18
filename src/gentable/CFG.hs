@@ -1,6 +1,6 @@
 module CFG where
 
-import Data.List(nub)
+import Data.List(nub,intersperse)
 
 --------------------------------------------------------------------------------
 -- Context Free Grammar
@@ -52,3 +52,13 @@ startNonterminal (CFG s prules) = s
 nonterminals augCfg = nub $ [s] ++ [x | ProductionRule x _ <- prules]
   where
     CFG s prules = augCfg
+
+prodRuleToStr (ProductionRule s syms) =
+  "ProductionRule " ++ show s
+    ++  " [" ++ concat (intersperse ", " (map symbolToStr syms)) ++ "]"
+
+symbolToStr (Nonterminal x) = "Nonterminal " ++ show x
+symbolToStr (Terminal x) = "Terminal " ++ show x
+
+
+

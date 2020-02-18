@@ -1,0 +1,151 @@
+
+Identifiers
+  = identifier
+  | identifier Identifiers
+
+OptIdentifiers
+  =
+  | Identifiers
+
+
+;; Grammar for types
+
+Type
+  = PolyAbsType
+  | PolyAbsType LocFun Type
+
+PolyAbsType
+  = { Identifiers } . PolyAbsType
+  | [ Identifiers ] . PolyAbsType
+  | PrimaryType
+
+PrimaryType
+  = Unit
+  | Int
+  | Bool
+  | String
+  | identifier
+  | TupleType
+  | ( Type )
+
+TupleType
+  = ( Type , TypeSeq )
+
+TypeSeq
+  = Type
+  | Type , TypeSeq
+
+Types
+  = Type
+  | Type Types
+
+OptTypes
+  =
+  | Types
+
+;; Grammar for terms
+
+TopLevel
+  = Binding
+  | Binding ; TopLevel
+  | data Identifiers = { TypeConDecls }
+  | data Identifiers = { TypeConDecls } ; TopLevel
+
+TypeConDecl
+  = identifier OptTypes
+
+TypeConDecls
+  = TypeConDecl
+  | TypeConDecl | TypeConDecls
+
+Binding
+  = identifier : Type = LExpr
+    
+Bindings
+  = Binding 
+  | Binding ; Bindings
+
+LExpr
+  = { Identifiers } . LExpr
+  | forall Identifiers . LExpr
+  | \ IdLocSeq . LExpr
+  | let { Bindings } LExpr end
+  | if Expr then LExpr else LExpr
+  | case Expr { Alternatives } 
+  | Expr
+
+IdLocSeq
+  = identifier @ Location
+  | identifier @ Location IdLocSeq
+
+Location
+  = identifier
+
+Alternatives
+  = Alternative
+  | Alternative ; Alternatives
+
+Alternative
+  = identifier OptIdentifiers => LExpr
+
+Expr
+  = Expr Term
+  | Expr [ Identifiers ]
+  | Tuple
+  | Cond
+
+Tuple
+  = ( LExpr , LExprSeq )
+     
+LExprSeq
+  = LExpr 
+  | LExpr , LExprSeq
+
+Cond
+  = LogicNot
+
+LogicNot
+  = ! LogicNot
+  | LogicOr
+
+LogicOr
+  = LogicOr or LogicAnd
+  | LogicAnd
+
+LogicAnd
+  = LogicAnd and CompEqNeq
+  | CompEqNeq
+
+CompEqNeq
+  = CompEqNeq == Comp
+  | CompEqNeq != Comp
+  | Comp
+
+Comp
+  = Comp < ArithAddSub
+  | Comp <= ArithAddSub
+  | Comp > ArithAddSub
+  | Comp >= ArithAddSub
+  | ArithAddSub
+
+ArithAddSub
+  = ArithAddSub + ArithMulDiv
+  | ArithAddSub - ArithMulDiv
+  | ArithMulDiv
+
+ArithMulDiv
+  = ArithMulDiv * ArithUnary
+  | ArithMulDiv / ArithUnary
+  | ArithUnary
+      
+ArithUnary
+  = - Term
+  | Term
+
+Term
+  = identifier
+  | number
+  | string
+  | boolean
+  | ()
+  | ( LExpr )
