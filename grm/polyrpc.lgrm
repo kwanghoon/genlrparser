@@ -1,3 +1,6 @@
+; This is an example of a human-readable grammar format
+; To convert it into the format by the parser tool
+;  $ stacke exec conv-exe grm/polyrpc.lgrm
 
 Identifiers
   = identifier
