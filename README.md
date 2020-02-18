@@ -233,5 +233,14 @@ How to write and run a parser :
 ~~~~
 
 
+### (3) Documents
 
+- [Parser generators sharing LR automaton generators and accepting general-purpose programming language-based specifications, J. of KIISE, 47(1), January 2020](http://swlab.jnumar.ac.kr/paper/kiise202001.pdf) Written in Korean.
 
+- This LALR(1) parser automation generator library is used by [Java parser](https://githbu.com/kwanghoon/swlab_parser_builder), [C++ parser](https://github.com/tlsdorye/swlab-parser-lib), and [Python parser](https://github.com/limjintack/swlab_parser_python).
+
+- <img src="https://github.com/kwanghoon/genlrparser/blob/master/genlrparser/doc/parserinaction.png"/>
+
+- <img src="https://github.com/kwanghoon/genlrparser/blob/master/genlrparser/doc/parsertoolarchitecture.png"/>
+
+- [A topdown approach to writing a compiler](https://github.com/kwanghoon/swlab_parser_builder/blob/master/doc/tutorial_swlab_parser_builder.txt) Written in Korean.
