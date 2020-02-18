@@ -19,7 +19,7 @@ How to run:
     ProductionRule "C" [Terminal "d"]
   ]
   
-  $ stack exec genlrparser grm/example.grm
+  $ stack exec genlrparser-exe grm/example.grm
   7 states
   I0:
   [S' -> .S, $]
