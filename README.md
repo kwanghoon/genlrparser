@@ -1,9 +1,9 @@
-## A LALR(1) Parser Builder
+## An LALR(1) Parser Builder
 
 Copyright (C) 2013- Kwanghoon Choi
 
 
-(1) A Parser Table Generator
+### (1) A Parser Table Generator
 
 - LR(1)/ LALR(1) parser tables
 - Grammar files written in Haskell datatype CFG
@@ -94,7 +94,7 @@ How to run an automation generator (genlrparser-exe):
 ~~~~
 
 
-(2) A Parser Builder in Haskell
+### (2) A Parser Builder in Haskell
 - Not a parser generator
 - A library-based parser builder
 - Write your LALR(1) parser in Haskell, not in Happy (+ Alex) nor in any other parser language
