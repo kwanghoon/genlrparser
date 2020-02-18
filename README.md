@@ -8,7 +8,7 @@ Copyright (C) 2013- Kwanghoon Choi
 - LR(1)/ LALR(1) parser tables
 - Grammar files written in Haskell datatype CFG
 
-How to run an automation generator (genlrparser-exe):
+How to run an LALR(1) automaton generator (genlrparser-exe):
 ~~~~
   $ stack build
   
@@ -237,7 +237,7 @@ How to write and run a parser :
 
 - [Parser generators sharing LR automaton generators and accepting general-purpose programming language-based specifications, J. of KIISE, 47(1), January 2020](http://swlab.jnu.ac.kr/paper/kiise202001.pdf) Written in Korean.
 
-- This LALR(1) parser automation generator library is used by [Java parser](https://github.com/kwanghoon/swlab_parser_builder), [C++ parser](https://github.com/tlsdorye/swlab-parser-lib), and [Python parser](https://github.com/limjintack/swlab_parser_python).
+- This LALR(1) parser automaton generator library is used by [Java parser](https://github.com/kwanghoon/swlab_parser_builder), [C++ parser](https://github.com/tlsdorye/swlab-parser-lib), and [Python parser](https://github.com/limjintack/swlab_parser_python).
 
 - Parser in action
   * <img src="https://github.com/kwanghoon/genlrparser/blob/master/doc/parserinaction.png"/>
