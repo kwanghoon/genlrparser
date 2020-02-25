@@ -72,7 +72,7 @@ Bindings
 
 LExpr
   = { Identifiers } . LExpr
-  | forall Identifiers . LExpr
+  | [ Identifiers ] . LExpr
   | \ IdLocSeq . LExpr
   | let { Bindings } LExpr end
   | if Expr then LExpr else LExpr
@@ -96,6 +96,7 @@ Alternative
 Expr
   = Expr Term
   | Expr [ Identifiers ]
+  | Expr { Identifiers }
   | Tuple
   | Cond
 
