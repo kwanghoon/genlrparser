@@ -5,3 +5,4 @@ goto_table.txt
 prod_rules.txt
 mygrammar.grm
 mygrammar.grm.hash
+stack.yaml.lock

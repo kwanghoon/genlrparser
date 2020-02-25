@@ -2,6 +2,8 @@
 ; To convert it into the format by the parser tool
 ;  $ stacke exec conv-exe grm/polyrpc.lgrm
 
+@start TopLevel
+
 Identifiers
   = identifier
   | identifier Identifiers
