@@ -153,5 +153,5 @@ Term
   | number
   | string
   | boolean
-  | ()
+  | ( )
   | ( LExpr )

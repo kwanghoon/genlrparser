@@ -82,6 +82,6 @@ ProductionRule "Term" [Terminal "identifier"],
 ProductionRule "Term" [Terminal "number"],
 ProductionRule "Term" [Terminal "string"],
 ProductionRule "Term" [Terminal "boolean"],
-ProductionRule "Term" [Terminal "()"],
+ProductionRule "Term" [Terminal "(", Terminal ")"],
 ProductionRule "Term" [Terminal "(", Nonterminal "LExpr", Terminal ")"]
 ]
