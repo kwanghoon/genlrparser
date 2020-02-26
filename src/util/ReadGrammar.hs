@@ -130,8 +130,8 @@ conversion text = do
         let startsymbol' = startsymbol ++ "'"
         let startprod = ProductionRule startsymbol' [ Nonterminal startsymbol ]
         let prodrules = startprod : prodrules_
-        putStrLn $ "CFG " ++ show startsymbol'
-        putStrLn $ "["
-        putStrLn $ concat (intersperse ",\n" (map prodRuleToStr prodrules))  -- May replace prodRuleToStr with show
+        putStr $ "CFG " ++ show startsymbol' ++ " [\n "
+        -- May replace prodRuleToStr with show
+        putStrLn $ concat (intersperse ",\n " (map prodRuleToStr prodrules))  
         putStrLn $ "]"
     

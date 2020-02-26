@@ -12,16 +12,23 @@ data AST =
   | ASTType    { fromASTType    :: Type  }
   | ASTLocationSeq { fromASTLocationSeq :: [Location] }
   | ASTLocation    { fromASTLocation    :: Location  }
-  | ASTTopLevelDeclSeq { fromASTTopLevelDecl :: [TopLevelDecl] }
-  | ASTBindingSeq { fromASTBindingSeq :: [Binding] }
-  | ASTBinding    { fromASTBinding    :: Binding  }
+  
+  | ASTBindingDeclSeq { fromASTBindingDeclSeq :: [BindingDecl] }
+  | ASTBindingDecl    { fromASTBindingDecl    :: BindingDecl  }
+
+  | ASTDataTypeDecl { fromASTDataTypeDecl :: DataTypeDecl }
+
+  | ASTTopLevelDeclSeq { fromASTTopLevelDeclSeq :: [TopLevelDecl] }
+  
   | ASTTypeConDeclSeq { fromASTTypeConDeclSeq :: [TypeConDecl] }
   | ASTTypeConDecl { fromASTTypeConDecl :: TypeConDecl }
-  | ASTDataType { fromASTDataType :: DataType }
+  
   | ASTIdLocSeq { fromASTIdLocSeq :: [(String,Location)] }
   | ASTIdLoc { fromASTIdLoc :: (String,Location) }
+  
   | ASTAlternativeSeq { fromASTAlternativeSeq :: [Alternative] }
   | ASTAlternative { fromASTAlternative :: Alternative }
+  
   | ASTLit { fromASTLit :: Lit }
 
 toASTExprSeq exprs = ASTExprSeq exprs
@@ -32,16 +39,23 @@ toASTTypeSeq types = ASTTypeSeq types
 toASTType ty     = ASTType ty
 toASTLocationSeq locations = ASTLocationSeq locations
 toASTLocation location     = ASTLocation location
+
+toASTBindingDeclSeq bindings = ASTBindingDeclSeq bindings
+toASTBindingDecl binding     = ASTBindingDecl binding
+
+toASTDataTypeDecl datatype     = ASTDataTypeDecl datatype
+
 toASTTopLevelDeclSeq toplevel = ASTTopLevelDeclSeq toplevel
-toASTBindingSeq bindings = ASTBindingSeq bindings
-toASTBinding binding     = ASTBinding binding
+
 toASTTypeConDeclSeq typecondecls = ASTTypeConDeclSeq typecondecls
 toASTTypeConDecl typecondecl     = ASTTypeConDecl typecondecl
-toASTDataType datatype     = ASTDataType datatype
+
 toASTIdLocSeq idlocs = ASTIdLocSeq idlocs
 toASTIdLoc idloc     = ASTIdLoc idloc
+
 toASTAlternativeSeq alts = ASTAlternativeSeq alts
 toASTAlternative alt     = ASTAlternative alt
+
 toASTLit lit     = ASTLit lit
 
 --
@@ -50,7 +64,7 @@ data Expr =
   | TypeAbs [String] Expr
   | LocAbs [String] Expr
   | Abs [(String, Location)] Expr
-  | Let [Binding] Expr
+  | Let [BindingDecl] Expr
   | Case Expr [Alternative]
   | App Expr Expr
   | TypeApp Expr [String]
@@ -85,18 +99,18 @@ data PrimOp =
   | DivPrimOp
   | NegPrimOp
 
-data Binding =
+data BindingDecl =
     Binding String Type Expr
 
-data DataType =
+data DataTypeDecl =
     DataType String [String] [TypeConDecl]
 
 data TopLevelDecl =
-    BindingDecl Binding
-  | DataTypeDecl DataType
+    BindingTopLevel BindingDecl
+  | DataTypeTopLevel DataTypeDecl
 
 data TypeConDecl =
-   TypeConDecl String [Type]
+   TypeCon String [Type]
 
 data Alternative =
   Alternative String [String] Expr

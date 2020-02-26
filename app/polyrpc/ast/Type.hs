@@ -14,9 +14,10 @@ data Type =
   | TypeAbsType [String] Type
   | LocAbsType [String] Type
 
-data TypeDecl =
-  DataType String [String] [ConDecl]
+-- data TypeDecl =
+--   TypeDecl String [String] [ConDecl]
 
-data ConDecl =
-  ConDecl String [Type]
+-- data ConDecl =
+--   ConDecl String [Type]
+
 
