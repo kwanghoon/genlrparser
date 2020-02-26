@@ -13,6 +13,7 @@ data Type =
   | FunType Type Location Type
   | TypeAbsType [String] Type
   | LocAbsType [String] Type
+  | ConType Type [Type]
 
 -- data TypeDecl =
 --   TypeDecl String [String] [ConDecl]

@@ -187,13 +187,15 @@ currentState _                    = error "No state found in the stack top"
 tokenTextFromTerminal :: TokenInterface token => Terminal token -> String
 tokenTextFromTerminal (Terminal _ _ _ token) = fromToken token
 
-lookupActionTable :: ActionTable -> Int -> String -> Action
-lookupActionTable actionTbl state terminalStr =
-  lookupTable actionTbl (state,terminalStr) "Not found in the action table"
+lookupActionTable :: TokenInterface token => ActionTable -> Int -> (Terminal token) -> Action
+lookupActionTable actionTbl state terminal =
+  lookupTable actionTbl (state,tokenTextFromTerminal terminal)
+     ("Not found in the action table: " ++ terminalToString terminal) 
 
 lookupGotoTable :: GotoTable -> Int -> String -> Int
 lookupGotoTable gotoTbl state nonterminalStr =
-  lookupTable gotoTbl (state,nonterminalStr) "Not found in the goto table"
+  lookupTable gotoTbl (state,nonterminalStr)
+     ("Not found in the goto table: ")
 
 lookupTable :: (Eq a, Show a) => [(a,b)] -> a -> String -> b
 lookupTable tbl key msg =   
@@ -226,8 +228,9 @@ runAutomaton actionTbl gotoTbl prodRules pFunList terminalList = do
     {- run :: TokenInterface token => [Terminal token] -> Stack token ast -> IO ast -}
     run terminalList stack = do
       let state = currentState stack
-      let text  = tokenTextFromTerminal (head terminalList)
-      let action = lookupActionTable actionTbl state text
+      let terminal = head terminalList
+      let text  = tokenTextFromTerminal terminal
+      let action = lookupActionTable actionTbl state terminal
       
       debug ("\nState " ++ show state)
       debug ("Token " ++ text)

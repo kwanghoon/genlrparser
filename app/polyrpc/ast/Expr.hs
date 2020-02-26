@@ -67,7 +67,7 @@ data Expr =
   | Let [BindingDecl] Expr
   | Case Expr [Alternative]
   | App Expr Expr
-  | TypeApp Expr [String]
+  | TypeApp Expr [Type]
   | LocApp Expr [String]
   | Tuple [Expr]
   | Prim PrimOp [Expr]

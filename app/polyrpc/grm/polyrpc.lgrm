@@ -29,9 +29,13 @@ PrimaryType
   | Int
   | Bool
   | String
-  | identifier
   | TupleType
   | ( Type )
+  | IdentifierOrTypeApplication
+
+IdentifierOrTypeApplication
+  = identifier
+  | identifier < Types >
 
 TupleType
   = ( Type , TypeSeq )

@@ -55,11 +55,16 @@ parserSpec = ParserSpec
 
       ("PrimaryType -> String", \rhs -> toASTType StringType),
 
-      ("PrimaryType -> identifier", \rhs -> toASTType (TypeVarType (getText rhs 1)) ),
-
       ("PrimaryType -> TupleType", \rhs -> get rhs 1 ),
 
       ("PrimaryType -> ( Type )", \rhs -> get rhs 2 ),
+
+      ("PrimaryType -> IdentifierOrTypeApplication", \rhs -> get rhs 1 ),
+
+      ("IdentifierOrTypeApplication -> identifier", \rhs -> toASTType (TypeVarType (getText rhs 1)) ),
+
+      ("IdentifierOrTypeApplication -> identifier < Types >",
+        \rhs -> toASTType (ConType (TypeVarType (getText rhs 1)) (fromASTTypeSeq (get rhs 3)))),
 
       ("TupleType -> ( Type , TypeSeq )",
         \rhs -> toASTType (TupleType $
@@ -163,8 +168,8 @@ parserSpec = ParserSpec
       ("Expr -> Expr Term",
         \rhs -> toASTExpr (App (fromASTExpr (get rhs 1)) (fromASTExpr (get rhs 2))) ),
 
-      ("Expr -> Expr [ Identifiers ]",
-        \rhs -> toASTExpr (TypeApp (fromASTExpr (get rhs 1)) (fromASTIdSeq (get rhs 3))) ),
+      ("Expr -> Expr [ Types ]",
+        \rhs -> toASTExpr (TypeApp (fromASTExpr (get rhs 1)) (fromASTTypeSeq (get rhs 3))) ),
 
       ("Expr -> Expr { Identifiers }",
         \rhs -> toASTExpr (LocApp (fromASTExpr (get rhs 1)) (fromASTIdSeq (get rhs 3))) ),

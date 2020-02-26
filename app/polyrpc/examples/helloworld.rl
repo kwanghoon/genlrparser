@@ -1,3 +1,3 @@
 
-main = print "Hello World\n"
+main : Unit = print "Hello World\n"
 

@@ -42,8 +42,7 @@ data Token =
   | SUB_TOKEN
   | MUL_TOKEN
   | DIV_TOKEN
-  
-  | UNIT_TOKEN
+
   | INTEGER_TOKEN
   | BOOLEAN_TOKEN
   | STRING_TOKEN
@@ -59,12 +58,12 @@ tokenStrList =
   [ (END_OF_TOKEN, "$"),
     (OPEN_PAREN_TOKEN, "("),
     (CLOSE_PAREN_TOKEN, ")"),
-    (OPEN_BRACE_TOKEN, "("),
-    (CLOSE_BRACE_TOKEN, ")"),
-    (OPEN_BRACKET_TOKEN, "("),
-    (CLOSE_BRACKET_TOKEN, ")"),
+    (OPEN_BRACE_TOKEN, "{"),
+    (CLOSE_BRACE_TOKEN, "}"),
+    (OPEN_BRACKET_TOKEN, "["),
+    (CLOSE_BRACKET_TOKEN, "]"),
     (IDENTIFIER_TOKEN, "identifier"),
-    (LOCFUN_TOKEN, "-loc->"),
+    (LOCFUN_TOKEN, "LocFun"),
     (DOT_TOKEN, "."),
     (COMMA_TOKEN, ","),
     (SEMICOLON_TOKEN, ";"),
@@ -94,13 +93,13 @@ tokenStrList =
     (SUB_TOKEN, "-"),
     (MUL_TOKEN, "*"),
     (DIV_TOKEN, "/"),
-    (INTEGER_TOKEN, "integer_token"),
-    (BOOLEAN_TOKEN, "boolean_token"),
-    (STRING_TOKEN, "string_token"),
-    (UNIT_TYPE_TOKEN, "unity_type__token"),
-    (INTEGER_TYPE_TOKEN, "integer_type_token"),
-    (BOOLEAN_TYPE_TOKEN, "boolean_type_token"),
-    (STRING_TYPE_TOKEN, "string_type_token")
+    (INTEGER_TOKEN, "integer"),
+    (BOOLEAN_TOKEN, "boolean"),
+    (STRING_TOKEN, "string"),
+    (UNIT_TYPE_TOKEN, "Unit"),
+    (INTEGER_TYPE_TOKEN, "Int"),
+    (BOOLEAN_TYPE_TOKEN, "Bool"),
+    (STRING_TYPE_TOKEN, "String")
   ]
 
 findTok tok [] = Nothing
