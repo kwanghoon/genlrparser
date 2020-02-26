@@ -1,0 +1,163 @@
+; This is an example of a human-readable grammar format
+; To convert it into the format by the parser tool
+;  $ stacke exec conv-exe grm/polyrpc.lgrm
+
+@start TopLevel
+
+Identifiers
+  = identifier
+  | identifier Identifiers
+
+OptIdentifiers
+  =
+  | Identifiers
+
+
+;; Grammar for types
+
+Type
+  = PolyAbsType
+  | PolyAbsType LocFun Type
+
+PolyAbsType
+  = { Identifiers } . PolyAbsType
+  | [ Identifiers ] . PolyAbsType
+  | PrimaryType
+
+PrimaryType
+  = Unit
+  | Int
+  | Bool
+  | String
+  | identifier
+  | TupleType
+  | ( Type )
+
+TupleType
+  = ( Type , TypeSeq )
+
+TypeSeq
+  = Type
+  | Type , TypeSeq
+
+Types
+  = Type
+  | Type Types
+
+OptTypes
+  =
+  | Types
+
+;; Grammar for terms
+
+TopLevel
+  = Binding
+  | Binding ; TopLevel
+  | DataTypeDecl
+  | DataTypeDecl ; TopLevel
+
+DataTypeDecl
+  = data Identifiers = { TypeConDecls }
+
+TypeConDecl
+  = identifier OptTypes
+
+TypeConDecls
+  = TypeConDecl
+  | TypeConDecl | TypeConDecls
+
+Binding
+  = identifier : Type = LExpr
+    
+Bindings
+  = Binding 
+  | Binding ; Bindings
+
+LExpr
+  = { Identifiers } . LExpr
+  | [ Identifiers ] . LExpr
+  | \ IdLocSeq . LExpr
+  | let { Bindings } LExpr end
+  | if Expr then LExpr else LExpr
+  | case Expr { Alternatives } 
+  | Expr
+
+IdLocSeq
+  = IdLoc
+  | IdLoc IdLocSeq
+
+IdLoc
+  = identifier @ Location
+
+Location
+  = identifier
+
+Alternatives
+  = Alternative
+  | Alternative ; Alternatives
+
+Alternative
+  = identifier OptIdentifiers => LExpr
+
+Expr
+  = Expr Term
+  | Expr [ Identifiers ]
+  | Expr { Identifiers }
+  | Tuple
+  | ConditionalExpr
+
+Tuple
+  = ( LExpr , LExprSeq )
+     
+LExprSeq
+  = LExpr 
+  | LExpr , LExprSeq
+
+ConditionalExpr
+  = LogicNot
+
+LogicNot
+  = ! LogicNot
+  | LogicOr
+
+LogicOr
+  = LogicOr or LogicAnd
+  | LogicAnd
+
+LogicAnd
+  = LogicAnd and CompEqNeq
+  | CompEqNeq
+
+CompEqNeq
+  = CompEqNeq == Comp
+  | CompEqNeq != Comp
+  | Comp
+
+Comp
+  = Comp < ArithAddSub
+  | Comp <= ArithAddSub
+  | Comp > ArithAddSub
+  | Comp >= ArithAddSub
+  | ArithAddSub
+
+ArithAddSub
+  = ArithAddSub + ArithMulDiv
+  | ArithAddSub - ArithMulDiv
+  | ArithMulDiv
+
+ArithMulDiv
+  = ArithMulDiv * ArithUnary
+  | ArithMulDiv / ArithUnary
+  | ArithUnary
+      
+ArithUnary
+  = - Term
+  | Term
+
+Term
+  = identifier
+  | integer
+  | string
+  | boolean
+  | ( )
+  | ( LExpr )

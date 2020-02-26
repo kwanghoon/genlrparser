@@ -10,7 +10,7 @@ data Type =
   | StringType
   | TypeVarType String
   | TupleType [Type]
-  | FunType Type Locatin Type
+  | FunType Type Location Type
   | TypeAbsType [String] Type
   | LocAbsType [String] Type
 

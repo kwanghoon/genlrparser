@@ -42,7 +42,17 @@ executable conv-exe
   build-depends:       base
                      , genlrparser
   default-language:    Haskell2010
-  
+
+executable polyrpc-exe
+  hs-source-dirs:      app/polyrpc app/polyrpc/ast 
+  main-is:             Main.hs
+  other-modules:       Token, Lexer, Type, Expr
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -O2
+  build-depends:       base
+                     , regex-tdfa
+                     , genlrparser
+  default-language:    Haskell2010
+
 executable parser-exe
   hs-source-dirs:      app/parser app/parser/ast 
   main-is:             Main.hs
