@@ -12,9 +12,7 @@ data AST =
   | ASTType    { fromASTType    :: Type  }
   | ASTLocationSeq { fromASTLocationSeq :: [Location] }
   | ASTLocation    { fromASTLocation    :: Location  }
-  | ASTTopLevel { fromASTTopLevel :: [TopLevel] }
-  | ASTBindingSeq { fromASTBindingSeq :: [Binding] }
-  | ASTBinding    { fromASTBinding    :: Binding  }
+  | ASTTopLevelDeclSeq { fromASTTopLevelDecl :: [TopLevelDecl] }
   | ASTBindingSeq { fromASTBindingSeq :: [Binding] }
   | ASTBinding    { fromASTBinding    :: Binding  }
   | ASTTypeConDeclSeq { fromASTTypeConDeclSeq :: [TypeConDecl] }
@@ -31,10 +29,10 @@ toASTExpr expr     = ASTExpr expr
 toASTIdSeq   ids   = ASTIdSeq ids
 toASTId   id       = ASTId id
 toASTTypeSeq types = ASTTypeSeq types
-toASTType type     = ASTType type
+toASTType ty     = ASTType ty
 toASTLocationSeq locations = ASTLocationSeq locations
 toASTLocation location     = ASTLocation location
-toASTTopLevel toplevel = ASTTopLevel toplevel
+toASTTopLevelDeclSeq toplevel = ASTTopLevelDeclSeq toplevel
 toASTBindingSeq bindings = ASTBindingSeq bindings
 toASTBinding binding     = ASTBinding binding
 toASTTypeConDeclSeq typecondecls = ASTTypeConDeclSeq typecondecls
@@ -43,7 +41,7 @@ toASTDataType datatype     = ASTDataType datatype
 toASTIdLocSeq idlocs = ASTIdLocSeq idlocs
 toASTIdLoc idloc     = ASTIdLoc idloc
 toASTAlternativeSeq alts = ASTAlternativeSeq alts
-toASTIdLoc alt     = ASTAlternative alt
+toASTAlternative alt     = ASTAlternative alt
 toASTLit lit     = ASTLit lit
 
 --
@@ -90,7 +88,7 @@ data PrimOp =
 data Binding =
     Binding String Type Expr
 
-data DataType
+data DataType =
     DataType String [String] [TypeConDecl]
 
 data TopLevelDecl =

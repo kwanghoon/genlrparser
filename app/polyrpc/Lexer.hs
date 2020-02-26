@@ -45,7 +45,7 @@ lexerSpec = LexerSpec
         ("/"      , mkFn DIV_TOKEN),
         ("[0-9]+" , mkFn INTEGER_TOKEN),
 	("Unit"   , mkFn UNIT_TYPE_TOKEN),
-	("Int"    , mkFn INT_TYPE_TOKEN),
+	("Int"    , mkFn INTEGER_TYPE_TOKEN),
 	("Bool"   , mkFn BOOLEAN_TYPE_TOKEN),
 	("String" , mkFn STRING_TYPE_TOKEN),	
         ("(True|False)" , mkFn BOOLEAN_TOKEN),

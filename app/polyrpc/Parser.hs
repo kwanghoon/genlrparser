@@ -29,17 +29,17 @@ parserSpec = ParserSpec
         \rhs -> toASTType (FunType
 	     		  (fromASTType (get rhs 1))
 			  (fromASTLocation (get rhs 2))
-			  (fromASTType (get rhs 3)) ),
+			  (fromASTType (get rhs 3))) ),
 
       ("PolyAbsType -> { Identifiers } . PolyAbsType",
         \rhs -> ToASTType (LocAbs
 	                  (fromASTIdSeq (get rhs 2))
-			  (fromASTExpr (get rhs 5)) ),
+			  (fromASTExpr (get rhs 5))) ),
 
       ("PolyAbsType -> [ Identifiers ] . PolyAbsType",
         \rhs -> ToASTType (TypeAbs
 	                  (fromASTIdSeq (get rhs 2))
-			  (fromASTExpr (get rhs 5)) ),
+			  (fromASTExpr (get rhs 5))) ),
 
       ("PolyAbsType -> PrimaryType", \rhs -> get rhs 1),
 
@@ -83,7 +83,7 @@ parserSpec = ParserSpec
             $ BindingDecl (fromASTBinding (get rhs 1) : fromASTTopLevel (get rhs 3)) ),
 
       ("TopLevel -> DataTypeDecl",
-        \rhs -> toASTTopLevel (DataTypeDecl (fromASTDataType (get rhs 1))) )
+        \rhs -> toASTTopLevel (DataTypeDecl (fromASTDataType (get rhs 1))) ),
 
       ("TopLevel -> DataTypeDecl ; TopLevel",
         \rhs -> toASTTopLevel
@@ -123,7 +123,7 @@ parserSpec = ParserSpec
       ("LExpr -> [ Identifiers ] . LExpr",
         \rhs -> toAstExp (TypeAbs (fromASTIdSeq (get rhs 2)) (fromASTExpr (get rhs 5))) ),
 
-      ("LExpr -> \ IdLocSeq . LExpr",
+      ("LExpr -> \\ IdLocSeq . LExpr",
         \rhs -> toAstExp (Abs (fromASTIdLocSeq (get rhs 2)) (fromASTExpr (get rhs 4))) ),
 
       ("LExpr -> let { Bindings } LExpr end",

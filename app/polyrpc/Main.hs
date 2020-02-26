@@ -5,7 +5,7 @@ import CommonParserUtil
 import Token
 import Lexer
 import Terminal
--- import Parser
+import Parser
 import Expr
 
 import System.IO
@@ -22,10 +22,10 @@ doProcess line = do
   putStrLn "Lexing..."
   terminalList <- lexing lexerSpec text
   mapM_ (putStrLn) (map terminalToString terminalList)
-  -- putStrLn "Parsing..."
-  -- exprSeqAst <- parsing parserSpec terminalList
-  -- putStrLn "Pretty Printing..."
-  -- putStrLn (pprintAst exprSeqAst)
+  putStrLn "Parsing..."
+  exprSeqAst <- parsing parserSpec terminalList
+  putStrLn "Pretty Printing..."
+  --putStrLn (pprintAst exprSeqAst)
   
   
 readline msg = do

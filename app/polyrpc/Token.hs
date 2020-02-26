@@ -42,12 +42,16 @@ data Token =
   | SUB_TOKEN
   | MUL_TOKEN
   | DIV_TOKEN
+  
+  | UNIT_TOKEN
   | INTEGER_TOKEN
   | BOOLEAN_TOKEN
+  | STRING_TOKEN
+  
   | UNIT_TYPE_TOKEN
   | INTEGER_TYPE_TOKEN
   | BOOLEAN_TYPE_TOKEN
-  | STRING_TOKEN
+  | STRING_TYPE_TOKEN
   deriving (Eq, Show)
 
 tokenStrList :: [(Token,String)]
