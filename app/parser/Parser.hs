@@ -14,35 +14,6 @@ parserSpec = ParserSpec
     [
       ("SeqExpr' -> SeqExpr", \rhs -> get rhs 1),
 
-      ("Identifiers -> identifier", \rhs -> toASTIdSeq [get rhs 1] ),
-
-      ("Identifiers -> identifier Identifiers",
-        \rhs -> toASTIdSeq (get rhs 1 : fromASTIdSeq (get rhs 2)) ),
-
-      ("OptIdentifiers -> ", \rhs -> toASTIdSeq [] ),
-
-      ("OptIdentifiers -> Identifiers", \rhs -> get rhs 1 ),
-
-      ("Type -> PolyAbsType", \rhs -> get rhs 1 ),
-
-      ("Type -> PolyAbsType LocFun Type",
-        \rhs -> toASTType (FunType
-	     		  (fromASTType (get rhs 1))
-			  (fromASTLocation (get rhs 2))
-			  (fromASTType (get rhs 3)) ),
-
-      ("PolyAbsType -> { Identifiers } . PolyAbsType",
-        \rhs -> ToAbsType (LocAbs
-	                  (fromASTIdSeq (get rhs 2))
-			  (fromASTExpr (get rhs 5)) ),
-
-      ("PolyAbsType -> [ Identifiers ] . PolyAbsType",
-        \rhs -> ToAbsType (TypeAbs
-	                  (fromASTIdSeq (get rhs 2))
-			  (fromASTExpr (get rhs 5)) ),
-
-      ("PolyAbsType -> PrimaryType", \rhs -> get rhs 1),
-
       ("SeqExpr -> SeqExpr ; AssignExpr",
         \rhs -> toAstSeq (
           fromAstSeq (get rhs 1) ++ [fromAstExpr (get rhs 3)]) ),

@@ -80,7 +80,7 @@ parserSpec = ParserSpec
 
       ("TopLevel -> Binding ; TopLevel",
         \rhs -> toASTTopLevel
-            $ BindingDecl (fromASTBinding (get rhs 1)) : (fromASTTopLevel (get rhs 3)) ),
+            $ BindingDecl (fromASTBinding (get rhs 1) : fromASTTopLevel (get rhs 3)) ),
 
       ("TopLevel -> DataTypeDecl",
         \rhs -> toASTTopLevel (DataTypeDecl (fromASTDataType (get rhs 1))) )
