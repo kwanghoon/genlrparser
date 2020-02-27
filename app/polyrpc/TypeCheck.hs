@@ -2,22 +2,28 @@ module TypeCheck where
 
 import Type
 
-typeCheck :: Monad m => [TopLevelDecl] -> m [TopLevelDecl]
+typeCheck :: Monad m => [TopLevelDecl] -> m ([DataTypeDecl], [BindingDecl])
 typeCheck toplevelDecls = do
   (bindingDecls, datatypeDecls) <- splitTopLevelDecls toplevelDecls
+  
   typeInfo <- allDataTypeDecls
-  bindingTypeInfo <- allBindingDecls typeInfo bindingDecls
+  
   elab_datatypeDecls <- mapM (elabDataTypeDecls typeInfo) datatypeDecls
-  elab_bindingTypeInfo <- mapM (\(f,ty)->
-                                  do elab_ty <- elabType typeInfo ty
-                                     return (f,elab_ty)) bindingTypeInfo
+  
+  elab_bindingTypeInfo <- elabBindingTypeInfo typeInfo bindingDecls
+                          
   elab_conTypeinfo <- allConTypeDecls elab_datatypeDecls
   
   let gti = GlobalTypeInfo {_typeInfo=typeInfo
                            , _bindingTypeInfo=elab_bindingTypeInfo
                            , _conTypeInfo=elabl_conTypeInfo}
-    
-  return topleveLDecls
+            
+  partial_elab_bindingDecls <- mapM (\((f,ty),(_,_,expr) -> (f,ty,expr)))
+                                (zip elab_bindingTypeInfo bindingDecls)
+                               
+  elab_bindingDecls <- elaborate gti elab_binding partial_elab_bindingDecls
+  
+  return (elab_datatypeDecls, elab_bindingDecls)
 
 splitTopLevelDecls :: Monad m => [TopLevelDecl] -> m ([BindingDecl], [DataTypeDecl])
 splitTopLevelDecls toplevelDecls =
@@ -85,7 +91,7 @@ elabTypeConDecl typeInfo tyvars (ConDecl con tys) = do
   elab_tys <- mapM (elabType typeInfo tyvars) tys
   return (ConDecl con elab_tys)
 
-elabType gti tyvars (TypeVarType x) = do
+elabType typeInfo tyvars (TypeVarType x) = do
   if elem x tyvars then return TypeVarType x else
   if isConstructorName x then
     do _tyvars <- lookupTypeCon (_conTypeInfo gti) x
@@ -122,14 +128,10 @@ elabType typeInfo tyvars (ConType name tys) = do
 -- Collect names and types of bindings
 type BindingTypeInfo = [(String, Type)]
 
-allBindingDecls :: Monad m => TypeInfo -> [BindingDecl] -> m BindingTypeInfo
-allBindingDecls typeInfo bindingDecls = do
-  mapM (allBindingDecl typeInfo) bindingDecls
-
-allBindingDecl :: Monad m => TypeInfo -> BindingDecl -> m (String, Type)
-allBindingDecl typeInfo (Binding name ty expr) =
-  if freeTyvars typeInfo ty == [] then return (name, ty)
-  else error $ "[TypeCheck] allBindingDecl: " ++ name ++ " has type with free variables"
+elabBindingTypeInfo typeInfo bindingDecls =
+  mapM (\(Binding f ty _)-> do
+           elab_ty <- elabType typeInfo [] ty
+           return (f,elab_ty))
 
 -- Well-formed data type declarations
 
@@ -153,10 +155,10 @@ lookupConstr conTypeInfo x = do
     else error $ "lookupConstr: Not found construct: " ++ x 
 
 --
-data TypeChkEnv = TypeChkEnv
+data Env = Env
        { _varEnv :: [(String,Type)], _locVarEnv :: [String], _typeVarEnv :: [String] }
 
-emptyTypeChkEnv = {_varEnv=[], _locVarEnv=[], _typeVarEnv=[]}
+emptyEnv = {_varEnv=[], _locVarEnv=[], _typeVarEnv=[]}
 
 lookupVar :: Monad m => GlobalTypeInfo -> TypeChkEnv -> String -> m Type
 lookupVar gti tychkEnv x = do
@@ -168,26 +170,83 @@ lookupVar gti tychkEnv x = do
 
 --
 elaborate :: Monad m => GlobalTypeInfo -> [BindingDecl] -> m [BindingDecl]
-elaborate gti bindingDecls = do
-  bindingTypeInfo <- allBindingDecls bindingDecls
-  let gti = {_typeInfo=typeInfo, _bindingTypeInfo=bindingTypeInfo}
-  mapM (tychkBindingDecl gti) bindingDecls
+elaborate gti bindingDecls =
+  mapM (elabBindingDecl gti) bindingDecls
 
 elabBindingDecl :: Monad m => GlobalTypeInfo -> BindingDecl -> m BindingDecl
 elabBindingDecl gti (Binding name ty expr) = do
-  (elabExpr, tyExpr) <- tychkExpr gti emptyTypeChkEnv clientLoc expr ty
-  if equalType ty tyExpr
-  then return (Binding name ty, elabExpr)
+  elab_expr <- tychkExpr gti emptyEnv clientLoc expr ty
+  return (Binding name ty elab_expr)
 
 elabExpr :: Monad m =>
-  GlobalTypeInfo -> TypeChkEnv -> Location -> Expr -> m (Expr, Type)
-elabExpr gti tychkEnv loc (Var x) ty
-  | isBindingName x = do
-      var_x_ty <- lookupVar tychkEnv x
-      if equalType ty var_x_ty then return (Var x, ty)
-      else error $ "tychkExpr: Var " ++ x ++ " " ++ show ty  ++ " != " show var_x_ty
-  | isConstructorName x = do
-      lookupConstr gti x 
-      return (Constr x [], ty)
+  GlobalTypeInfo -> Env -> Location -> Expr -> Type -> m Expr
+elabExpr gti env loc (Var x) ty
+  | isBindingName x =        -- if it is a term variable
+  case lookupEnv x env of    -- try to find it in the local var env or
+    (x_ty:_) ->
+      if equalType x_ty ty
+      then return (Var x)
+      else error $ "[TypeCheck] Incorrect type for local var " ++ x
+    [] ->
+      case lookupBindingTypeInfo (_bindingTypeInfo gti) x of
+        (g_ty:_) ->          -- try to find it in the global bindings
+          if equalType g_ty ty
+          then return (Var x)
+          else error $ "[TypeCheck] Incorrect type for local var " ++ x
+        
+  | isConstructorName x =    -- if it is a constructor
+      case lookupConTypeInfo (_conTypeInfo gti) x  of
+        (([], name, tyvars):_) ->
+          if unifiableType (ConType name tyvars) ty
+          then return (Constr x [])
+          else error $ "[TypeCheck] Incorrect type for constructor " ++ x
+        ((_, name, tyvars):_) ->
+          error $ "[TypeCheck] Incorrect arguments for constructor " ++ x
+        [] -> error $ "[TypeCheck] Not found constructor " ++ x
   
- 
+elabExpr gti env loc (TypeAbs tyvars expr) (TypeAbsType tyvars' ty)
+  | tyvars == tyvars' = do
+      let typeVarEnv = _typeVarEnv gti
+      let typeVarEnv' = reverse tyvars ++ typeVarEnv
+      elabExpr gti (env{_typeVarEnv=typeVarEnv'}) loc expr ty
+  | otherwise =
+      error $ "[TypeCheck] different tyvar names in TypeAbs: "
+                 ++ tyvars ++ " != " += tyvars'
+elabExpr gti env loc (TypeAbs tyvars expr) ty =
+  error $ "[TypeCheck] Incorrect type for TypeAbs"
+
+elabExpr gti env loc (LocAbs locvars expr) (LocAbsType locvars' ty)
+  | locvars == locvars' = do
+      let locVarEnv = _locVarEnv gti
+      let locVarEnv' = reverse locvars ++ locVarEnv
+      elabExpr gti (env{_locVarEnv=locVarEnv'}) loc expr ty
+  | otherwise =
+      error $ "[TypeCheck] different locvar names in LocAbs: "
+                 ++ locvars ++ " != " += locvars'
+elabExpr gti env loc (LocAbs locvars expr) ty =
+  error $ "[TypeCheck] Incorrect type for LocAbs"
+
+elabExpr gti env loc_0 (Abs ((var,loc):[]) expr) (FunType argty loc1 retty) =
+  | loc == loc1 = do
+      let varEnv = _varEnv gti
+      let varEnv' = (var,argty):varEnv
+      elabExpr gti (env{_varEnv=varEnv'}) loc expr retty
+  | otherwise = error $ "[TypeCheck] Incorrect location for Abs " ++ var
+                            ++ ": " ++ loc ++ "!=" ++ loc1
+
+elabExpr gti env loc_0 (Abs ((var,loc):varLocList) expr) (FunType argty loc1 retty) =
+  | loc == loc1 = do
+      let varEnv = _varEnv gti
+      let varEnv' = (var,argty):varEnv
+      elabExpr gti (env{_varEnv=varEnv'}) loc (Abs varLocList expr) retty
+  | otherwise = error $ "[TypeCheck] Incorrect location for Abs " ++ var
+                            ++ ": " ++ loc ++ "!=" ++ loc1
+
+elabExpr gti env loc_0 (Abs varLocList expr) ty =
+  error $ "[TypeCheck] Incorrect type for Abs " ++ show varLocList
+
+elabExpr gti env loc_0 (Let letBindingDecls expr) ty = do
+  letBindingTypeInfo <- allBindingDecls 
+
+!!!HEREHERE!!!
+
