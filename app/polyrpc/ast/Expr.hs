@@ -15,9 +15,10 @@ data Expr =
   | LocApp Expr [String]
   | Tuple [Expr]
   | Prim PrimOp [Expr]
-  | Const Lit
+  | Lit Literal
+  | Constr String [Expr]
 
-data Lit =
+data Literal =
     IntLit Int
   | StrLit String
   | BoolLit Bool

@@ -47,10 +47,10 @@ data Token =
   | BOOLEAN_TOKEN
   | STRING_TOKEN
   
-  | UNIT_TYPE_TOKEN
-  | INTEGER_TYPE_TOKEN
-  | BOOLEAN_TYPE_TOKEN
-  | STRING_TYPE_TOKEN
+  -- | UNIT_TYPE_TOKEN
+  -- | INTEGER_TYPE_TOKEN
+  -- | BOOLEAN_TYPE_TOKEN
+  -- | STRING_TYPE_TOKEN
   deriving (Eq, Show)
 
 tokenStrList :: [(Token,String)]
@@ -95,11 +95,11 @@ tokenStrList =
     (DIV_TOKEN, "/"),
     (INTEGER_TOKEN, "integer"),
     (BOOLEAN_TOKEN, "boolean"),
-    (STRING_TOKEN, "string"),
-    (UNIT_TYPE_TOKEN, "Unit"),
-    (INTEGER_TYPE_TOKEN, "Int"),
-    (BOOLEAN_TYPE_TOKEN, "Bool"),
-    (STRING_TYPE_TOKEN, "String")
+    (STRING_TOKEN, "string")
+    -- (UNIT_TYPE_TOKEN, "Unit"),
+    -- (INTEGER_TYPE_TOKEN, "Int"),
+    -- (BOOLEAN_TYPE_TOKEN, "Bool"),
+    -- (STRING_TYPE_TOKEN, "String")
   ]
 
 findTok tok [] = Nothing
