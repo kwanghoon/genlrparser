@@ -3,7 +3,21 @@ module TypeCheck where
 import Type
 
 typeCheck :: Monad m => [TopLevelDecl] -> m [TopLevelDecl]
-typeCheck toplevelDecls = toplevelDecls
+typeCheck toplevelDecls = do
+  (bindingDecls, datatypeDecls) <- splitTopLevelDecls toplevelDecls
+  typeInfo <- allDataTypeDecls
+  bindingTypeInfo <- allBindingDecls typeInfo bindingDecls
+  elab_datatypeDecls <- mapM (elabDataTypeDecls typeInfo) datatypeDecls
+  elab_bindingTypeInfo <- mapM (\(f,ty)->
+                                  do elab_ty <- elabType typeInfo ty
+                                     return (f,elab_ty)) bindingTypeInfo
+  elab_conTypeinfo <- allConTypeDecls elab_datatypeDecls
+  
+  let gti = GlobalTypeInfo {_typeInfo=typeInfo
+                           , _bindingTypeInfo=elab_bindingTypeInfo
+                           , _conTypeInfo=elabl_conTypeInfo}
+    
+  return topleveLDecls
 
 splitTopLevelDecls :: Monad m => [TopLevelDecl] -> m ([BindingDecl], [DataTypeDecl])
 splitTopLevelDecls toplevelDecls =
@@ -36,28 +50,74 @@ collectDataTypeDecls datatypeDecls = do
   return nameTyvarsPairList
 
 collectDataTypeDecl (DataType name tyvars typeConDecls) =
-  if isTypeName name && and (map isTypeVarName tyvars) && allUnique tyvars
+  if isTypeName name && and (map isTypeVarName tyvars) && allUnique tyvars == []
   then (name, tyvars)
   else error $ "[TypeCheck] collectDataTypeDecls: Invalid names: " ++ name ++ " " ++ show tyvars
 
-allUnique [] = True
+allUnique [] = []
 allUnique (x:xs) =
-  if elem x xs then False else allUnique xs
+  if elem x xs then [x] else allUnique xs
 
-tychkDataTypeDecl :: Monad m => DataTypeDecl -> m DataTypeDecl
-tychkDataTypeDecl typeInfo (DataType name tyvars typeConDecls) = do
-  elabTypeConDecls <- mapM (wfTypeConDecl typeInfo tyvars) typeConDecls
-  return (DataType name tyvars elabTypeConDecls)
+--
+type ConTypeInfo = [(String, ([Type], String, [String]))]
 
-wfTypeConDecl typeInfo tyvars (ConDecl con tys) = do
-  elabTys <- mapM (wfType typeInfo tyvars) tys
-  return (ConDecl con elabTys)
+allConTypeDecls :: Monad m => [DataTypeDecl] -> m ConTypeInfo
+allConTypeDecls datatypeDecls = do
+  conTypeInfo <- concatM (mapM allConTypeDecls_ datatypeDecls)
+  case allUnique [con | (con,_) <- conTypeInfo] of
+    [] -> return conTypeInfo
+    (con:_) -> error $ "allConTypeDecls: duplicate constructor: " ++ con
 
-!!!HERE HERE!!!
-wfType typeInfo tyvars (TypeVarType x) = do
-  if elem x tyvars then return TypeVarType x
-  else if isConstructorName x
-       then do  <- lookupConstr typeInfo 
+allConTypeDecls_ (DataType name tyvars typeConDecls) = do
+  return [ (con, (tys, name tyvars)) | ConDecl con tys <- typeConDecls ]
+  
+-- Elaboration of datatype declarations
+--  by elaborating Int as an identifier into ConType Int [],
+--     checking duplicate type variables in each datatype declaration, and
+--     checking duplicate constructor names in all datatype declarations.
+elabDataTypeDecl :: Monad m => TypeInfo -> m DataTypeDecl
+elabDataTypeDecl typeInfo (DataType name tyvars typeConDecls) = do
+  elab_typeConDecls <- mapM (elabTypeConDecl typeInfo tyvars) typeConDecls
+  return (DataType name tyvars elab_typeConDecls)
+
+elabTypeConDecl :: Monad m => GlobalTypeInfo -> [String] -> TypeConDecl -> m TypeConDecl
+elabTypeConDecl typeInfo tyvars (ConDecl con tys) = do
+  elab_tys <- mapM (elabType typeInfo tyvars) tys
+  return (ConDecl con elab_tys)
+
+elabType gti tyvars (TypeVarType x) = do
+  if elem x tyvars then return TypeVarType x else
+  if isConstructorName x then
+    do _tyvars <- lookupTypeCon (_conTypeInfo gti) x
+       if _tyvars == []
+       then ConType x []
+       else error $ "[TypeCheck]: elabType: Invalid type constructor: " ++ x
+  else
+    error $ "[TypeCheck] elabType: Not found: " ++ x
+
+elabType typeInfo tyvars (TupleType tys) = do
+  elab_tys <- mapM (elabType typeInfo tyvars) tys
+  return (TupleType elab_tys)
+
+elabType typeInfo tyvars (FunType ty1 loc ty2) = do
+  elab_ty1 <- elabType typeInfo tyvars ty1
+  elab_ty2 <- elabType typeInfo tyvars ty2
+  return (FunType elab_ty1 loc elab_ty2)
+
+elabType typeInfo tyvars (TypeAbsType abs_tyvars ty) = do
+  elab_ty <- elabType typeInfo (tyvars ++ abs_tyvars) ty
+  return (TypeAbsType abs_tyvars elab_ty)
+
+elabType typeInfo tyvars (LocAbsType abs_tyvars ty) = do
+  elab_ty <- elabType typeInfo (tyvars ++ abs_tyvars) ty
+  return (LocAbsType abs_tyvars elab_ty)
+
+elabType typeInfo tyvars (ConType name tys) = do
+  _tyvars <- lookupTypeCon typeInfo name
+  if length _tyvars == length tys
+    then do elab_tys <- mapM (elabType typeInfo tyvars) tys
+            return (ConType name elab_tys)
+    else error $ "[TypeCheck]: elabType: Invalud args for ConType: " ++ name
 
 -- Collect names and types of bindings
 type BindingTypeInfo = [(String, Type)]
@@ -74,12 +134,23 @@ allBindingDecl typeInfo (Binding name ty expr) =
 -- Well-formed data type declarations
 
 data GlobalTypeInfo = GlobalTypeInfo
-       { _typeInfo :: TypeInfo, _bindingTypeInfo :: BindingTypeInfo }
+       { _typeInfo :: TypeInfo
+       , _bindingTypeInfo :: BindingTypeInfo
+       , _conTypeInfo :: ConTypeInfo }
 
-!!!HERE HERE!!!
-lookupConstr :: Monad m => TypeInfo -> String -> m ([[Type], Type)
-lookupConstr typeInfo x = do
-  let found = [ | <- typeInfo ]
+lookupTypeCon :: Monad m => TypeInfo -> String -> m [String]
+lookupTypeCon typeInfo x = do
+  let found = [tyvars | (name, tyvars) <- typeInfo, x==name]
+  if found /= [] 
+    then return (head found)
+    else error $ "lookupConstr: Not found construct : " ++ x 
+
+lookupConstr :: Monad m => ConTypeInfo -> String -> m ([Type], String, [String])
+lookupConstr conTypeInfo x = do
+  let found = [z | (con, z) <- conTypeInfo, x==con]
+  if fond /= []
+    then return z
+    else error $ "lookupConstr: Not found construct: " ++ x 
 
 --
 data TypeChkEnv = TypeChkEnv
@@ -96,21 +167,21 @@ lookupVar gti tychkEnv x = do
           else error $ "lookupVar: Not found: " ++ x
 
 --
-tychk :: Monad m => TypeInfo -> [BindingDecl] -> m [BindingDecl]
-tychk typeInfo bindingDecls = do
+elaborate :: Monad m => GlobalTypeInfo -> [BindingDecl] -> m [BindingDecl]
+elaborate gti bindingDecls = do
   bindingTypeInfo <- allBindingDecls bindingDecls
   let gti = {_typeInfo=typeInfo, _bindingTypeInfo=bindingTypeInfo}
   mapM (tychkBindingDecl gti) bindingDecls
 
-tychkBindingDecl :: Monad m => GlobalTypeInfo -> BindingDecl -> m BindingDecl
-tychkBindingDecl gti (Binding name ty expr) = do
+elabBindingDecl :: Monad m => GlobalTypeInfo -> BindingDecl -> m BindingDecl
+elabBindingDecl gti (Binding name ty expr) = do
   (elabExpr, tyExpr) <- tychkExpr gti emptyTypeChkEnv clientLoc expr ty
   if equalType ty tyExpr
   then return (Binding name ty, elabExpr)
 
-tychkExpr :: Monad m =>
+elabExpr :: Monad m =>
   GlobalTypeInfo -> TypeChkEnv -> Location -> Expr -> m (Expr, Type)
-tychkExpr gti tychkEnv loc (Var x) ty
+elabExpr gti tychkEnv loc (Var x) ty
   | isBindingName x = do
       var_x_ty <- lookupVar tychkEnv x
       if equalType ty var_x_ty then return (Var x, ty)

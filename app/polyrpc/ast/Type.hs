@@ -13,7 +13,7 @@ data Type =
   | FunType Type Location Type
   | TypeAbsType [String] Type
   | LocAbsType [String] Type
-  | ConType Type [Type]
+  | ConType String [Type]
 
 equalType :: Type -> Type -> Bool
 
