@@ -25,13 +25,14 @@ PolyAbsType
   | PrimaryType
 
 PrimaryType
-  = Unit
-  | Int
-  | Bool
-  | String
   | TupleType
   | ( Type )
   | IdentifierOrTypeApplication
+
+;  = Unit
+;  | Int
+;  | Bool
+;  | String
 
 IdentifierOrTypeApplication
   = identifier

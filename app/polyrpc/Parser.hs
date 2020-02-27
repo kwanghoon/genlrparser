@@ -47,13 +47,13 @@ parserSpec = ParserSpec
 
       ("PolyAbsType -> PrimaryType", \rhs -> get rhs 1),
 
-      ("PrimaryType -> Unit", \rhs -> toASTType UnitType),
+      -- ("PrimaryType -> Unit", \rhs -> toASTType UnitType),
 
-      ("PrimaryType -> Int", \rhs -> toASTType IntType),
+      -- ("PrimaryType -> Int", \rhs -> toASTType IntType),
 
-      ("PrimaryType -> Bool", \rhs -> toASTType BoolType),
+      -- ("PrimaryType -> Bool", \rhs -> toASTType BoolType),
 
-      ("PrimaryType -> String", \rhs -> toASTType StringType),
+      -- ("PrimaryType -> String", \rhs -> toASTType StringType),
 
       ("PrimaryType -> TupleType", \rhs -> get rhs 1 ),
 
