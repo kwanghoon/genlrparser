@@ -7,16 +7,16 @@ data Expr =
     Var String
   | TypeAbs [String] Expr
   | LocAbs [String] Expr
-  | Abs [(String, Location)] Expr
+  | Abs [(String, Type, Location)] Expr
   | Let [BindingDecl] Expr
   | Case Expr [Alternative]
-  | App Expr Expr
+  | App Expr Expr (Maybe Location)
   | TypeApp Expr [Type]
   | LocApp Expr [String]
   | Tuple [Expr]
   | Prim PrimOp [Expr]
   | Lit Literal
-  | Constr String [Expr]
+  | Constr String [String] [Expr]
 
 data Literal =
     IntLit Int
@@ -24,25 +24,59 @@ data Literal =
   | BoolLit Bool
   | UnitLit
 
+typeOfLiteral (IntLit _) = int_type
+typeOfLiteral (StrLit _) = string_type
+typeOfLiteral (BoolLit _) = bool_type
+typeOfLiteral (UnitLit _) = unit_type
+
 trueLit  = "True"
 falseLit = "False"
 unitLit  = "()"
 
 data PrimOp =
-    NotPrimOp
-  | OrPrimOp
-  | AndPrimOp
-  | EqPrimOp
-  | NeqPrimOp
-  | LtPrimOp
-  | LePrimOp
-  | GtPrimOp
-  | GePrimOp
-  | AddPrimOp
-  | SubPrimOp
-  | MulPrimOp
-  | DivPrimOp
-  | NegPrimOp
+    NotPrimOp  --{l}. Bool -l-> Bool
+  | OrPrimOp   --{l}. (Bool, Bool) -l-> Bool
+  | AndPrimOp  --{l}. (Bool, Bool) -l-> Bool
+  | EqPrimOp   --{l}. (Bool, Bool) -l-> Bool
+  | NeqPrimOp  --{l}. (Bool, Bool) -l-> Bool
+  | LtPrimOp   --{l}. (Int, Int) -l-> Bool
+  | LePrimOp   --{l}. (Int, Int) -l-> Bool
+  | GtPrimOp   --{l}. (Int, Int) -l-> Bool
+  | GePrimOp   --{l}. (Int, Int) -l-> Bool
+  | AddPrimOp  --{l}. (Int, Int) -l-> Int
+  | SubPrimOp  --{l}. (Int, Int) -l-> Int
+  | MulPrimOp  --{l}. (Int, Int) -l-> Int
+  | DivPrimOp  --{l}. (Int, Int) -l-> Int
+  | NegPrimOp  --{l}. Int -l-> Int
+  deriving Eq
+
+primType tyname = ConType tyname []
+
+bool_type = primType boolType
+int_type  = primType intType
+unit_type = primType unitType
+string_type = primType stringType
+
+primOpTypes :: [(PrimOp, ([Type], Type))]
+primOpTypes =
+  [ (NotPrimOp, ([bool_type], bool_type)),
+  , (OrPrimOp,  ([bool_type, bool_type], bool_type)),
+  , (AndPrimOp, ([bool_type, bool_type], bool_type)),
+  , (EqPrimOp,  ([bool_type, bool_type], bool_type)),
+  , (NeqPrimOp, ([bool_type, bool_type], bool_type)),
+  , (LtPrimOp,  ([int_type, int_type], bool_type)),
+  , (LePrimOp,  ([int_type, int_type], bool_type)),
+  , (GtPrimOp,  ([int_type, int_type], bool_type)),
+  , (GePrimOp,  ([int_type, int_type], bool_type)),
+  , (AddPrimOp, ([int_type, int_type], int_type)),
+  , (SubPrimOp, ([int_type, int_type], int_type)),
+  , (MulPrimOp, ([int_type, int_type], int_type)),
+  , (DivPrimOp, ([int_type, int_type], int_type)),
+  , (NegPrimOp, ([int_type], int_type))
+  ]
+
+lookupPrimOpType primop =
+  [ (tys,ty) | (primop1,(tys,ty)) <- primOpTypes, primop==primop1]
 
 data BindingDecl =
     Binding String Type Expr
@@ -82,8 +116,8 @@ data AST =
   | ASTTypeConDeclSeq { fromASTTypeConDeclSeq :: [TypeConDecl] }
   | ASTTypeConDecl { fromASTTypeConDecl :: TypeConDecl }
   
-  | ASTIdLocSeq { fromASTIdLocSeq :: [(String,Location)] }
-  | ASTIdLoc { fromASTIdLoc :: (String,Location) }
+  | ASTIdTypeLocSeq { fromASTIdTypeLocSeq :: [(String,Type,Location)] }
+  | ASTIdTypeLoc { fromASTIdTypeLoc :: (String,Type,Location) }
   
   | ASTAlternativeSeq { fromASTAlternativeSeq :: [Alternative] }
   | ASTAlternative { fromASTAlternative :: Alternative }
@@ -109,8 +143,8 @@ toASTTopLevelDeclSeq toplevel = ASTTopLevelDeclSeq toplevel
 toASTTypeConDeclSeq typecondecls = ASTTypeConDeclSeq typecondecls
 toASTTypeConDecl typecondecl     = ASTTypeConDecl typecondecl
 
-toASTIdLocSeq idlocs = ASTIdLocSeq idlocs
-toASTIdLoc idloc     = ASTIdLoc idloc
+toASTIdTypeLocSeq idtypelocs = ASTIdTypeLocSeq idtypelocs
+toASTIdTypeLoc idtypeloc     = ASTIdTypeLoc idtypeloc
 
 toASTAlternativeSeq alts = ASTAlternativeSeq alts
 toASTAlternative alt     = ASTAlternative alt

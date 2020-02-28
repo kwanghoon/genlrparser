@@ -81,18 +81,18 @@ Bindings
 LExpr
   = { Identifiers } . LExpr
   | [ Identifiers ] . LExpr
-  | \ IdLocSeq . LExpr
+  | \ IdTypeLocSeq . LExpr
   | let { Bindings } LExpr end
   | if Expr then LExpr else LExpr
   | case Expr { Alternatives } 
   | Expr
 
-IdLocSeq
-  = IdLoc
-  | IdLoc IdLocSeq
+IdTypeLocSeq
+  = IdTypeLoc
+  | IdTypeLoc IdTypeLocSeq
 
-IdLoc
-  = identifier @ Location
+IdTypeLoc
+  = identifier : Type @ Location
 
 Location
   = identifier
@@ -166,3 +166,4 @@ Term
   | boolean
   | ( )
   | ( LExpr )
+

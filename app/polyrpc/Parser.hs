@@ -130,8 +130,8 @@ parserSpec = ParserSpec
       ("LExpr -> [ Identifiers ] . LExpr",
         \rhs -> toASTExpr (TypeAbs (fromASTIdSeq (get rhs 2)) (fromASTExpr (get rhs 5))) ),
 
-      ("LExpr -> \\ IdLocSeq . LExpr",
-        \rhs -> toASTExpr (Abs (fromASTIdLocSeq (get rhs 2)) (fromASTExpr (get rhs 4))) ),
+      ("LExpr -> \\ IdLocTypeSeq . LExpr",
+        \rhs -> toASTExpr (Abs (fromASTIdTypeLocSeq (get rhs 2)) (fromASTExpr (get rhs 4))) ),
 
       ("LExpr -> let { Bindings } LExpr end",
         \rhs -> toASTExpr (Let (fromASTBindingDeclSeq (get rhs 3)) (fromASTExpr (get rhs 5))) ),
@@ -146,13 +146,13 @@ parserSpec = ParserSpec
 
       ("LExpr -> Expr", \rhs -> get rhs 1 ),
 
-      ("IdLocSeq -> IdLoc", \rhs -> toASTIdLocSeq [fromASTIdLoc (get rhs 1)] ),
+      ("IdTypeLocSeq -> IdTypeLoc", \rhs -> toASTIdLocSeq [fromASTIdLoc (get rhs 1)] ),
 
-      ("IdLocSeq -> IdLoc IdLocSeq",
+      ("IdTypeLocSeq -> IdTypeLoc IdTypeLocSeq",
         \rhs -> toASTIdLocSeq $ fromASTIdLoc (get rhs 1) : fromASTIdLocSeq (get rhs 2) ),
 
-      ("IdLoc -> identifier @ Location",
-        \rhs -> toASTIdLoc (getText rhs 1, fromASTLocation (get rhs 3)) ),
+      ("IdTypeLoc -> identifier : Type @ Location",
+        \rhs -> toASTIdTypeLoc (getText rhs 1, fromASTType (get rhs 3), fromASTLocation (get rhs 5)) ),
 
       ("Location -> identifier", \rhs -> toASTLocation (Location (getText rhs 1)) ),
 
@@ -166,7 +166,7 @@ parserSpec = ParserSpec
                   (Alternative (getText rhs 1) (fromASTIdSeq (get rhs 2)) (fromASTExpr (get rhs 4))) ),
 
       ("Expr -> Expr Term",
-        \rhs -> toASTExpr (App (fromASTExpr (get rhs 1)) (fromASTExpr (get rhs 2))) ),
+        \rhs -> toASTExpr (App (fromASTExpr (get rhs 1)) (fromASTExpr (get rhs 2)) Nothing) ),
 
       ("Expr -> Expr [ Types ]",
         \rhs -> toASTExpr (TypeApp (fromASTExpr (get rhs 1)) (fromASTTypeSeq (get rhs 3))) ),
