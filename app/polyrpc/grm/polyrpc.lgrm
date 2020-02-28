@@ -106,7 +106,7 @@ Alternative
 
 Expr
   = Expr Term
-  | Expr [ Identifiers ]
+  | Expr [ Types ]
   | Expr { Identifiers }
   | Tuple
   | ConditionalExpr

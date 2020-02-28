@@ -64,7 +64,7 @@ parserSpec = ParserSpec
       ("IdentifierOrTypeApplication -> identifier", \rhs -> toASTType (TypeVarType (getText rhs 1)) ),
 
       ("IdentifierOrTypeApplication -> identifier < Types >",
-        \rhs -> toASTType (ConType (TypeVarType (getText rhs 1)) (fromASTTypeSeq (get rhs 3)))),
+        \rhs -> toASTType (ConType (getText rhs 1) (fromASTTypeSeq (get rhs 3)))),
 
       ("TupleType -> ( Type , TypeSeq )",
         \rhs -> toASTType (TupleType $
@@ -130,7 +130,7 @@ parserSpec = ParserSpec
       ("LExpr -> [ Identifiers ] . LExpr",
         \rhs -> toASTExpr (TypeAbs (fromASTIdSeq (get rhs 2)) (fromASTExpr (get rhs 5))) ),
 
-      ("LExpr -> \\ IdLocTypeSeq . LExpr",
+      ("LExpr -> \\ IdTypeLocSeq . LExpr",
         \rhs -> toASTExpr (Abs (fromASTIdTypeLocSeq (get rhs 2)) (fromASTExpr (get rhs 4))) ),
 
       ("LExpr -> let { Bindings } LExpr end",
@@ -146,10 +146,10 @@ parserSpec = ParserSpec
 
       ("LExpr -> Expr", \rhs -> get rhs 1 ),
 
-      ("IdTypeLocSeq -> IdTypeLoc", \rhs -> toASTIdLocSeq [fromASTIdLoc (get rhs 1)] ),
+      ("IdTypeLocSeq -> IdTypeLoc", \rhs -> toASTIdTypeLocSeq [fromASTIdTypeLoc (get rhs 1)] ),
 
       ("IdTypeLocSeq -> IdTypeLoc IdTypeLocSeq",
-        \rhs -> toASTIdLocSeq $ fromASTIdLoc (get rhs 1) : fromASTIdLocSeq (get rhs 2) ),
+        \rhs -> toASTIdTypeLocSeq $ fromASTIdTypeLoc (get rhs 1) : fromASTIdTypeLocSeq (get rhs 2) ),
 
       ("IdTypeLoc -> identifier : Type @ Location",
         \rhs -> toASTIdTypeLoc (getText rhs 1, fromASTType (get rhs 3), fromASTLocation (get rhs 5)) ),
@@ -172,7 +172,7 @@ parserSpec = ParserSpec
         \rhs -> toASTExpr (TypeApp (fromASTExpr (get rhs 1)) (fromASTTypeSeq (get rhs 3))) ),
 
       ("Expr -> Expr { Identifiers }",
-        \rhs -> toASTExpr (LocApp (fromASTExpr (get rhs 1)) (fromASTIdSeq (get rhs 3))) ),
+        \rhs -> toASTExpr (LocApp (fromASTExpr (get rhs 1)) (map Location (fromASTIdSeq (get rhs 3)))) ),
 
       ("Expr -> Tuple", \rhs -> get rhs 1 ),
 
@@ -246,13 +246,13 @@ parserSpec = ParserSpec
 
       ("Term -> identifier", \rhs -> toASTExpr (Var (getText rhs 1)) ),
 
-      ("Term -> integer", \rhs -> toASTExpr (Const (IntLit (read (getText rhs 1)))) ),
+      ("Term -> integer", \rhs -> toASTExpr (Lit (IntLit (read (getText rhs 1)))) ),
 
-      ("Term -> string", \rhs -> toASTExpr (Const (StrLit (getText rhs 1))) ),
+      ("Term -> string", \rhs -> toASTExpr (Lit (StrLit (getText rhs 1))) ),
       
-      ("Term -> boolean", \rhs -> toASTExpr (Const (BoolLit (read (getText rhs 1)))) ),
+      ("Term -> boolean", \rhs -> toASTExpr (Lit (BoolLit (read (getText rhs 1)))) ),
 
-      ("Term -> ( )", \rhs -> toASTExpr (Const UnitLit) ),
+      ("Term -> ( )", \rhs -> toASTExpr (Lit UnitLit) ),
 
       ("Term -> ( LExpr )", \rhs -> get rhs 2 )
     ],

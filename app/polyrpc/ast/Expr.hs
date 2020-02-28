@@ -12,11 +12,11 @@ data Expr =
   | Case Expr [Alternative]
   | App Expr Expr (Maybe Location)
   | TypeApp Expr [Type]
-  | LocApp Expr [String]
+  | LocApp Expr [Location]
   | Tuple [Expr]
   | Prim PrimOp [Expr]
   | Lit Literal
-  | Constr String [String] [Expr]
+  | Constr String [Type] [Expr]
 
 data Literal =
     IntLit Int
@@ -27,7 +27,7 @@ data Literal =
 typeOfLiteral (IntLit _) = int_type
 typeOfLiteral (StrLit _) = string_type
 typeOfLiteral (BoolLit _) = bool_type
-typeOfLiteral (UnitLit _) = unit_type
+typeOfLiteral (UnitLit) = unit_type
 
 trueLit  = "True"
 falseLit = "False"
@@ -59,19 +59,19 @@ string_type = primType stringType
 
 primOpTypes :: [(PrimOp, ([Type], Type))]
 primOpTypes =
-  [ (NotPrimOp, ([bool_type], bool_type)),
-  , (OrPrimOp,  ([bool_type, bool_type], bool_type)),
-  , (AndPrimOp, ([bool_type, bool_type], bool_type)),
-  , (EqPrimOp,  ([bool_type, bool_type], bool_type)),
-  , (NeqPrimOp, ([bool_type, bool_type], bool_type)),
-  , (LtPrimOp,  ([int_type, int_type], bool_type)),
-  , (LePrimOp,  ([int_type, int_type], bool_type)),
-  , (GtPrimOp,  ([int_type, int_type], bool_type)),
-  , (GePrimOp,  ([int_type, int_type], bool_type)),
-  , (AddPrimOp, ([int_type, int_type], int_type)),
-  , (SubPrimOp, ([int_type, int_type], int_type)),
-  , (MulPrimOp, ([int_type, int_type], int_type)),
-  , (DivPrimOp, ([int_type, int_type], int_type)),
+  [ (NotPrimOp, ([bool_type], bool_type))
+  , (OrPrimOp,  ([bool_type, bool_type], bool_type))
+  , (AndPrimOp, ([bool_type, bool_type], bool_type))
+  , (EqPrimOp,  ([bool_type, bool_type], bool_type))
+  , (NeqPrimOp, ([bool_type, bool_type], bool_type))
+  , (LtPrimOp,  ([int_type, int_type], bool_type))
+  , (LePrimOp,  ([int_type, int_type], bool_type))
+  , (GtPrimOp,  ([int_type, int_type], bool_type))
+  , (GePrimOp,  ([int_type, int_type], bool_type))
+  , (AddPrimOp, ([int_type, int_type], int_type))
+  , (SubPrimOp, ([int_type, int_type], int_type))
+  , (MulPrimOp, ([int_type, int_type], int_type))
+  , (DivPrimOp, ([int_type, int_type], int_type))
   , (NegPrimOp, ([int_type], int_type))
   ]
 
@@ -122,7 +122,7 @@ data AST =
   | ASTAlternativeSeq { fromASTAlternativeSeq :: [Alternative] }
   | ASTAlternative { fromASTAlternative :: Alternative }
   
-  | ASTLit { fromASTLit :: Lit }
+  | ASTLit { fromASTLit :: Literal }
 
 toASTExprSeq exprs = ASTExprSeq exprs
 toASTExpr expr     = ASTExpr expr

@@ -7,6 +7,7 @@ import Lexer
 import Terminal
 import Parser
 import Expr
+import TypeCheck
 
 import System.IO
 
@@ -26,6 +27,9 @@ doProcess line = do
   exprSeqAst <- parsing parserSpec terminalList
   putStrLn "Pretty Printing..."
   --putStrLn (pprintAst exprSeqAst)
+  let toplevelDecls = (fromASTTopLevelDeclSeq exprSeqAst)
+  (datatypes, bindings) <- typeCheck toplevelDecls
+  return ()
   
   
 readline msg = do

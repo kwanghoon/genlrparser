@@ -47,7 +47,7 @@ CFG "TopLevel'" [
  ProductionRule "Alternatives" [Nonterminal "Alternative", Terminal ";", Nonterminal "Alternatives"],
  ProductionRule "Alternative" [Terminal "identifier", Nonterminal "OptIdentifiers", Terminal "=>", Nonterminal "LExpr"],
  ProductionRule "Expr" [Nonterminal "Expr", Nonterminal "Term"],
- ProductionRule "Expr" [Nonterminal "Expr", Terminal "[", Nonterminal "Identifiers", Terminal "]"],
+ ProductionRule "Expr" [Nonterminal "Expr", Terminal "[", Nonterminal "Types", Terminal "]"],
  ProductionRule "Expr" [Nonterminal "Expr", Terminal "{", Nonterminal "Identifiers", Terminal "}"],
  ProductionRule "Expr" [Nonterminal "Tuple"],
  ProductionRule "Expr" [Nonterminal "ConditionalExpr"],
