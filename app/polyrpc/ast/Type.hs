@@ -116,12 +116,53 @@ equalTypeWithFreshness ns (LocAbsType locvars1 ty1) (LocAbsType locvars2 ty2) =
   in len1==len2 && equalWithFreshness ns' (doSubstLoc (locvars1 newvars) ty1) (doSubstLoc (locvars2 newvars) ty2)
 
 equalTypeWithFreshness ns (ConType name1 tys1) (ConType name2 tys2) =   
-  name1==name2 && and (map (uncurry (equalTypeWithFreshness ns) (zip tys1 tys2)
+  name1==name2 && and (map (uncurry (equalTypeWithFreshness ns) (zip tys1 tys2))))
 
 --
-unifyType :: Type -> Type -> Maybe [(String,Type)]
+occur :: String -> Type -> Bool
+occur x (TypeVariable y) = x==y
+occur x (TupleType tys) = and (map (occur x) tys)
+occur x (FunType argty loc retty) = occur x argty && occur x retty
+occur x (ConType c tys) = and (map (occur x) tys)
+occur x (TypeAbsType _ _) = False  -- ???
+occur x (LocAbsType _ _) = False -- ???
 
+unifyTypeOne :: Type -> Type -> Maybe [(String,Type)]
+unifyTypeOne (TypeVarType x) (TypeVarType y)
+  | x==y = Just []
+  | otherwise = Just [(x, TypeVarType y)]
+  
+unifyTypeOne (TypeVarType x) ty
+  | occur x ty = Nothing
+  | otherwise = Just [(x,ty)]
 
-unifTypes :: [Type] -> [Type] -> Maybe [(String,Type)]
+unifyTypeOne ty (TypeVarType x)
+  | occur x ty = Nothing
+  | otherwise = Just [(x,ty)]
 
+unifyTypeOne (TupleType tys1) (TupleType tys2) = unifyType tys1 tys2
 
+unifyTypeOne (Fun argty1 loc1 retty1) (Fun argty2 loc2 retty2) =  -- loc1 and loc2 ??
+  case unifyType argty1 argty2 of
+    Nothing -> Nothing
+    Just subst1 ->
+      case unifyType (doSubst subst1 retty1) (doSubst subst1 retty2) of
+        Nothing -> Nothing
+        Just subst2 -> subst1 ++ subst2
+
+unifyTypeOne (ConType c1 tys1) (ConType c2 tys2)
+  | c1==c2 = unify tys1 tys2
+  | otherwise = Nothing
+
+unifyTypeOne _ _ = Nothing   -- universal types and locations ???
+
+unifyTypes :: [Type] -> [Type] -> Maybe [(String,Type)]
+unifyTypes [] [] = Just []
+unifyTypes (ty1:tys1) (ty2:tys2) =
+  case unifyTypeOne ty1 ty2 of
+    Nothing -> Nothing
+    Just subst1 ->
+      case unifyTypes (map (doSubst subst1) tys1) (map (doSubst subst1) tys2) of
+        Nothing -> Nothing
+        Just subst2 -> subst1 ++ subst2
+        
