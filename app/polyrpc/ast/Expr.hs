@@ -17,12 +17,14 @@ data Expr =
   | Prim PrimOp [Expr]
   | Lit Literal
   | Constr String [Type] [Expr]
+  deriving Show
 
 data Literal =
     IntLit Int
   | StrLit String
   | BoolLit Bool
   | UnitLit
+  deriving Show
 
 typeOfLiteral (IntLit _) = int_type
 typeOfLiteral (StrLit _) = string_type
@@ -48,7 +50,7 @@ data PrimOp =
   | MulPrimOp  --{l}. (Int, Int) -l-> Int
   | DivPrimOp  --{l}. (Int, Int) -l-> Int
   | NegPrimOp  --{l}. Int -l-> Int
-  deriving Eq
+  deriving (Show, Eq)
 
 primType tyname = ConType tyname []
 
@@ -80,19 +82,24 @@ lookupPrimOpType primop =
 
 data BindingDecl =
     Binding String Type Expr
+    deriving Show
 
 data DataTypeDecl =
     DataType String [String] [TypeConDecl]
+    deriving Show
 
 data TopLevelDecl =
     BindingTopLevel BindingDecl
   | DataTypeTopLevel DataTypeDecl
+    deriving Show
 
 data TypeConDecl =
    TypeCon String [Type]
+   deriving Show
 
 data Alternative =
   Alternative String [String] Expr
+  deriving Show
 
 
 --

@@ -26,7 +26,7 @@ doProcess line = do
   putStrLn "Parsing..."
   exprSeqAst <- parsing parserSpec terminalList
   putStrLn "Pretty Printing..."
-  --putStrLn (pprintAst exprSeqAst)
+  putStrLn (show (fromASTTopLevelDeclSeq exprSeqAst))
   let toplevelDecls = (fromASTTopLevelDeclSeq exprSeqAst)
   (datatypes, bindings) <- typeCheck toplevelDecls
   return ()

@@ -3,8 +3,9 @@ module Type where
 import Data.Char
 
 data Location =
-      Location String
-    | LocVar String
+    Location String
+  | LocVar String
+  deriving Show
 
 equalLoc (Location x) (Location y) = x==y
 equalLoc (LocVar x) (LocVar y) = x==y
@@ -17,6 +18,7 @@ data Type =
   | TypeAbsType [String] Type
   | LocAbsType [String] Type
   | ConType String [Type]
+  deriving Show
 
 -- Names
 isTypeName (c:s) = isUpper c

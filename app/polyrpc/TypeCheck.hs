@@ -167,7 +167,7 @@ elabBindingDecl gti (Binding name ty expr) = do
   (elab_expr,elab_ty) <- elabExpr gti env clientLoc expr
   if equalType elab_ty ty
   then return (Binding name ty elab_expr)
-  else error $ "[TypeCheck] elabBindingDecl: Incorrect types: " ++ name
+  else error $ "[TypeCheck] elabBindingDecl: Incorrect types: " ++ name ++ "\n" ++ show elab_ty ++ "\n" ++ show ty
 
 ----------------------------------------------------------------------------
 -- [Common] Elaboration of types
@@ -181,7 +181,7 @@ elabType typeInfo tyvars locvars (TypeVarType x) = do
              then return (ConType x [])
              else error $ "[TypeCheck]: elabType: Invalid type constructor: " ++ x
        else
-          error $ "[TypeCheck] elabType: Not found: " ++ x
+          error $ "[TypeCheck] elabType: Not found: " ++ x ++ " in " ++ show tyvars
 
 elabType typeInfo tyvars locvars (TupleType tys) = do
   elab_tys <- mapM (elabType typeInfo tyvars locvars) tys
@@ -211,6 +211,14 @@ elabType typeInfo tyvars locvars (ConType name tys) = do
     then do elab_tys <- mapM (elabType typeInfo tyvars locvars) tys
             return (ConType name elab_tys)
     else error $ "[TypeCheck]: elabType: Invalud args for ConType: " ++ name
+
+elabLocation :: Monad m => [String] -> Location -> m Location
+elabLocation locvars (Location loc)
+  | loc `elem` locvars = return (LocVar loc)
+  | otherwise = return (Location loc)
+elabLocation locvars (LocVar x)
+  | x `elem` locvars = return (LocVar x)
+  | otherwise = error $ "[TypeCheck] elabLocation: Not found LocVar " ++ x
 
 ----------------------------------------------------------------------------
 -- [Common] Elaboration of expressions
@@ -293,28 +301,21 @@ elabExpr gti env loc (LocAbs locvars expr) = do
   return (LocAbs locvars elab_expr, LocAbsType locvars elab_ty)
 
 elabExpr gti env loc_0 (Abs [(var,argty,loc)] expr)  = do
+  elab_argty <- elabType (_typeInfo gti) (_typeVarEnv env) (_locVarEnv env) argty
+  elab_loc <- elabLocation (_locVarEnv env) loc
   let varEnv = _varEnv env
-  let varEnv' = (var,argty):varEnv
-  (elab_expr, ret_ty) <- elabExpr gti (env{_varEnv=varEnv'}) loc expr
-  case loc of
-    Location loc0 -> do
-      let loc' = if loc0 `elem` (_locVarEnv env)
-                 then LocVar loc0 else loc
-      return (Abs [(var,argty,loc')] elab_expr, FunType argty loc' ret_ty)
-    LocVar x -> error $ "[TypeCheck] elabExpr: Abs: LocVar: " ++ x
-  
+  let varEnv' = (var,elab_argty):varEnv
+  (elab_expr, ret_ty) <- elabExpr gti (env{_varEnv=varEnv'}) elab_loc expr
+  return (Abs [(var,elab_argty,elab_loc)] elab_expr, FunType elab_argty elab_loc ret_ty)  
 
 elabExpr gti env loc_0 (Abs ((var,argty,loc):varTypeLocList) expr)  = do
+  elab_argty <- elabType (_typeInfo gti) (_typeVarEnv env) (_locVarEnv env) argty
+  elab_loc <- elabLocation (_locVarEnv env) loc
   let varEnv = _varEnv env
-  let varEnv' = (var,argty):varEnv
+  let varEnv' = (var,elab_argty):varEnv
   (elab_expr, ret_ty) <-
-    elabExpr gti (env{_varEnv=varEnv'}) loc (Abs varTypeLocList expr)
-  case loc of
-    Location loc0 -> do
-      let loc' = if loc0 `elem` (_locVarEnv env)
-                 then LocVar loc0 else loc
-      return (Abs [(var,argty,loc)] elab_expr, FunType argty loc ret_ty)
-    LocVar x -> error $ "[TypeCheck] elabExpr: Abs: LocVar: " ++ x
+    elabExpr gti (env{_varEnv=varEnv'}) elab_loc (Abs varTypeLocList expr)
+  return (Abs [(var,elab_argty,elab_loc)] elab_expr, FunType elab_argty elab_loc ret_ty)
 
 elabExpr gti env loc_0 (Abs [] expr)  =
   error $ "[TypeCheck] elabExpr: empty argument Abs"
@@ -346,22 +347,23 @@ elabExpr gti env loc (Case expr alts) = do
         [] -> error $ "[TypeCheck] elabExpr: invalid constructor type: " ++ tyconName
     _ -> error $ "[TypeCheck] elabExpr: case expr not constructor type"
 
-elabExpr gti env loc (App left_expr right_expr _) = do
+elabExpr gti env loc (App left_expr right_expr l) = do
   (elab_left_expr, left_ty) <- elabExpr gti env loc left_expr
   (elab_right_expr, right_ty) <- elabExpr gti env loc right_expr
   case left_ty of
     FunType argty loc0 retty ->
       if equalType argty right_ty
       then return (App elab_left_expr elab_right_expr (Just loc0), retty)
-      else error $ "[TypeCheck] elabExpr: not equal arg type in app: "
-    _ -> error $ "[TypeCheck] elabExpr: not function type in app: "
+      else error $ "[TypeCheck] elabExpr: not equal arg type in app:\n" ++ show (App left_expr right_expr l) ++ "\n" ++ show argty ++ "\n" ++ show right_ty
+    _ -> error $ "[TypeCheck] elabExpr: not function type in app:\n" ++ show (App left_expr right_expr l) ++ "\n" ++ show left_ty
 
 elabExpr gti env loc (TypeApp expr tys) = do
+  elab_tys <- mapM (elabType (_typeInfo gti) (_typeVarEnv env) (_locVarEnv env)) tys
   (elab_expr, elab_ty) <- elabExpr gti env loc expr
   case elab_ty of
     TypeAbsType tyvars ty0 ->
-      if length tyvars == length tys
-      then return (TypeApp elab_expr tys, doSubst (zip tyvars tys) ty0)
+      if length tyvars == length elab_tys
+      then return (TypeApp elab_expr elab_tys, doSubst (zip tyvars elab_tys) ty0)
       else error $ "[TypeCheck] elabExpr: not equal length of arg types in type app: "
     _ -> error $ "[TypeCheck] elabExpr: not type-abstraction type in type app: "
 
@@ -395,18 +397,20 @@ elabExpr gti env loc (Prim op exprs) = do
 
 elabExpr gti env loc (Lit literal) = return (Lit literal, typeOfLiteral literal)
 
-elabExpr gti env loc (Constr conname tys exprs) = do
+elabExpr gti env loc (Constr conname contys exprs) = do
+  elab_contys <- mapM (elabType (_typeInfo gti) (_typeVarEnv env) (_locVarEnv env)) contys
   elabExprTyList <- mapM (elabExpr gti env loc) exprs
   let (elab_exprs, elab_tys) = unzip elabExprTyList
   case lookupConstr gti conname of
     ((argtys,tyname,tyvars):_) ->
       case unifyTypes argtys elab_tys of
         Just subst ->
-          return (Constr conname tys elab_exprs -- BUG??
+          return (Constr conname elab_contys elab_exprs -- BUG??
                  , doSubst subst (ConType tyname (map TypeVarType tyvars)))
         Nothing -> error $ "[TypeCheck] elabExpr: constructor arg types incorrect: " ++ conname
             
     [] -> error $ "[TypeCheck] elabExpr: constructor not found: " ++ conname
+
 
 --
 elabAlts gti env loc tys tyvars tycondecls [alt] = do
