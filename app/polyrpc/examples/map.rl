@@ -11,6 +11,6 @@ map : {l1 l2 l3}. [a b]. ((a -l1-> b) -l2-> List<a> -l3-> List<b>)
 	
 	
 main : List<Int>
-     = map {client client client} [Int Int]
+     = map {client server server} [Int Int]
          (\x:Int @client . x) (Cons [Int] 1 (Cons [Int] 2 (Cons [Int] 3 (Nil [Int]))))
 	 
