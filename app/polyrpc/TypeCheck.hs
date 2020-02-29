@@ -2,6 +2,7 @@ module TypeCheck where
 
 import Type
 import Expr
+import BasicLib
 
 typeCheck :: Monad m => [TopLevelDecl] -> m ([DataTypeDecl], [BindingDecl])
 typeCheck toplevelDecls = do
@@ -30,7 +31,7 @@ typeCheck toplevelDecls = do
               { _typeInfo=typeInfo
               , _conTypeInfo=conTypeInfo
               , _dataTypeInfo=dataTypeInfo
-              , _bindingTypeInfo=bindingTypeInfo }
+              , _bindingTypeInfo=basicLib ++ bindingTypeInfo }
             
   elab_bindingDecls <- elaborate gti partial_elab_bindingDecls
 

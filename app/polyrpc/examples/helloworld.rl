@@ -1,3 +1,3 @@
 
-main : Unit = print "Hello World\n"
+main : Unit = print {client} "Hello World\n"
 
