@@ -3,8 +3,8 @@
 module Type where
 
 import Data.Char
-import Data.Aeson
 import GHC.Generics
+import Data.Aeson
 
 data Location =
     Location String

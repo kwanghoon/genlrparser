@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Main where
 
 import CommonParserUtil
@@ -12,7 +14,7 @@ import TypeCheck
 
 --import Text.JSON
 --import Text.JSON.Pretty
-import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Aeson.Encode.Pretty
 import Data.Maybe
 import System.IO 
@@ -28,6 +30,7 @@ main = do
         if bool == False
         then return ()
         else B.writeFile jsonfile (encodePretty toplevels)
+--        else B.putStrLn (encodePretty toplevels)
   mapM_ (uncurry doProcess)
     [((build bool file jsonfile), file) | file <- files, let jsonfile = file++".json"]
 
@@ -43,6 +46,8 @@ doProcess cont line = do
   let toplevelDecls = fromASTTopLevelDeclSeq exprSeqAst
   putStrLn "Type checking..."
   elab_toplevelDecls <- typeCheck toplevelDecls
+  putStrLn "Dumping..."
+  putStrLn $ show $ elab_toplevelDecls
   putStrLn "Finalizing..."
   cont elab_toplevelDecls
   

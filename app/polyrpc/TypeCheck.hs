@@ -281,7 +281,7 @@ elabExpr gti env loc (Var x)
           return (Abs varTypeLocList (Constr x [] (map Var vars)), finaltype)
           
         ((tys, tyname, tyvars):_) -> do
-          let vars = ["arg"++show i | i<-[1..]]
+          let vars = take (length tys) ["arg"++show i | i<-[1..]]
           let locs = loc : locs
           let varTypeLocList = zip3 vars tys locs
           let finaltype = foldr (\(ty,loc) ty0 -> FunType ty loc ty0)
