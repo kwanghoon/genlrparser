@@ -54,6 +54,8 @@ executable polyrpc-exe
                      , aeson
                      , aeson-pretty
                      , prettyprinter
+                     , json
+                     , pretty
                      , genlrparser
   default-language:    Haskell2010
 

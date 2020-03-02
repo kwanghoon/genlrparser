@@ -1,15 +1,19 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveDataTypeable, DeriveGeneric #-}
 
 module Type where
 
 import Data.Char
-import GHC.Generics
-import Data.Aeson
+-- For aeson
+-- import GHC.Generics
+-- import Data.Aeson
+import Text.JSON.Generic
 
 data Location =
     Location String
   | LocVar String
-  deriving (Show, Generic)
+-- For aeson  
+--  deriving (Show, Generic)
+  deriving (Show, Typeable, Data)
 
 equalLoc (Location x) (Location y) = x==y
 equalLoc (LocVar x) (LocVar y) = x==y
@@ -22,11 +26,14 @@ data Type =
   | TypeAbsType [String] Type
   | LocAbsType [String] Type
   | ConType String [Type]
-  deriving (Show, Generic)
+-- For aeson  
+--  deriving (Show, Generic)
+  deriving (Show, Typeable, Data)
 
 --
-instance ToJSON Location where
-instance ToJSON Type where
+-- For aeson
+-- instance ToJSON Location where
+-- instance ToJSON Type where
 
 -- Names
 isTypeName (c:s) = isUpper c

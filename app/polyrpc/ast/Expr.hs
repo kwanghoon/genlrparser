@@ -1,10 +1,12 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveDataTypeable, DeriveGeneric #-}
 
 module Expr where
 
 import Type
-import GHC.Generics
-import Data.Aeson
+-- For aeson
+-- import GHC.Generics
+-- import Data.Aeson
+import Text.JSON.Generic
 
 --
 data Expr =
@@ -21,14 +23,18 @@ data Expr =
   | Prim PrimOp [Expr]
   | Lit Literal
   | Constr String [Type] [Expr]
-  deriving (Show, Generic)
+-- For aeson  
+--  deriving (Show, Generic)
+  deriving (Show, Typeable, Data)
 
 data Literal =
     IntLit Int
   | StrLit String
   | BoolLit Bool
   | UnitLit
-  deriving (Show, Generic)
+-- For aeson  
+--  deriving (Show, Generic)
+  deriving (Show, Typeable, Data)
 
 typeOfLiteral (IntLit _) = int_type
 typeOfLiteral (StrLit _) = string_type
@@ -54,7 +60,9 @@ data PrimOp =
   | MulPrimOp  --{l}. (Int, Int) -l-> Int
   | DivPrimOp  --{l}. (Int, Int) -l-> Int
   | NegPrimOp  --{l}. Int -l-> Int
-  deriving (Show, Eq, Generic)
+-- For aeson  
+--  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Typeable, Data)
 
 primType tyname = ConType tyname []
 
@@ -86,35 +94,46 @@ lookupPrimOpType primop =
 
 data BindingDecl =
     Binding String Type Expr
-    deriving (Show, Generic)
+-- For aeson  
+--  deriving (Show, Generic)
+    deriving (Show, Typeable, Data)
 
 data DataTypeDecl =
     DataType String [String] [TypeConDecl]
-    deriving (Show, Generic)
+-- For aeson  
+--  deriving (Show, Generic)
+    deriving (Show, Typeable, Data)
 
 data TopLevelDecl =
     BindingTopLevel BindingDecl
   | DataTypeTopLevel DataTypeDecl
   | LibDeclTopLevel String Type 
-    deriving (Show, Generic)
+-- For aeson  
+--  deriving (Show, Generic)
+    deriving (Show, Typeable, Data)
 
 data TypeConDecl =
    TypeCon String [Type]
-   deriving (Show, Generic)
+-- For aeson  
+--  deriving (Show, Generic)
+    deriving (Show, Typeable, Data)
 
 data Alternative =
   Alternative String [String] Expr
-  deriving (Show, Generic)
+-- For aeson  
+--  deriving (Show, Generic)
+    deriving (Show, Typeable, Data)
 
 --
-instance ToJSON Expr where
-instance ToJSON Literal where
-instance ToJSON PrimOp where
-instance ToJSON BindingDecl where
-instance ToJSON DataTypeDecl where
-instance ToJSON TopLevelDecl where
-instance ToJSON TypeConDecl where
-instance ToJSON Alternative where
+-- For aeson
+-- instance ToJSON Expr where
+-- instance ToJSON Literal where
+-- instance ToJSON PrimOp where
+-- instance ToJSON BindingDecl where
+-- instance ToJSON DataTypeDecl where
+-- instance ToJSON TopLevelDecl where
+-- instance ToJSON TypeConDecl where
+-- instance ToJSON Alternative where
 
 
 

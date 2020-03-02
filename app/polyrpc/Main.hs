@@ -12,10 +12,12 @@ import Type
 import Expr
 import TypeCheck
 
---import Text.JSON
---import Text.JSON.Pretty
-import qualified Data.ByteString.Lazy.Char8 as B
-import Data.Aeson.Encode.Pretty
+import Text.JSON.Generic
+import Text.JSON.Pretty
+import Text.PrettyPrint
+-- For aeson
+--import qualified Data.ByteString.Lazy.Char8 as B
+--import Data.Aeson.Encode.Pretty
 import Data.Maybe
 import System.IO 
 import System.Environment (getArgs)
@@ -29,8 +31,11 @@ main = do
   let build bool file jsonfile toplevels =
         if bool == False
         then return ()
-        else B.writeFile jsonfile (encodePretty toplevels)
---        else B.putStrLn (encodePretty toplevels)
+-- For aeson        
+--        else B.writeFile jsonfile (encodePretty toplevels)
+-- --        else B.putStrLn (encodePretty toplevels)
+        else writeFile jsonfile $ render $ pp_value $ toJSON toplevels
+--        else putStrLn $ render $ pp_value $ toJSON toplevels
   mapM_ (uncurry doProcess)
     [((build bool file jsonfile), file) | file <- files, let jsonfile = file++".json"]
 
