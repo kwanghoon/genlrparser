@@ -1,6 +1,10 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Expr where
 
 import Type
+import GHC.Generics
+import Data.Aeson
 
 --
 data Expr =
@@ -17,14 +21,14 @@ data Expr =
   | Prim PrimOp [Expr]
   | Lit Literal
   | Constr String [Type] [Expr]
-  deriving Show
+  deriving (Show, Generic)
 
 data Literal =
     IntLit Int
   | StrLit String
   | BoolLit Bool
   | UnitLit
-  deriving Show
+  deriving (Show, Generic)
 
 typeOfLiteral (IntLit _) = int_type
 typeOfLiteral (StrLit _) = string_type
@@ -50,7 +54,7 @@ data PrimOp =
   | MulPrimOp  --{l}. (Int, Int) -l-> Int
   | DivPrimOp  --{l}. (Int, Int) -l-> Int
   | NegPrimOp  --{l}. Int -l-> Int
-  deriving (Show, Eq)
+  deriving (Show, Eq, Generic)
 
 primType tyname = ConType tyname []
 
@@ -82,24 +86,37 @@ lookupPrimOpType primop =
 
 data BindingDecl =
     Binding String Type Expr
-    deriving Show
+    deriving (Show, Generic)
 
 data DataTypeDecl =
     DataType String [String] [TypeConDecl]
-    deriving Show
+    deriving (Show, Generic)
 
 data TopLevelDecl =
     BindingTopLevel BindingDecl
   | DataTypeTopLevel DataTypeDecl
-    deriving Show
+  | LibDeclTopLevel String Type 
+    deriving (Show, Generic)
 
 data TypeConDecl =
    TypeCon String [Type]
-   deriving Show
+   deriving (Show, Generic)
 
 data Alternative =
   Alternative String [String] Expr
-  deriving Show
+  deriving (Show, Generic)
+
+--
+instance ToJSON Expr where
+instance ToJSON Literal where
+instance ToJSON PrimOp where
+instance ToJSON BindingDecl where
+instance ToJSON DataTypeDecl where
+instance ToJSON TopLevelDecl where
+instance ToJSON TypeConDecl where
+instance ToJSON Alternative where
+
+
 
 
 --

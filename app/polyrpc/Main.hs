@@ -6,30 +6,45 @@ import Token
 import Lexer
 import Terminal
 import Parser
+import Type
 import Expr
 import TypeCheck
 
-import System.IO
+--import Text.JSON
+--import Text.JSON.Pretty
+import qualified Data.ByteString.Lazy as B
+import Data.Aeson.Encode.Pretty
+import Data.Maybe
+import System.IO 
+import System.Environment (getArgs)
 
 main :: IO ()
 main = do
-  fileName <- readline "Enter your file: "
-  case fileName of
-    "exit" -> return ()
-    line -> doProcess line
+  args <- getArgs
+  cmd  <- getCmd args
+  let bool  = _flag_print_json cmd
+  let files = _files cmd
+  let build bool file jsonfile toplevels =
+        if bool == False
+        then return ()
+        else B.writeFile jsonfile (encodePretty toplevels)
+  mapM_ (uncurry doProcess)
+    [((build bool file jsonfile), file) | file <- files, let jsonfile = file++".json"]
 
-doProcess line = do
+doProcess cont line = do
   text <- readFile line 
   putStrLn "Lexing..."
   terminalList <- lexing lexerSpec text
   mapM_ (putStrLn) (map terminalToString terminalList)
   putStrLn "Parsing..."
   exprSeqAst <- parsing parserSpec terminalList
-  putStrLn "Pretty Printing..."
-  putStrLn (show (fromASTTopLevelDeclSeq exprSeqAst))
-  let toplevelDecls = (fromASTTopLevelDeclSeq exprSeqAst)
-  (datatypes, bindings) <- typeCheck toplevelDecls
-  return ()
+  putStrLn "Dumping..."
+  putStrLn $ show $ fromASTTopLevelDeclSeq exprSeqAst
+  let toplevelDecls = fromASTTopLevelDeclSeq exprSeqAst
+  putStrLn "Type checking..."
+  elab_toplevelDecls <- typeCheck toplevelDecls
+  putStrLn "Finalizing..."
+  cont elab_toplevelDecls
   
   
 readline msg = do
@@ -44,3 +59,22 @@ readline' = do
   else
     do line <- readline'
        return (ch:line)
+
+--
+data Cmd = Cmd { _flag_print_json :: Bool, _files :: [String] }
+
+getCmd :: Monad m => [String] -> m Cmd
+getCmd args = collect (Cmd {_flag_print_json=False, _files=[]}) args 
+
+collect :: Monad m => Cmd -> [String] -> m Cmd
+collect cmd [] = return cmd
+collect cmd ("--output-json":args) = do
+  let new_cmd = cmd { _flag_print_json = True }
+  collect new_cmd args
+collect cmd (arg:args) = do
+  let old_files = _files cmd 
+  let new_cmd = cmd { _files = old_files ++ [arg] }
+  collect new_cmd args
+
+  
+
