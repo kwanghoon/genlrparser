@@ -30,6 +30,17 @@ data Type =
 --  deriving (Show, Generic)
   deriving (Show, Typeable, Data)
 
+singleTypeAbsType (TypeAbsType [] expr) = expr
+singleTypeAbsType (TypeAbsType [a] expr) = TypeAbsType [a] expr
+singleTypeAbsType (TypeAbsType (a:as) expr) = TypeAbsType [a] (singleTypeAbsType (TypeAbsType as expr))
+singleTypeAbsType other = other
+
+singleLocAbsType (LocAbsType [] expr) = expr
+singleLocAbsType (LocAbsType [a] expr) = LocAbsType [a] expr
+singleLocAbsType (LocAbsType (a:as) expr) = LocAbsType [a] (singleLocAbsType (LocAbsType as expr))
+singleLocAbsType other = other
+
+
 --
 -- For aeson
 -- instance ToJSON Location where

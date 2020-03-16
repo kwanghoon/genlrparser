@@ -36,14 +36,14 @@ parserSpec = ParserSpec
                           (fromASTType (get rhs 3))) ),
 
       ("PolyAbsType -> { Identifiers } . PolyAbsType",
-        \rhs -> toASTType (LocAbsType
-                          (fromASTIdSeq (get rhs 2))
-                          (fromASTType (get rhs 5))) ),
+        \rhs -> toASTType (singleLocAbsType
+                            (LocAbsType (fromASTIdSeq (get rhs 2))
+                                        (fromASTType (get rhs 5)))) ),
 
       ("PolyAbsType -> [ Identifiers ] . PolyAbsType",
-        \rhs -> toASTType (TypeAbsType
-                          (fromASTIdSeq (get rhs 2))
-                          (fromASTType (get rhs 5))) ),
+        \rhs -> toASTType (singleTypeAbsType (TypeAbsType
+                                              (fromASTIdSeq (get rhs 2))
+                                              (fromASTType (get rhs 5)))) ),
 
       ("PolyAbsType -> PrimaryType", \rhs -> get rhs 1),
 
@@ -125,13 +125,13 @@ parserSpec = ParserSpec
         \rhs -> toASTBindingDeclSeq $ fromASTBindingDecl (get rhs 1) : fromASTBindingDeclSeq (get rhs 3) ),
 
       ("LExpr -> { Identifiers } . LExpr",
-        \rhs -> toASTExpr (LocAbs (fromASTIdSeq (get rhs 2)) (fromASTExpr (get rhs 5))) ),
+        \rhs -> toASTExpr (singleLocAbs (LocAbs (fromASTIdSeq (get rhs 2)) (fromASTExpr (get rhs 5)))) ),
 
       ("LExpr -> [ Identifiers ] . LExpr",
-        \rhs -> toASTExpr (TypeAbs (fromASTIdSeq (get rhs 2)) (fromASTExpr (get rhs 5))) ),
+        \rhs -> toASTExpr (singleTypeAbs (TypeAbs (fromASTIdSeq (get rhs 2)) (fromASTExpr (get rhs 5)))) ),
 
       ("LExpr -> \\ IdTypeLocSeq . LExpr",
-        \rhs -> toASTExpr (Abs (fromASTIdTypeLocSeq (get rhs 2)) (fromASTExpr (get rhs 4))) ),
+        \rhs -> toASTExpr (singleAbs (Abs (fromASTIdTypeLocSeq (get rhs 2)) (fromASTExpr (get rhs 4)))) ),
 
       ("LExpr -> let { Bindings } LExpr end",
         \rhs -> toASTExpr (Let (fromASTBindingDeclSeq (get rhs 3)) (fromASTExpr (get rhs 5))) ),
@@ -169,10 +169,10 @@ parserSpec = ParserSpec
         \rhs -> toASTExpr (App (fromASTExpr (get rhs 1)) (fromASTExpr (get rhs 2)) Nothing) ),
 
       ("Expr -> Expr [ Types ]",
-        \rhs -> toASTExpr (TypeApp (fromASTExpr (get rhs 1)) (fromASTTypeSeq (get rhs 3))) ),
+        \rhs -> toASTExpr (singleTypeApp (TypeApp (fromASTExpr (get rhs 1)) (fromASTTypeSeq (get rhs 3)))) ),
 
       ("Expr -> Expr { Identifiers }",
-        \rhs -> toASTExpr (LocApp (fromASTExpr (get rhs 1)) (map Location (fromASTIdSeq (get rhs 3)))) ),
+        \rhs -> toASTExpr (singleLocApp (LocApp (fromASTExpr (get rhs 1)) (map Location (fromASTIdSeq (get rhs 3))))) ),
 
       ("Expr -> Tuple", \rhs -> get rhs 1 ),
 

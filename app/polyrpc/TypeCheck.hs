@@ -269,8 +269,8 @@ elabExpr gti env loc (Var x)
         (([], tyname, []):_) -> return (Constr x [] [], ConType tyname [])
         
         (([], tyname, tyvars):_) ->
-          return (TypeAbs tyvars (Constr x (map TypeVarType tyvars) [])
-                 , TypeAbsType tyvars (ConType tyname (map TypeVarType tyvars)))
+          return (singleTypeAbs (TypeAbs tyvars (Constr x (map TypeVarType tyvars) []))
+                 , singleTypeAbsType (TypeAbsType tyvars (ConType tyname (map TypeVarType tyvars))))
                  
         ((tys, tyname, []):_) -> do
           let vars = ["arg"++show i | i<-[1..]]
@@ -278,7 +278,7 @@ elabExpr gti env loc (Var x)
           let varTypeLocList = zip3 vars tys locs
           let finaltype = foldr (\(ty,loc) ty0 -> FunType ty loc ty0)
                             (ConType tyname []) (zip tys locs)
-          return (Abs varTypeLocList (Constr x [] (map Var vars)), finaltype)
+          return (singleAbs (Abs varTypeLocList (Constr x [] (map Var vars))), finaltype)
           
         ((tys, tyname, tyvars):_) -> do
           let vars = take (length tys) ["arg"++show i | i<-[1..]]
@@ -286,10 +286,10 @@ elabExpr gti env loc (Var x)
           let varTypeLocList = zip3 vars tys locs
           let finaltype = foldr (\(ty,loc) ty0 -> FunType ty loc ty0)
                             (ConType tyname (map TypeVarType tyvars)) (zip tys locs)
-          return (TypeAbs tyvars
-                  (Abs varTypeLocList
-                   (Constr x (map TypeVarType tyvars) (map Var vars)))
-                 , TypeAbsType tyvars finaltype)
+          return (singleTypeAbs (TypeAbs tyvars
+                  (singleAbs (Abs varTypeLocList
+                   (Constr x (map TypeVarType tyvars) (map Var vars)))))
+                 , singleTypeAbsType (TypeAbsType tyvars finaltype))
         
         [] -> error $ "[TypeCheck] elabExpr: Not found constructor " ++ x
   
@@ -297,13 +297,13 @@ elabExpr gti env loc (TypeAbs tyvars expr) = do
   let typeVarEnv = _typeVarEnv env
   let typeVarEnv' = reverse tyvars ++ typeVarEnv
   (elab_expr, elab_ty) <- elabExpr gti (env{_typeVarEnv=typeVarEnv'}) loc expr
-  return (TypeAbs tyvars elab_expr, TypeAbsType tyvars elab_ty)
+  return (singleTypeAbs (TypeAbs tyvars elab_expr), singleTypeAbsType (TypeAbsType tyvars elab_ty))
 
 elabExpr gti env loc (LocAbs locvars expr) = do
   let locVarEnv = _locVarEnv env
   let locVarEnv' = reverse locvars ++ locVarEnv
   (elab_expr, elab_ty) <- elabExpr gti (env{_locVarEnv=locVarEnv'}) loc expr
-  return (LocAbs locvars elab_expr, LocAbsType locvars elab_ty)
+  return (singleLocAbs (LocAbs locvars elab_expr), singleLocAbsType (LocAbsType locvars elab_ty))
 
 elabExpr gti env loc_0 (Abs [(var,argty,loc)] expr)  = do
   elab_argty <- elabType (_typeInfo gti) (_typeVarEnv env) (_locVarEnv env) argty
@@ -319,7 +319,7 @@ elabExpr gti env loc_0 (Abs ((var,argty,loc):varTypeLocList) expr)  = do
   let varEnv = _varEnv env
   let varEnv' = (var,elab_argty):varEnv
   (elab_expr, ret_ty) <-
-    elabExpr gti (env{_varEnv=varEnv'}) elab_loc (Abs varTypeLocList expr)
+    elabExpr gti (env{_varEnv=varEnv'}) elab_loc (singleAbs (Abs varTypeLocList expr))
   return (Abs [(var,elab_argty,elab_loc)] elab_expr, FunType elab_argty elab_loc ret_ty)
 
 elabExpr gti env loc_0 (Abs [] expr)  =
@@ -368,7 +368,7 @@ elabExpr gti env loc (TypeApp expr tys) = do
   case elab_ty of
     TypeAbsType tyvars ty0 ->
       if length tyvars == length elab_tys
-      then return (TypeApp elab_expr elab_tys, doSubst (zip tyvars elab_tys) ty0)
+      then return (singleTypeApp (TypeApp elab_expr elab_tys), doSubst (zip tyvars elab_tys) ty0)
       else error $ "[TypeCheck] elabExpr: not equal length of arg types in type app: "
     _ -> error $ "[TypeCheck] elabExpr: not type-abstraction type in type app: "
 
@@ -381,8 +381,8 @@ elabExpr gti env loc (LocApp expr locs) =
   case elab_ty of
     LocAbsType locvars ty0 ->
       if length locvars == length locs
-      then return (LocApp elab_expr locs0, doSubstLoc (zip locvars locs0) ty0)
-      else error $ "[TypeCheck] elabExpr: not equal length of arg locations in location app: "
+      then return (singleLocApp (LocApp elab_expr locs0), doSubstLoc (zip locvars locs0) ty0)
+      else error $ "[TypeCheck] elabExpr: not equal length of arg locations in location app: " ++ show locvars ++ " " ++ show locs
     _ -> error $ "[TypeCheck] elabExpr: not location-abstraction type in type app: "
 
 elabExpr gti env loc (Tuple exprs) = do

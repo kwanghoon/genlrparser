@@ -64,6 +64,33 @@ data PrimOp =
 --  deriving (Show, Eq, Generic)
   deriving (Show, Eq, Typeable, Data)
 
+
+singleTypeAbs (TypeAbs [] expr) = expr
+singleTypeAbs (TypeAbs [a] expr) = TypeAbs [a] expr
+singleTypeAbs (TypeAbs (a:as) expr) = TypeAbs [a] (singleTypeAbs (TypeAbs as expr))
+singleTypeAbs other = other
+
+singleLocAbs (LocAbs [] expr) = expr
+singleLocAbs (LocAbs [l] expr) = LocAbs [l] expr
+singleLocAbs (LocAbs (l:ls) expr) = LocAbs [l] (singleLocAbs (LocAbs ls expr))
+singleLocAbs other = other
+
+singleAbs (Abs [] expr) = expr
+singleAbs (Abs [t] expr) = Abs [t] expr
+singleAbs (Abs (t:ts) expr) = Abs [t] (singleAbs (Abs ts expr))
+singleAbs other = other
+
+singleTypeApp (TypeApp expr []) = expr
+singleTypeApp (TypeApp expr [ty]) = TypeApp expr [ty]
+singleTypeApp (TypeApp expr (ty:tys)) = singleTypeApp (TypeApp (TypeApp expr [ty]) tys)
+singleTypeApp other = other
+
+singleLocApp (LocApp expr []) = expr
+singleLocApp (LocApp expr [l]) = LocApp expr [l]
+singleLocApp (LocApp expr (l:ls)) = singleLocApp (LocApp (LocApp expr [l]) ls)
+singleLocApp other = other
+
+
 primType tyname = ConType tyname []
 
 bool_type = primType boolType
