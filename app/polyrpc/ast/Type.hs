@@ -26,6 +26,7 @@ data Type =
   | TypeAbsType [String] Type
   | LocAbsType [String] Type
   | ConType String [Type]
+  | RefType Location Type
 -- For aeson  
 --  deriving (Show, Generic)
   deriving (Show, Typeable, Data)
@@ -87,6 +88,8 @@ doSubstOne x ty (LocAbsType tyvars bodyty) =
   LocAbsType tyvars (doSubstOne x ty bodyty)
 doSubstOne x ty (ConType name tys) =
   ConType name (map (doSubstOne x ty) tys)
+doSubstOne x ty (RefType loc valty) =
+  RefType loc (doSubstOne x ty valty)
 
 doSubst :: [(String,Type)] -> Type -> Type
 doSubst [] ty0 = ty0
@@ -114,6 +117,8 @@ doSubstLocOne x loc (LocAbsType locvars bodyty)
   | otherwise = LocAbsType locvars (doSubstLocOne x loc bodyty)
 doSubstLocOne x loc (ConType name tys) =
   ConType name (map (doSubstLocOne x loc) tys)
+doSubstLocOne x loc (RefType loc0 valty) =
+  RefType (doSubstLocOverLoc x loc loc0) (doSubstLocOne x loc valty)
 
 
 doSubstLoc :: [(String, Location)] -> Type -> Type
@@ -150,12 +155,16 @@ equalTypeWithFreshness ns (LocAbsType locvars1 ty1) (LocAbsType locvars2 ty2) =
 equalTypeWithFreshness ns (ConType name1 tys1) (ConType name2 tys2) =   
   name1==name2 && and (map (uncurry (equalTypeWithFreshness ns)) (zip tys1 tys2))
 
+equalTypeWithFreshness ns (RefType loc1 ty1) (RefType loc2 ty2) =
+  equalLoc loc1 loc2 && equalTypeWithFreshness ns ty1 ty2
+
 --
 occur :: String -> Type -> Bool
 occur x (TypeVarType y) = x==y
 occur x (TupleType tys) = and (map (occur x) tys)
 occur x (FunType argty loc retty) = occur x argty && occur x retty
 occur x (ConType c tys) = and (map (occur x) tys)
+occur x (RefType loc ty) = occur x ty
 occur x (TypeAbsType _ _) = False  -- ???
 occur x (LocAbsType _ _) = False -- ???
 
@@ -185,6 +194,8 @@ unifyTypeOne (FunType argty1 loc1 retty1) (FunType argty2 loc2 retty2) =  -- loc
 unifyTypeOne (ConType c1 tys1) (ConType c2 tys2)
   | c1==c2 = unifyTypes tys1 tys2
   | otherwise = Nothing
+
+unifyTypeOne (RefType loc1 ty1) (RefType loc2 ty2) = unifyTypeOne ty1 ty2 -- loc1 and loc2 ??
 
 unifyTypeOne _ _ = Nothing   -- universal types and locations ???
 

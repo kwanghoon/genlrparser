@@ -1,6 +1,6 @@
 ; This is an example of a human-readable grammar format
 ; To convert it into the format by the parser tool
-;  $ stacke exec conv-exe grm/polyrpc.lgrm
+;  $ stack exec conv-exe grm/polyrpc.lgrm
 
 @start TopLevel
 
@@ -28,6 +28,7 @@ PrimaryType
   | TupleType
   | ( Type )
   | IdentifierOrTypeApplication
+  | RefType
 
 ;  = Unit
 ;  | Int
@@ -52,6 +53,9 @@ Types
 OptTypes
   =
   | Types
+
+RefType
+  =  identifier < Type @ Location >
 
 ;; Grammar for terms
 
@@ -109,7 +113,7 @@ Expr
   | Expr [ Types ]
   | Expr { Identifiers }
   | Tuple
-  | ConditionalExpr
+  | AssignExpr
 
 Tuple
   = ( LExpr , LExprSeq )
@@ -118,11 +122,12 @@ LExprSeq
   = LExpr 
   | LExpr , LExprSeq
 
-ConditionalExpr
-  = LogicNot
+AssignExpr
+  = DerefExpr
+  | DerefExpr := { Identifiers } [ Types ] AssignExpr
 
-LogicNot
-  = ! LogicNot
+DerefExpr
+  = ! { Identifiers } [ Types ] DerefExpr
   | LogicOr
 
 LogicOr

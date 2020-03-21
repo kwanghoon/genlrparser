@@ -42,6 +42,7 @@ data Token =
   | SUB_TOKEN
   | MUL_TOKEN
   | DIV_TOKEN
+  | ASSIGN_TOKEN
 
   | INTEGER_TOKEN
   | BOOLEAN_TOKEN
@@ -93,6 +94,7 @@ tokenStrList =
     (SUB_TOKEN, "-"),
     (MUL_TOKEN, "*"),
     (DIV_TOKEN, "/"),
+    (ASSIGN_TOKEN, ":="),
     (INTEGER_TOKEN, "integer"),
     (BOOLEAN_TOKEN, "boolean"),
     (STRING_TOKEN, "string")

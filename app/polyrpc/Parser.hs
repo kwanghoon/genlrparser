@@ -60,7 +60,9 @@ parserSpec = ParserSpec
       ("PrimaryType -> ( Type )", \rhs -> get rhs 2 ),
 
       ("PrimaryType -> IdentifierOrTypeApplication", \rhs -> get rhs 1 ),
-
+      
+      ("PrimaryType -> RefType", \rhs -> get rhs 1 ),
+      
       ("IdentifierOrTypeApplication -> identifier", \rhs -> toASTType (TypeVarType (getText rhs 1)) ),
 
       ("IdentifierOrTypeApplication -> identifier < Types >",
@@ -84,6 +86,9 @@ parserSpec = ParserSpec
 
       ("OptTypes -> Types", \rhs -> get rhs 1 ),
 
+      ("RefType -> identifier < Type @ Location >",
+       \rhs -> toASTType (RefType (fromASTLocation (get rhs 5)) (fromASTType (get rhs 3))) ),
+      
       ("TopLevel -> Binding",
         \rhs -> toASTTopLevelDeclSeq [BindingTopLevel (fromASTBindingDecl (get rhs 1 ))] ),
 
@@ -176,7 +181,7 @@ parserSpec = ParserSpec
 
       ("Expr -> Tuple", \rhs -> get rhs 1 ),
 
-      ("Expr -> ConditionalExpr", \rhs -> get rhs 1 ),
+      ("Expr -> AssignExpr", \rhs -> get rhs 1 ),
 
       ("Tuple -> ( LExpr , LExprSeq )",
         \rhs -> toASTExpr (Tuple $ fromASTExpr (get rhs 2) : fromASTExprSeq (get rhs 4)) ),
@@ -186,11 +191,33 @@ parserSpec = ParserSpec
       ("LExprSeq -> LExpr , LExprSeq",
         \rhs -> toASTExprSeq ( fromASTExpr (get rhs 1) : fromASTExprSeq (get rhs 3)) ),
 
-      ("ConditionalExpr -> LogicNot", \rhs -> get rhs 1 ),
+      ("AssignExpr -> DerefExpr", \rhs -> get rhs 1 ),
 
-      ("LogicNot -> ! LogicNot", \rhs -> toASTExpr (Prim NotPrimOp [fromASTExpr (get rhs 2)]) ),
+      ("AssignExpr -> DerefExpr := { Identifiers } [ Types ] AssignExpr",
+       \rhs ->
+         toASTExpr
+         (App
+          (App
+           (singleTypeApp (TypeApp
+            (singleLocApp ( LocApp (Var ":=") (map Location (fromASTIdSeq (get rhs 4))) ) )
+            (fromASTTypeSeq (get rhs 7)) ) )
+           (fromASTExpr (get rhs 1))
+           Nothing )
+          (fromASTExpr (get rhs 9))
+          Nothing) ),
 
-      ("LogicNot -> LogicOr", \rhs -> get rhs 1 ),
+      ("DerefExpr -> LogicNot", \rhs -> get rhs 1 ),
+
+      ("DerefExpr -> ! { Identifiers } [ Types ] DerefExpr",
+       \rhs ->
+         toASTExpr
+         (App
+          (singleTypeApp (TypeApp
+           (singleLocApp (LocApp (Var "!") (map Location (fromASTIdSeq (get rhs 3)))))
+           (fromASTTypeSeq (get rhs 6)) ))
+          (fromASTExpr (get rhs 8)) Nothing) ),
+
+      ("DerefExpr -> LogicOr", \rhs -> get rhs 1 ),
 
       ("LogicOr -> LogicOr or LogicAnd",
         \rhs -> toASTExpr (Prim OrPrimOp [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),

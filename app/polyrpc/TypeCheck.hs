@@ -217,6 +217,12 @@ elabType typeInfo tyvars locvars (ConType name tys) = do
             return (ConType name elab_tys)
     else error $ "[TypeCheck]: elabType: Invalud args for ConType: " ++ name
 
+elabType typeInfo tyvars locvars (RefType (Location loc) ty) = do
+  elab_ty <- elabType typeInfo tyvars locvars ty
+  let loc0 = if loc `elem` locvars then LocVar loc else Location loc
+  return (RefType loc0 elab_ty)
+
+
 elabLocation :: Monad m => [String] -> Location -> m Location
 elabLocation locvars (Location loc)
   | loc `elem` locvars = return (LocVar loc)
@@ -259,11 +265,6 @@ collectDataTypeInfo datatypeDecls = do
 elabExpr :: Monad m =>
   GlobalTypeInfo -> Env -> Location -> Expr -> m (Expr, Type)
 elabExpr gti env loc (Var x)
-  | isBindingName x =        -- if it is a term variable
-  case lookupVar env x of    -- try to find it in the local var env or
-    (x_ty:_) -> return (Var x, x_ty)
-    [] -> error $ "[TypeCheck] Not found constructor " ++ x
-        
   | isConstructorName x =    -- if it is a constructor
       case lookupConstr gti x  of
         (([], tyname, []):_) -> return (Constr x [] [], ConType tyname [])
@@ -293,6 +294,11 @@ elabExpr gti env loc (Var x)
         
         [] -> error $ "[TypeCheck] elabExpr: Not found constructor " ++ x
   
+  | otherwise =    --  isBindingName x =        -- if it is a term variable
+  case lookupVar env x of    -- try to find it in the local var env or
+    (x_ty:_) -> return (Var x, x_ty)
+    [] -> error $ "[TypeCheck] Not found constructor " ++ x
+        
 elabExpr gti env loc (TypeAbs tyvars expr) = do
   let typeVarEnv = _typeVarEnv env
   let typeVarEnv' = reverse tyvars ++ typeVarEnv
@@ -416,6 +422,7 @@ elabExpr gti env loc (Constr conname contys exprs) = do
             
     [] -> error $ "[TypeCheck] elabExpr: constructor not found: " ++ conname
 
+-- elabExpr gti env loc expr = error $ "[TypeCheck] elabExpr: " ++ show expr
 
 --
 elabAlts gti env loc tys tyvars tycondecls [alt] = do

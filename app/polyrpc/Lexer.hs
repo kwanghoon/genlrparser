@@ -26,6 +26,7 @@ lexerSpec = LexerSpec
         ("\\."    , mkFn DOT_TOKEN),
         ("\\,"    , mkFn COMMA_TOKEN),
         ("\\;"    , mkFn SEMICOLON_TOKEN),
+        ("\\:="   , mkFn ASSIGN_TOKEN),
         ("\\:"    , mkFn COLON_TOKEN),
         ("=="     , mkFn EQUAL_TOKEN),
         ("=>"     , mkFn ALT_ARROW_TOKEN),
