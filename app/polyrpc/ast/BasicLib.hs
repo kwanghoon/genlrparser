@@ -12,12 +12,18 @@ basicLib =
       LocAbsType [l] (FunType string_type (LocVar l) unit_type)),
   ("not", let l = "l" in
       LocAbsType [l] (FunType bool_type (LocVar l) bool_type)),
+
+  -- ref :: {l}. [a]. a -l-> Ref l a
+  
   ("ref", let l = "l" in
       let a = "a" in
         let tyvar_a = TypeVarType a in
         LocAbsType [l]
         (TypeAbsType [a]
          (FunType tyvar_a (LocVar l) (RefType (LocVar l) tyvar_a)))),
+	 
+  -- (!) :: {l1 l2}. [a]. Ref l1 a -l2-> a
+  
   ("!", let l1 = "l1" in
       let l2 = "l2" in
         let a = "a" in
@@ -25,6 +31,9 @@ basicLib =
           singleLocAbsType (LocAbsType [l1,l2]
           (TypeAbsType [a]
           (FunType (RefType (LocVar l1) tyvar_a) (LocVar l2) tyvar_a)))),
+	 
+  -- (:=) :: {l1 l2}. [a]. Ref l1 a -l2-> a -l2-> Unit
+  
   (":=", let l1 = "l1" in
       let l2 = "l2" in
         let a = "a" in
