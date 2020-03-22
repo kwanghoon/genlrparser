@@ -86,7 +86,7 @@ parserSpec = ParserSpec
 
       ("OptTypes -> Types", \rhs -> get rhs 1 ),
 
-      ("RefType -> identifier < Type @ Location >",
+      ("RefType -> identifier < Type @ Location >",  -- identifier must be 'Ref'!
        \rhs -> toASTType (RefType (fromASTLocation (get rhs 5)) (fromASTType (get rhs 3))) ),
       
       ("TopLevel -> Binding",
