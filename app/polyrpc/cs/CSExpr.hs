@@ -4,6 +4,7 @@ module CSExpr where
 
 import Location
 import Type
+import qualified Expr as SE
 import Text.JSON.Generic
 
 data Expr =
@@ -13,11 +14,14 @@ data Expr =
   | App Value Value
   | TypeApp Expr [Type]
   | LocApp Expr [Location]
+  | Prim SE.PrimOp [Value]
   deriving (Show, Typeable, Data)
 
 data Value =
     Var String
-  | Constr String [Type] [Value]    -- including (V,W)
+  | Lit SE.Literal
+  | Tuple [Value]
+  | Constr String [Type] [Value]
   | Closure [Value] CodeName  
   | UnitM Value
   | BindM String Expr Expr
@@ -30,6 +34,26 @@ data BindingDecl =
     Binding String Type Expr
     deriving (Show, Typeable, Data)
 
+data DataTypeDecl =
+    DataType String [String] [TypeConDecl]
+-- For aeson  
+--  deriving (Show, Generic)
+    deriving (Show, Typeable, Data)
+
+data TopLevelDecl =
+    BindingTopLevel BindingDecl
+  | DataTypeTopLevel DataTypeDecl
+  | LibDeclTopLevel String Type 
+-- For aeson  
+--  deriving (Show, Generic)
+    deriving (Show, Typeable, Data)
+
+data TypeConDecl =
+   TypeCon String [Type]
+-- For aeson  
+--  deriving (Show, Generic)
+    deriving (Show, Typeable, Data)
+    
 data Alternative =
     Alternative String [String] Expr
     deriving (Show, Typeable, Data)
