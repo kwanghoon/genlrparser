@@ -1,5 +1,6 @@
 module BasicLib where
 
+import Location
 import Type
 import Expr
 

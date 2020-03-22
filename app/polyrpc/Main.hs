@@ -11,6 +11,7 @@ import Parser
 import Type
 import Expr
 import TypeCheck
+import Compile
 
 import Text.JSON.Generic
 import Text.JSON.Pretty
@@ -53,7 +54,9 @@ doProcess cont line = do
   elab_toplevelDecls <- typeCheck toplevelDecls
   putStrLn "Dumping..."
   putStrLn $ show $ elab_toplevelDecls
-  putStrLn "Finalizing..."
+  putStrLn "Compiling..."
+  cs_toplevelDecls <- compile elab_toplevelDecls
+  putStrLn "Success..."
   cont elab_toplevelDecls
   
   

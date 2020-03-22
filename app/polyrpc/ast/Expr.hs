@@ -2,6 +2,7 @@
 
 module Expr where
 
+import Location
 import Type
 -- For aeson
 -- import GHC.Generics

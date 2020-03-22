@@ -1,5 +1,6 @@
 module TypeCheck where
 
+import Location
 import Type
 import Expr
 import BasicLib

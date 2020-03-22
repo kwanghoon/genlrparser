@@ -1,6 +1,7 @@
 module Parser where
 
 import CommonParserUtil
+import Location
 import Token
 import Type
 import Expr
