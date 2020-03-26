@@ -157,11 +157,11 @@ bindingTypes partial_elab_bindingDecls =
 -- 6. Elaboration of bindings
 ----------------------------------------------------------------------------
 
-data GlobalTypeInfo = GlobalTypeInfo
-       { _typeInfo :: TypeInfo
-       , _conTypeInfo :: ConTypeInfo
-       , _dataTypeInfo :: DataTypeInfo
-       , _bindingTypeInfo :: BindingTypeInfo }
+-- data GlobalTypeInfo = GlobalTypeInfo
+--        { _typeInfo :: TypeInfo
+--        , _conTypeInfo :: ConTypeInfo
+--        , _dataTypeInfo :: DataTypeInfo
+--        , _bindingTypeInfo :: BindingTypeInfo }
 
 elaborate :: Monad m => GlobalTypeInfo -> [BindingDecl] -> m [BindingDecl]
 elaborate gti bindingDecls =

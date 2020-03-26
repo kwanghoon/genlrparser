@@ -173,6 +173,12 @@ type ConTypeInfo = [(String, ([Type], String, [String]))]
 
 type BindingTypeInfo = [(String, Type)]
 
+data GlobalTypeInfo = GlobalTypeInfo
+       { _typeInfo :: TypeInfo
+       , _conTypeInfo :: ConTypeInfo
+       , _dataTypeInfo :: DataTypeInfo
+       , _bindingTypeInfo :: BindingTypeInfo }
+       
 data Env = Env
        { _locVarEnv  :: [String]
        , _typeVarEnv :: [String]
