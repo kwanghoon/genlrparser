@@ -25,6 +25,15 @@ parserSpec = ParserSpec
 
       ("OptIdentifiers -> Identifiers", \rhs -> get rhs 1 ),
 
+      ("IdentifierCommas -> identifier", \rhs -> toASTIdSeq [getText rhs 1] ),
+
+      ("IdentifierCommas -> identifier , IdentifierCommas",
+        \rhs -> toASTIdSeq (getText rhs 1 : fromASTIdSeq (get rhs 3)) ),
+
+      ("OptIdentifierCommas -> ", \rhs -> toASTIdSeq [] ),
+
+      ("OptIdentifierCommas -> IdentifierCommas", \rhs -> get rhs 1 ),
+
       ("Type -> PolyAbsType", \rhs -> get rhs 1 ),
 
       ("Type -> PolyAbsType LocFun Type",
@@ -170,6 +179,10 @@ parserSpec = ParserSpec
       ("Alternative -> identifier OptIdentifiers => LExpr",
         \rhs -> toASTAlternative $
                   (Alternative (getText rhs 1) (fromASTIdSeq (get rhs 2)) (fromASTExpr (get rhs 4))) ),
+
+      ("Alternative -> ( OptIdentifierCommas ) => LExpr",
+        \rhs -> toASTAlternative $
+                  (TupleAlternative (fromASTIdSeq (get rhs 2)) (fromASTExpr (get rhs 5))) ),
 
       ("Expr -> Expr Term",
         \rhs -> toASTExpr (App (fromASTExpr (get rhs 1)) (fromASTExpr (get rhs 2)) Nothing) ),

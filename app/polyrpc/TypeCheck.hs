@@ -357,6 +357,11 @@ elabExpr gti env loc (Case expr alts) = do
           (elab_alts, altty) <- elabAlts gti env loc tys tyvars tycondecls alts
           return (Case elab_caseexpr elab_alts, altty)
         [] -> error $ "[TypeCheck] elabExpr: invalid constructor type: " ++ tyconName
+
+    TupleType tys -> do
+      (elab_alts, altty) <- elabAlts gti env loc tys [] [] alts
+      return (Case elab_caseexpr elab_alts, altty)
+    
     _ -> error $ "[TypeCheck] elabExpr: case expr not constructor type"
 
 elabExpr gti env loc (App left_expr right_expr l) = do
@@ -428,21 +433,25 @@ elabExpr gti env loc (Constr conname contys exprs) = do
 --
 elabAlts gti env loc tys tyvars tycondecls [alt] = do
   let subst = zip tyvars tys
-  (elab_alt, elab_ty) <- elabAlt gti env loc subst tycondecls alt
+  (elab_alt, elab_ty) <- elabAlt gti env loc subst tycondecls tys alt
   return ([elab_alt], elab_ty)
   
-elabAlts gti env loc tys tyvars tycondecls (alt@(Alternative con args _):alts) = do
+elabAlts gti env loc tys tyvars tycondecls (alt:alts) = do
   let subst = zip tyvars tys
-  (elab_alt, elab_ty1)  <- elabAlt gti env loc subst tycondecls alt
+  (elab_alt, elab_ty1)  <- elabAlt gti env loc subst tycondecls tys alt
   (elab_alts, elab_ty2) <- elabAlts gti env loc tys tyvars tycondecls alts
   if equalType elab_ty1 elab_ty2
   then return (elab_alt:elab_alts, elab_ty1)
-  else error $ "[TypeCheck] elabAlts: not equal alt type: " ++ con ++ show args
+  else error $ "[TypeCheck] elabAlts: not equal alt type: " ++
+                             (case alt of {
+                               Alternative con args _ -> con ++ show args;
+                               TupleAlternative args _ -> show args })
 
 lookupCon tycondecls con =
   [tys | TypeCon conname tys <- tycondecls, con==conname]
 
-elabAlt gti env loc subst tycondecls (Alternative con args expr) = do
+elabAlt gti env loc subst tycondecls externTys (Alternative con args expr) = do
+-- externTys only for TupleAlternative
   case lookupCon tycondecls con of
     (tys:_) -> 
       if length tys==length args
@@ -455,6 +464,12 @@ elabAlt gti env loc subst tycondecls (Alternative con args expr) = do
       
     [] -> error $ "[TypeCheck] elabAlt: constructor not found"
 
+elabAlt gti env loc subst tycondecls externTys (TupleAlternative args expr) = do
+-- subst==[], tycondecls==[]
+  let varEnv  = _varEnv env
+  let varEnv' = zip args externTys ++ varEnv
+  (elab_expr, elab_ty) <- elabExpr gti (env {_varEnv=varEnv'}) loc expr
+  return (TupleAlternative args elab_expr, elab_ty)
 
 
 ----------------------------------------------------------------------------

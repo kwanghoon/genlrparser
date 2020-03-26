@@ -12,6 +12,14 @@ OptIdentifiers
   =
   | Identifiers
 
+IdentifierCommas
+  = identifier
+  | identifier , IdentifierCommas
+
+OptIdentifierCommas
+  =
+  | IdentifierCommas
+
 
 ;; Grammar for types
 
@@ -107,6 +115,7 @@ Alternatives
 
 Alternative
   = identifier OptIdentifiers => LExpr
+  | ( OptIdentifierCommas ) => LExpr
 
 Expr
   = Expr Term

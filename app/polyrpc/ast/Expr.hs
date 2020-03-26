@@ -147,7 +147,8 @@ data TypeConDecl =
     deriving (Show, Typeable, Data)
 
 data Alternative =
-  Alternative String [String] Expr
+    Alternative String [String] Expr
+  | TupleAlternative [String] Expr
 -- For aeson  
 --  deriving (Show, Generic)
     deriving (Show, Typeable, Data)
