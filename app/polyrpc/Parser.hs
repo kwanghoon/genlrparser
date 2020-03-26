@@ -187,7 +187,7 @@ parserSpec = ParserSpec
       ("Tuple -> ( LExpr , LExprSeq )",
         \rhs -> toASTExpr (Tuple $ fromASTExpr (get rhs 2) : fromASTExprSeq (get rhs 4)) ),
 
-      ("LExprSeq -> LExpr", \rhs -> get rhs 1 ),
+      ("LExprSeq -> LExpr", \rhs -> toASTExprSeq [ fromASTExpr (get rhs 1) ] ),
 
       ("LExprSeq -> LExpr , LExprSeq",
         \rhs -> toASTExprSeq ( fromASTExpr (get rhs 1) : fromASTExprSeq (get rhs 3)) ),
