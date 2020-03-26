@@ -165,6 +165,18 @@ data Alternative =
 -- instance ToJSON Alternative where
 
 
+--
+-- For type-checker
+type TypeInfo = [(String, [String])]
+
+type ConTypeInfo = [(String, ([Type], String, [String]))]
+
+type BindingTypeInfo = [(String, Type)]
+
+data Env = Env
+       { _locVarEnv  :: [String]
+       , _typeVarEnv :: [String]
+       , _varEnv     :: BindingTypeInfo }
 
 
 --

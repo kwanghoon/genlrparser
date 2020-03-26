@@ -64,7 +64,7 @@ splitTopLevelDecl (DataTypeTopLevel datatypeDecl) = return ([], [datatypeDecl])
 -- 2. Collect bultin types and user-defined datatyps
 ----------------------------------------------------------------------------
 
-type TypeInfo = [(String, [String])]
+-- type TypeInfo = [(String, [String])]
 
 lookupTypeCon :: Monad m => TypeInfo -> String -> m [String]
 lookupTypeCon typeInfo x = do
@@ -120,7 +120,7 @@ elabTypeConDecl typeInfo tyvars (TypeCon con tys) = do
 -- 4. Elaboration of constructor types
 ----------------------------------------------------------------------------
 
-type ConTypeInfo = [(String, ([Type], String, [String]))]
+-- type ConTypeInfo = [(String, ([Type], String, [String]))]
 
 lookupConstr :: GlobalTypeInfo -> String -> [([Type], String, [String])]
 lookupConstr gti x = [z | (con, z) <- _conTypeInfo gti, x==con]
@@ -141,7 +141,7 @@ elabConTypeDecl (DataType name tyvars typeConDecls) = do
 -- 5. Elaboration of types declared in bindings
 ----------------------------------------------------------------------------
 
-type BindingTypeInfo = [(String, Type)]
+-- type BindingTypeInfo = [(String, Type)]
 
 elabBindingTypes :: Monad m => TypeInfo -> [BindingDecl] -> m [BindingDecl]
 elabBindingTypes typeInfo bindingDecls =
@@ -236,10 +236,10 @@ elabLocation locvars (LocVar x)
 -- [Common] Elaboration of expressions
 ----------------------------------------------------------------------------
 
-data Env = Env
-       { _locVarEnv  :: [String]
-       , _typeVarEnv :: [String]
-       , _varEnv     :: BindingTypeInfo }
+-- data Env = Env
+--        { _locVarEnv  :: [String]
+--        , _typeVarEnv :: [String]
+--        , _varEnv     :: BindingTypeInfo }
 
 emptyEnv = Env {_varEnv=[], _locVarEnv=[], _typeVarEnv=[]}
 
@@ -253,14 +253,16 @@ lookupTypeVar :: Env -> String -> Bool
 lookupTypeVar env x = elem x (_typeVarEnv env)
 
 --
-type DataTypeInfo = [(String, ([String], [TypeConDecl]))]
+type DataTypeInfo = [(String, ([String], [(String,[Type])]))]
 
 lookupDataTypeName gti x = [info | (y,info) <- _dataTypeInfo gti, x==y]
 
 collectDataTypeInfo :: Monad m => [DataTypeDecl] -> m DataTypeInfo
 collectDataTypeInfo datatypeDecls = do
   mapM get datatypeDecls
-  where get (DataType name tyvars tycondecls) = return (name, (tyvars,tycondecls))
+  where get (DataType name tyvars tycondecls) =
+          return (name, (tyvars,map f tycondecls))
+        f (TypeCon s tys) = (s,tys)
 
 --
 elabExpr :: Monad m =>
@@ -448,7 +450,7 @@ elabAlts gti env loc tys tyvars tycondecls (alt:alts) = do
                                TupleAlternative args _ -> show args })
 
 lookupCon tycondecls con =
-  [tys | TypeCon conname tys <- tycondecls, con==conname]
+  [tys | (conname, tys) <- tycondecls, con==conname]
 
 elabAlt gti env loc subst tycondecls externTys (Alternative con args expr) = do
 -- externTys only for TupleAlternative
