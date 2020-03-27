@@ -51,4 +51,25 @@ take_stream
 	    then Nil [a]
 	    else Cons [a] y (\unit : Unit @ client . take_stream {l1 l2} [a] (ys ()) (n-1))
 	}
+;
+
+////////////////////////////////////////////////////////////////////////////////
+// main
+////////////////////////////////////////////////////////////////////////////////
+
+s1 : Stream<Int>
+   = Cons [Int] 1 (\unit:Unit @client.
+      Cons [Int] 2 (\unit:Unit @client.
+        Cons [Int] 3 (\unit:Unit @client. Nil [Int])))
+;
+
+main : Int
+     = hd_stream {client} [Int]
+        (tl_stream {client} [Int]
+	  (take_stream {client client} [Int]  
+	    (map_stream {client client client} [Int Int]
+	       (\x:Int@client.x+1) s1)
+	    2))
+	    
+
 
