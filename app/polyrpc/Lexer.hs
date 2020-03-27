@@ -16,7 +16,7 @@ lexerSpec = LexerSpec
     endOfToken    = END_OF_TOKEN,
     lexerSpecList = 
       [ ("[ \t\n]", skip),
-        ("\\/\\/[^\\n]*\n" , skip),
+        ("\\/\\/[^\n]*\n" , skip),
         ("\\("    , mkFn OPEN_PAREN_TOKEN),
         ("\\)"    , mkFn CLOSE_PAREN_TOKEN),
         ("\\{"    , mkFn OPEN_BRACE_TOKEN),
