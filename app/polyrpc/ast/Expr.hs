@@ -173,6 +173,8 @@ type ConTypeInfo = [(String, ([Type], String, [String]))]
 
 type BindingTypeInfo = [(String, Type)]
 
+type DataTypeInfo = [(String, ([String], [(String,[Type])]))]
+
 data GlobalTypeInfo = GlobalTypeInfo
        { _typeInfo :: TypeInfo
        , _conTypeInfo :: ConTypeInfo

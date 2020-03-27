@@ -149,6 +149,8 @@ equalTypeWithFreshness ns (ConType name1 tys1) (ConType name2 tys2) =
 equalTypeWithFreshness ns (RefType loc1 ty1) (RefType loc2 ty2) =
   equalLoc loc1 loc2 && equalTypeWithFreshness ns ty1 ty2
 
+equalTypeWithFreshness ns ty1 ty2 = False
+
 --
 occur :: String -> Type -> Bool
 occur x (TypeVarType y) = x==y

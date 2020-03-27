@@ -253,7 +253,7 @@ lookupTypeVar :: Env -> String -> Bool
 lookupTypeVar env x = elem x (_typeVarEnv env)
 
 --
-type DataTypeInfo = [(String, ([String], [(String,[Type])]))]
+-- type DataTypeInfo = [(String, ([String], [(String,[Type])]))]
 
 lookupDataTypeName gti x = [info | (y,info) <- _dataTypeInfo gti, x==y]
 
