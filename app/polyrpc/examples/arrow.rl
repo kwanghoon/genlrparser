@@ -1,10 +1,11 @@
 
-
+// arrow[->]
 arr_fun
   : {l}. [a]. (a -l-> a)
   = {l}. [a]. \x : a @ l . x  
 ;
 
+// f >>> g
 arr_seq_fun
   : {l1 l2 l3 l4 l5}. [a b c]. ( (a -l1-> b) -l3-> (b -l2-> c) -l4-> a -l5-> c )
   = {l1 l2 l3 l4 l5}. [a b c].
@@ -13,6 +14,7 @@ arr_seq_fun
        x : a @ l5 .        g (f x)
 ;
 
+// f &&& g
 arr_par_fun 
   : {l1 l2 l3 l4 l5}. [a b c]. ( (a -l1-> b) -l3-> (a -l2-> c) -l4-> a -l5-> (b,c) )
   = {l1 l2 l3 l4 l5}. [a b c].
@@ -21,6 +23,7 @@ arr_par_fun
        x : a @ l5 . (f x, g x)
 ;
 
+// arr (+)
 arr_plus
   : {l}. ( (Int, Int) -l-> Int )
   = {l}. arr_fun {l} [(Int, Int) -l-> Int]
@@ -31,6 +34,7 @@ arr_plus
       )
 ;
 
+// f &&& g >>> arr (+)
 addA
   : (Int -client-> Int) -client-> (Int -server-> Int) -client-> Int -client-> Int
   = \f : Int -client-> Int @ client 
