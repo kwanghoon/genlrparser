@@ -44,6 +44,9 @@ isTypeName _     = False
 isTypeVarName (c:s) = isLower c
 isTypeVarName _ = False
 
+isLocationVarName (c:s) = isLower c
+isLocationVarName _ = False
+
 isBindingName (c:s) = isLower c
 isBindingName _     = False
 

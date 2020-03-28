@@ -167,13 +167,17 @@ data Alternative =
 
 --
 -- For type-checker
-type TypeInfo = [(String, [String])]
 
-type ConTypeInfo = [(String, ([Type], String, [String]))]
+-- [(Name, Location Vars, Type Vars)]
+type TypeInfo = [(String, [String], [String])] 
+
+-- [(ConName, (ConArgTypes, DTName, LocationVars, TypeVars))]
+type ConTypeInfo = [(String, ([Type], String, [String], [String]))] 
 
 type BindingTypeInfo = [(String, Type)]
 
-type DataTypeInfo = [(String, ([String], [(String,[Type])]))]
+-- [ (DTName, LocationVars, TypeVars, [(ConName, ArgTypes)]) ]
+type DataTypeInfo = [(String, ([String], [String], [(String,[Type])]))]
 
 data GlobalTypeInfo = GlobalTypeInfo
        { _typeInfo :: TypeInfo

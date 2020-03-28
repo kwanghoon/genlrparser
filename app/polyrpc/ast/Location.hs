@@ -18,3 +18,20 @@ equalLocs (l1:locs1) (l2:locs2) = equalLoc l1 l2 && equalLocs locs1 locs2
 equalLocs _ _ = False
 
 type LocationVar = String
+
+-- unifyLocations [] [] = Just []
+-- unifyLocations (loc1:locs1) (loc2:locs2) =
+--   case unifyLocation loc1 loc2 of
+--     Nothing -> Nothing
+--     Just subst1 ->
+--       case unifyLocations (map (doSubst subst1) locs1) (map (doSubst subst1) locs2) of
+--         Nothing -> Nothing
+-- 	Just subst2 -> Just (subst1 ++ subst2)
+
+-- unifyLocation (Location s1) (Location s2) =
+--   if s1==s2 then Just [] else Nothing
+-- unifyLocation (Location s) (LocVar x) = Just [(x, Location s)]
+-- unifyLocation (LocVar x) (Location s) = Just [(x, Location s)]
+-- unifyLocation (LocVar x) (LocVar y) =
+--   if ==y then Just [] else Just [(x, LocVary)]
+  
