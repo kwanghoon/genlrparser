@@ -269,7 +269,7 @@ parserSpec = ParserSpec
       ("Expr -> Expr Term",
         \rhs -> toASTExpr (App (fromASTExpr (get rhs 1)) (fromASTExpr (get rhs 2)) Nothing) ),
 
-      ("Expr -> Expr [ Types ]",
+      ("Expr -> Expr [ LocFunTypes ]",
         \rhs -> toASTExpr (singleTypeApp (TypeApp (fromASTExpr (get rhs 1)) (fromASTTypeSeq (get rhs 3)))) ),
 
       ("Expr -> Expr { Identifiers }",
@@ -295,7 +295,7 @@ parserSpec = ParserSpec
       {- AssignExpr -}
       ("AssignExpr -> DerefExpr", \rhs -> get rhs 1 ),
 
-      ("AssignExpr -> DerefExpr := { Identifiers } [ Types ] AssignExpr",
+      ("AssignExpr -> DerefExpr := { Identifiers } [ LocFunTypes ] AssignExpr",
        \rhs ->
          toASTExpr
          (App
@@ -312,7 +312,7 @@ parserSpec = ParserSpec
       {- DerefExpr -}
       ("DerefExpr -> LogicNot", \rhs -> get rhs 1 ),
 
-      ("DerefExpr -> ! { Identifiers } [ Types ] DerefExpr",
+      ("DerefExpr -> ! { Identifiers } [ LocFunTypes ] DerefExpr",
        \rhs ->
          toASTExpr
          (App

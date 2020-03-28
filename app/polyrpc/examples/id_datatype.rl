@@ -1,5 +1,5 @@
 
-data Pair a = { Pair a a };
+data Pair = [a]. Pair a a ;
 
 id : {l}. [a]. (a -l-> a)
    = {l}. [a].
@@ -7,4 +7,4 @@ id : {l}. [a]. (a -l-> a)
 
 x : Int = id {client} [Int] 1;
 
-main : Pair<Int> = id {client} [Pair<Int>] (Pair [Int] 1 2)
+main : Pair [Int] = id {client} [Pair [Int]] (Pair [Int] 1 2)

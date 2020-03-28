@@ -44,7 +44,7 @@ AppType
   | AppType { Locations }
   | AppType [ LocFunTypes ]
 
-; LocFunTypes instead of Types in AtomicType [ LocFun Types ]
+; LocFunTypes instead of Types in AtomicType [ LocFunTypes ]
 
 AtomicType
   = TupleType
@@ -123,7 +123,7 @@ Alternative
 
 Expr
   = Expr Term
-  | Expr [ Types ]
+  | Expr [ LocFunTypes ]
   | Expr { Identifiers }
   | Tuple
   | AssignExpr
@@ -137,10 +137,10 @@ LExprSeq
 
 AssignExpr
   = DerefExpr
-  | DerefExpr := { Identifiers } [ Types ] AssignExpr
+  | DerefExpr := { Identifiers } [ LocFunTypes ] AssignExpr
 
 DerefExpr
-  = ! { Identifiers } [ Types ] DerefExpr
+  = ! { Identifiers } [ LocFunTypes ] DerefExpr
   | LogicOr
 
 LogicOr
