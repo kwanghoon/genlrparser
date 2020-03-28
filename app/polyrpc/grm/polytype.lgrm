@@ -40,8 +40,8 @@ LocFunType
 
 AppType
   = AtomicType
-  | AtomicType [ LocFunTypes ]
-  | AtomicType { Locations }
+  | AppType [ LocFunTypes ]
+  | AppType { Locations }
 
 ; LocFunTypes instead of Types in AtomicType [ LocFun Types ]
 

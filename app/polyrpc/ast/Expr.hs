@@ -23,7 +23,7 @@ data Expr =
   | Tuple [Expr]
   | Prim PrimOp [Expr]
   | Lit Literal
-  | Constr String [Type] [Expr]
+  | Constr String [Location] [Type] [Expr]
 -- For aeson  
 --  deriving (Show, Generic)
   deriving (Show, Typeable, Data)
@@ -92,7 +92,7 @@ singleLocApp (LocApp expr (l:ls)) = singleLocApp (LocApp (LocApp expr [l]) ls)
 singleLocApp other = other
 
 
-primType tyname = ConType tyname []
+primType tyname = ConType tyname [] []
 
 bool_type = primType boolType
 int_type  = primType intType
@@ -126,32 +126,32 @@ data BindingDecl =
 --  deriving (Show, Generic)
     deriving (Show, Typeable, Data)
 
+--
+-- The four forms of data type declarations supported now.
+--
+--  data D =                             C1 | ... | Cn
+--  data D = [a1 ... ak]               . C1 | ... | Cn 
+--  data D = {l1 ... li}               . C1 | ... | Cn 
+--  data D = {l1 ... li} . [a1 ... ak] . C1 | ... | Cn
+--
 data DataTypeDecl =
-    DataType String [String] [TypeConDecl]
--- For aeson  
---  deriving (Show, Generic)
+    DataType String [LocationVar] [TypeVar] [TypeConDecl] -- 
     deriving (Show, Typeable, Data)
 
 data TopLevelDecl =
     BindingTopLevel BindingDecl
   | DataTypeTopLevel DataTypeDecl
   | LibDeclTopLevel String Type 
--- For aeson  
---  deriving (Show, Generic)
-    deriving (Show, Typeable, Data)
+  deriving (Show, Typeable, Data)
 
 data TypeConDecl =
    TypeCon String [Type]
--- For aeson  
---  deriving (Show, Generic)
-    deriving (Show, Typeable, Data)
+   deriving (Show, Typeable, Data)
 
 data Alternative =
     Alternative String [String] Expr
   | TupleAlternative [String] Expr
--- For aeson  
---  deriving (Show, Generic)
-    deriving (Show, Typeable, Data)
+  deriving (Show, Typeable, Data)
 
 --
 -- For aeson
@@ -216,6 +216,8 @@ data AST =
   
   | ASTLit { fromASTLit :: Literal }
 
+  | ASTTriple { fromASTTriple :: ([String], [String], [TypeConDecl]) }
+  
 toASTExprSeq exprs = ASTExprSeq exprs
 toASTExpr expr     = ASTExpr expr
 toASTIdSeq   ids   = ASTIdSeq ids
@@ -240,6 +242,8 @@ toASTIdTypeLoc idtypeloc     = ASTIdTypeLoc idtypeloc
 
 toASTAlternativeSeq alts = ASTAlternativeSeq alts
 toASTAlternative alt     = ASTAlternative alt
+
+toASTTriple triple = ASTTriple triple
 
 toASTLit lit     = ASTLit lit
 

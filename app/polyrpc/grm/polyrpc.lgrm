@@ -21,31 +21,36 @@ OptIdentifierCommas
   | IdentifierCommas
 
 
+;; Grammar for locations
+Location
+  = identifier
+
+Locations
+  = Identifiers
+  
 ;; Grammar for types
 
 Type
-  = PolyAbsType
-  | PolyAbsType LocFun Type
+  = LocFunType
+  | { Identifiers } . Type
+  | [ Identifiers ] . Type
 
-PolyAbsType
-  = { Identifiers } . PolyAbsType
-  | [ Identifiers ] . PolyAbsType
-  | PrimaryType
+LocFunType
+  = AppType
+  | AppType LocFun LocFunType
 
-PrimaryType
-  | TupleType
+AppType
+  = AtomicType
+  | AppType { Locations }
+  | AppType [ LocFunTypes ]
+
+; LocFunTypes instead of Types in AtomicType [ LocFun Types ]
+
+AtomicType
+  = TupleType
   | ( Type )
-  | IdentifierOrTypeApplication
-  | RefType
+  | identifier
 
-;  = Unit
-;  | Int
-;  | Bool
-;  | String
-
-IdentifierOrTypeApplication
-  = identifier
-  | identifier < Types >
 
 TupleType
   = ( Type , TypeSeq )
@@ -54,16 +59,13 @@ TypeSeq
   = Type
   | Type , TypeSeq
 
-Types
-  = Type
-  | Type Types
+LocFunTypes
+  = LocFunType
+  | LocFunType LocFunTypes
 
-OptTypes
+OptLocFunTypes
   =
-  | Types
-
-RefType
-  =  identifier < Type @ Location >
+  | LocFunTypes
 
 ;; Grammar for terms
 
@@ -74,10 +76,15 @@ TopLevel
   | DataTypeDecl ; TopLevel
 
 DataTypeDecl
-  = data Identifiers = { TypeConDecls }
+  = data identifier = DataTypeDeclRHS
+
+DataTypeDeclRHS
+  = TypeConDecls 
+  | { Identifiers } . DataTypeDeclRHS
+  | [ Identifiers ] . DataTypeDeclRHS 
 
 TypeConDecl
-  = identifier OptTypes
+  = identifier OptLocFunTypes
 
 TypeConDecls
   = TypeConDecl
@@ -105,9 +112,6 @@ IdTypeLocSeq
 
 IdTypeLoc
   = identifier : Type @ Location
-
-Location
-  = identifier
 
 Alternatives
   = Alternative

@@ -10,8 +10,8 @@ import Terminal
 import Parser
 import Type
 import Expr
-import TypeCheck
-import Compile
+-- import TypeCheck
+-- import Compile
 
 import Text.JSON.Generic
 import Text.JSON.Pretty
@@ -32,11 +32,7 @@ main = do
   let build bool file jsonfile toplevels =
         if bool == False
         then return ()
--- For aeson        
---        else B.writeFile jsonfile (encodePretty toplevels)
--- --        else B.putStrLn (encodePretty toplevels)
-        else writeFile jsonfile $ render $ pp_value $ toJSON toplevels
---        else putStrLn $ render $ pp_value $ toJSON toplevels
+        else writeFile jsonfile $ render $ pp_value $ toJSON (toplevels :: [TopLevelDecl])
   mapM_ (uncurry doProcess)
     [((build bool file jsonfile), file) | file <- files, let jsonfile = file++".json"]
 
@@ -49,15 +45,15 @@ doProcess cont line = do
   exprSeqAst <- parsing parserSpec terminalList
   putStrLn "Dumping..."
   putStrLn $ show $ fromASTTopLevelDeclSeq exprSeqAst
-  let toplevelDecls = fromASTTopLevelDeclSeq exprSeqAst
-  putStrLn "Type checking..."
-  elab_toplevelDecls <- typeCheck toplevelDecls
-  putStrLn "Dumping..."
-  putStrLn $ show $ elab_toplevelDecls
-  putStrLn "Compiling..."
-  cs_toplevelDecls <- compile elab_toplevelDecls
+  -- let toplevelDecls = fromASTTopLevelDeclSeq exprSeqAst
+  -- putStrLn "Type checking..."
+  -- elab_toplevelDecls <- typeCheck toplevelDecls
+  -- putStrLn "Dumping..."
+  -- putStrLn $ show $ elab_toplevelDecls
+  -- putStrLn "Compiling..."
+  -- cs_toplevelDecls <- compile elab_toplevelDecls
   putStrLn "Success..."
-  cont elab_toplevelDecls
+  -- cont elab_toplevelDecls
   
   
 readline msg = do

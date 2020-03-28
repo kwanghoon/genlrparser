@@ -11,16 +11,16 @@ import Text.JSON.Generic
 import Location
 
 data Type =
-    TypeVarType String
+    TypeVarType TypeVar
   | TupleType [Type]
   | FunType Type Location Type
-  | TypeAbsType [String] Type
-  | LocAbsType [String] Type
-  | ConType String [Type]
+  | TypeAbsType [TypeVar] Type
+  | LocAbsType [LocationVar] Type
+  | ConType String [Location] [Type]
   | RefType Location Type
--- For aeson  
---  deriving (Show, Generic)
   deriving (Show, Typeable, Data)
+
+type TypeVar = String
 
 singleTypeAbsType (TypeAbsType [] expr) = expr
 singleTypeAbsType (TypeAbsType [a] expr) = TypeAbsType [a] expr
@@ -77,8 +77,8 @@ doSubstOne x ty (TypeAbsType tyvars bodyty)
   | otherwise = (TypeAbsType tyvars (doSubstOne x ty bodyty))
 doSubstOne x ty (LocAbsType tyvars bodyty) =
   LocAbsType tyvars (doSubstOne x ty bodyty)
-doSubstOne x ty (ConType name tys) =
-  ConType name (map (doSubstOne x ty) tys)
+doSubstOne x ty (ConType name locs tys) =
+  ConType name locs (map (doSubstOne x ty) tys)
 doSubstOne x ty (RefType loc valty) =
   RefType loc (doSubstOne x ty valty)
 
@@ -106,8 +106,8 @@ doSubstLocOne x loc (TypeAbsType tyvars bodyty) =
 doSubstLocOne x loc (LocAbsType locvars bodyty)
   | elem x locvars = LocAbsType locvars bodyty
   | otherwise = LocAbsType locvars (doSubstLocOne x loc bodyty)
-doSubstLocOne x loc (ConType name tys) =
-  ConType name (map (doSubstLocOne x loc) tys)
+doSubstLocOne x loc (ConType name locs tys) =
+  ConType name (map (doSubstLocOverLoc x loc) locs) (map (doSubstLocOne x loc) tys)
 doSubstLocOne x loc (RefType loc0 valty) =
   RefType (doSubstLocOverLoc x loc loc0) (doSubstLocOne x loc valty)
 
@@ -143,11 +143,8 @@ equalTypeWithFreshness ns (LocAbsType locvars1 ty1) (LocAbsType locvars2 ty2) =
       ns'     = drop len1 ns
   in len1==len2 && equalTypeWithFreshness ns' (doSubstLoc (zip locvars1 newvars) ty1) (doSubstLoc (zip locvars2 newvars) ty2)
 
-equalTypeWithFreshness ns (ConType name1 tys1) (ConType name2 tys2) =   
-  name1==name2 && and (map (uncurry (equalTypeWithFreshness ns)) (zip tys1 tys2))
-
-equalTypeWithFreshness ns (RefType loc1 ty1) (RefType loc2 ty2) =
-  equalLoc loc1 loc2 && equalTypeWithFreshness ns ty1 ty2
+equalTypeWithFreshness ns (ConType name1 locs1 tys1) (ConType name2 locs2 tys2) =   
+  name1==name2 && equalLocs locs1 locs2 && and (map (uncurry (equalTypeWithFreshness ns)) (zip tys1 tys2))
 
 equalTypeWithFreshness ns ty1 ty2 = False
 
@@ -156,8 +153,7 @@ occur :: String -> Type -> Bool
 occur x (TypeVarType y) = x==y
 occur x (TupleType tys) = and (map (occur x) tys)
 occur x (FunType argty loc retty) = occur x argty && occur x retty
-occur x (ConType c tys) = and (map (occur x) tys)
-occur x (RefType loc ty) = occur x ty
+occur x (ConType c locs tys) = and (map (occur x) tys)
 occur x (TypeAbsType _ _) = False  -- ???
 occur x (LocAbsType _ _) = False -- ???
 
@@ -184,11 +180,9 @@ unifyTypeOne (FunType argty1 loc1 retty1) (FunType argty2 loc2 retty2) =  -- loc
         Nothing -> Nothing
         Just subst2 -> Just (subst1 ++ subst2)
 
-unifyTypeOne (ConType c1 tys1) (ConType c2 tys2)
+unifyTypeOne (ConType c1 locs1 tys1) (ConType c2 locs2 tys2)  -- locs1, locs2 ???
   | c1==c2 = unifyTypes tys1 tys2
   | otherwise = Nothing
-
-unifyTypeOne (RefType loc1 ty1) (RefType loc2 ty2) = unifyTypeOne ty1 ty2 -- loc1 and loc2 ??
 
 unifyTypeOne _ _ = Nothing   -- universal types and locations ???
 
