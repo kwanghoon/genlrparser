@@ -57,19 +57,38 @@ take_stream
 // main
 ////////////////////////////////////////////////////////////////////////////////
 
-s1 : Stream {client} [Int]
+client_list1 : Stream {client} [Int]
    = Cons {client} [Int] 1 (\unit:Unit @client.
       Cons {client} [Int] 2 (\unit:Unit @client.
         Cons {client} [Int] 3 (\unit:Unit @client. Nil {client} [Int])))
 ;
 
-main : Int
+server_list1 : Stream {server} [Int]
+   = Cons {server} [Int] 1 (\unit:Unit @server.
+      Cons {server} [Int] 2 (\unit:Unit @server.
+        Cons {server} [Int] 3 (\unit:Unit @server. Nil {server} [Int])))
+
+;
+
+test1 : Int
      = hd_stream {client} [Int]
         (tl_stream {client} [Int]
 	  (take_stream {client client} [Int]  
 	    (map_stream {client client client} [Int Int]
-	       (\x:Int@client.x+1) s1)
+	       (\x:Int@client.x+1) client_list1)
 	    2))
 	    
+;
+
+serverToclient
+  : Stream {server} [Int] -client-> Stream {client} [Int]
+  = \server_stream : Stream {server} [Int] @ client .
+      case server_stream {
+        Nil => Nil {client} [Int];
+	Cons y ys =>
+	  Cons {client} [Int] y
+	    ( \unit:Unit@client. serverToclient (ys ()) )
+      }
+
 
 
