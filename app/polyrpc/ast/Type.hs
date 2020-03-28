@@ -17,7 +17,6 @@ data Type =
   | TypeAbsType [TypeVar] Type
   | LocAbsType [LocationVar] Type
   | ConType String [Location] [Type]
-  | RefType Location Type
   deriving (Show, Typeable, Data)
 
 type TypeVar = String
@@ -57,6 +56,7 @@ unitType   = "Unit"
 intType    = "Int"
 boolType   = "Bool"
 stringType = "String"
+refType    = "Ref"
 
 -- Predefined location names
 clientLoc = Location "client"
@@ -79,8 +79,6 @@ doSubstOne x ty (LocAbsType tyvars bodyty) =
   LocAbsType tyvars (doSubstOne x ty bodyty)
 doSubstOne x ty (ConType name locs tys) =
   ConType name locs (map (doSubstOne x ty) tys)
-doSubstOne x ty (RefType loc valty) =
-  RefType loc (doSubstOne x ty valty)
 
 doSubst :: [(String,Type)] -> Type -> Type
 doSubst [] ty0 = ty0
@@ -108,8 +106,6 @@ doSubstLocOne x loc (LocAbsType locvars bodyty)
   | otherwise = LocAbsType locvars (doSubstLocOne x loc bodyty)
 doSubstLocOne x loc (ConType name locs tys) =
   ConType name (map (doSubstLocOverLoc x loc) locs) (map (doSubstLocOne x loc) tys)
-doSubstLocOne x loc (RefType loc0 valty) =
-  RefType (doSubstLocOverLoc x loc loc0) (doSubstLocOne x loc valty)
 
 
 doSubstLoc :: [(String, Location)] -> Type -> Type
