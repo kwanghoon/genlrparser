@@ -395,7 +395,7 @@ elabExpr gti env loc (TypeApp expr tys) = do
       else error $ "[TypeCheck] elabExpr: not equal length of arg types in type app: "
     _ -> error $ "[TypeCheck] elabExpr: not type-abstraction type in type app: " ++ "\n" 
                    ++ show elab_ty ++ "\n"
-		   ++ show (TypeApp expr tys) ++ "\n"
+                   ++ show (TypeApp expr tys) ++ "\n"
 
 elabExpr gti env loc (LocApp expr locs) = 
   let f (Location loc0) = if loc0 `elem` (_locVarEnv env) then LocVar loc0 else Location loc0

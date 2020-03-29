@@ -35,13 +35,9 @@ compValType (ST.LocAbsType ls ty) = do
   t_ty <- compType ty
   return (TT.CloType (TT.LocAbsType ls t_ty))
 
-compValType (ST.ConType s tys) = do
+compValType (ST.ConType s locs tys) = do
   t_tys <- mapM compValType tys
-  return (TT.ConType s t_tys)
-
-compValType (ST.RefType loc ty) = do
-  t_ty <- compValType ty
-  return (TT.RefType loc t_ty)
+  return (TT.ConType s locs t_tys)
 
 ----------------------------
 -- Compile computation types
