@@ -8,7 +8,8 @@ import qualified Expr as SE
 import qualified CSType as TT
 import qualified CSExpr as TE
 
-compile x = return x
+-- compile :: SE.GlobalTypeInfo -> [SE.ToplevelDecl] -> (TE.GlobalTypeInfo, [TE.ToplevelDecl])
+compile s_gti s_topleveldecls = return []
 
 -----
 

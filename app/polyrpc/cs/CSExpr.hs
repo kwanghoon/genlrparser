@@ -73,3 +73,26 @@ data CodeName =
     CodeName String [Type] [Location]
     deriving (Show, Typeable, Data)
 
+--
+-- [(Name, Location Vars, Type Vars)]
+type TypeInfo = [(String, [String], [String])] 
+
+-- [(ConName, (ConArgTypes, DTName, LocationVars, TypeVars))]
+type ConTypeInfo = [(String, ([Type], String, [String], [String]))] 
+
+type BindingTypeInfo = [(String, Type)]
+
+-- [ (DTName, LocationVars, TypeVars, [(ConName, ArgTypes)]) ]
+type DataTypeInfo = [(String, ([String], [String], [(String,[Type])]))]
+
+data GlobalTypeInfo = GlobalTypeInfo
+       { _typeInfo :: TypeInfo
+       , _conTypeInfo :: ConTypeInfo
+       , _dataTypeInfo :: DataTypeInfo
+       , _bindingTypeInfo :: BindingTypeInfo }
+       
+data Env = Env
+       { _locVarEnv  :: [String]
+       , _typeVarEnv :: [String]
+       , _varEnv     :: BindingTypeInfo }
+

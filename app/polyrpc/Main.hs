@@ -47,11 +47,11 @@ doProcess cont line = do
   putStrLn $ show $ fromASTTopLevelDeclSeq exprSeqAst
   let toplevelDecls = fromASTTopLevelDeclSeq exprSeqAst
   putStrLn "Type checking..."
-  elab_toplevelDecls <- typeCheck toplevelDecls
+  (gti, elab_toplevelDecls) <- typeCheck toplevelDecls
   putStrLn "Dumping..."
   putStrLn $ show $ elab_toplevelDecls
   putStrLn "Compiling..."
-  cs_toplevelDecls <- compile elab_toplevelDecls
+  ( {- cs_gti, -} cs_toplevelDecls) <- compile gti elab_toplevelDecls
   putStrLn "Success..."
   cont elab_toplevelDecls
   

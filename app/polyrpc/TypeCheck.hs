@@ -5,7 +5,7 @@ import Type
 import Expr
 import BasicLib
 
-typeCheck :: Monad m => [TopLevelDecl] -> m [TopLevelDecl]
+typeCheck :: Monad m => [TopLevelDecl] -> m (GlobalTypeInfo, [TopLevelDecl])
 typeCheck toplevelDecls = do
   -- 1. split
   (bindingDecls, userDatatypes) <- splitTopLevelDecls toplevelDecls
@@ -41,7 +41,7 @@ typeCheck toplevelDecls = do
                        ++ [ DataTypeTopLevel dt | dt <- elab_datatypeDecls]
                        ++ [ BindingTopLevel bd | bd <- elab_bindingDecls]
   
-  return elab_toplevels
+  return (gti, elab_toplevels)
 
 ----------------------------------------------------------------------------
 -- 1. Split toplevel declarations into datatypes and bindings
