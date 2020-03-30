@@ -51,7 +51,7 @@ doProcess cont line = do
   putStrLn "Dumping..."
   putStrLn $ show $ elab_toplevelDecls
   putStrLn "Compiling..."
-  ( {- cs_gti, -} cs_toplevelDecls) <- compile gti elab_toplevelDecls
+  cs_toplevelDecls <- compile gti elab_toplevelDecls
   putStrLn "Success..."
   cont elab_toplevelDecls
   

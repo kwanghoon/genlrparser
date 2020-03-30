@@ -8,9 +8,10 @@ import qualified Expr as SE
 import qualified CSType as TT
 import qualified CSExpr as TE
 
--- compile :: SE.GlobalTypeInfo -> [SE.ToplevelDecl] -> (TE.GlobalTypeInfo, [TE.ToplevelDecl])
+-- compile :: SE.GlobalTypeInfo -> [SE.TopLevelDecl] -> (TE.GlobalTypeInfo, [TE.TopLevelDecl])
 compile s_gti s_topleveldecls = do
   t_gti <- compileGTI s_gti
+  t_topleveldecls <- mapM compTopLevel s_topleveldecls
   return []
 
 -----
@@ -46,12 +47,12 @@ compConTypeInfo conTypeInfo = mapM compConTypeInfo' conTypeInfo
       
 compDataTypeInfo :: Monad m => SE.DataTypeInfo -> m TE.DataTypeInfo
 compDataTypeInfo dataTypeInfo = mapM compDataTypeInfo' dataTypeInfo
-  where
-    compDataTypeInfo' (dtname, (locvars, tyvars, cnameArgtysList)) = do
-      target_cnameArgtysList <-
-        mapM (\ (cname,argtys)-> do target_argtys <- mapM compValType argtys
-                                    return (cname,target_argtys)) cnameArgtysList
-      return (dtname, (locvars, tyvars, target_cnameArgtysList))
+
+compDataTypeInfo' (dtname, (locvars, tyvars, cnameArgtysList)) = do
+  target_cnameArgtysList <- 
+     mapM (\ (cname,argtys)-> do target_argtys <- mapM compValType argtys
+                                 return (cname,target_argtys)) cnameArgtysList
+  return (dtname, (locvars, tyvars, target_cnameArgtysList))
 
 compBindingTypeInfo :: Monad m => SE.BindingTypeInfo -> m TE.BindingTypeInfo
 compBindingTypeInfo bindingTypeInfo = mapM compBindingTypeInfo' bindingTypeInfo
@@ -95,6 +96,29 @@ compType ty = do
   t_ty <- compValType ty
   return (TT.MonType t_ty)
 
------
+--------------------
+-- Compile toplevels
+--------------------
+compTopLevel :: Monad m => SE.TopLevelDecl -> m [TE.TopLevelDecl]
+compTopLevel (SE.LibDeclTopLevel x ty) = return []
 
+compTopLevel (SE.DataTypeTopLevel
+               (SE.DataType dtname locvars tyvars tycondecls)) = return []
 
+compTopLevel (SE.BindingTopLevel bindingDecl) = do
+  target_bindingDecl <- compBindingDecl bindingDecl
+  return [TE.BindingTopLevel target_bindingDecl]
+
+-------------------------------
+-- Compile binding declarations
+-------------------------------
+compBindingDecl :: Monad m => SE.BindingDecl -> m TE.BindingDecl
+compBindingDecl (SE.Binding x ty expr) = do
+  target_ty <- compValType ty
+  target_expr <- compExpr expr
+  return (TE.Binding x target_ty target_expr)
+
+compExpr :: Monad m => SE.Expr -> m TE.Expr
+compExpr expr = error "Not implemented yet"
+
+  
