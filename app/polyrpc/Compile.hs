@@ -9,9 +9,56 @@ import qualified CSType as TT
 import qualified CSExpr as TE
 
 -- compile :: SE.GlobalTypeInfo -> [SE.ToplevelDecl] -> (TE.GlobalTypeInfo, [TE.ToplevelDecl])
-compile s_gti s_topleveldecls = return []
+compile s_gti s_topleveldecls = do
+  t_gti <- compileGTI s_gti
+  return []
 
 -----
+
+--------------
+-- Compile GTI
+--------------
+compileGTI :: Monad m => SE.GlobalTypeInfo -> m TE.GlobalTypeInfo
+compileGTI (SE.GlobalTypeInfo
+    { SE._typeInfo        = typeInfo,
+      SE._conTypeInfo     = conTypeInfo,
+      SE._dataTypeInfo    = dataTypeInfo,
+      SE._bindingTypeInfo = bindingTypeInfo }) = do
+  target_typeInfo <- compTypeInfo typeInfo
+  target_conTypeInfo <- compConTypeInfo conTypeInfo
+  target_dataTypeInfo <- compDataTypeInfo dataTypeInfo
+  target_bindingTypeInfo <- compBindingTypeInfo bindingTypeInfo
+  return (TE.GlobalTypeInfo
+    { TE._typeInfo        = target_typeInfo,
+      TE._conTypeInfo     = target_conTypeInfo,
+      TE._dataTypeInfo    = target_dataTypeInfo,
+      TE._bindingTypeInfo = target_bindingTypeInfo })
+
+compTypeInfo :: Monad m => SE.TypeInfo -> m TE.TypeInfo
+compTypeInfo typeInfo = return typeInfo
+
+compConTypeInfo :: Monad m => SE.ConTypeInfo -> m TE.ConTypeInfo
+compConTypeInfo conTypeInfo = mapM compConTypeInfo' conTypeInfo
+  where
+    compConTypeInfo' (cname, (argtys, dtname, locvars, tyvars)) = do
+      target_argtys <- mapM compValType argtys
+      return (cname, (target_argtys, dtname, locvars, tyvars))
+      
+compDataTypeInfo :: Monad m => SE.DataTypeInfo -> m TE.DataTypeInfo
+compDataTypeInfo dataTypeInfo = mapM compDataTypeInfo' dataTypeInfo
+  where
+    compDataTypeInfo' (dtname, (locvars, tyvars, cnameArgtysList)) = do
+      target_cnameArgtysList <-
+        mapM (\ (cname,argtys)-> do target_argtys <- mapM compValType argtys
+                                    return (cname,target_argtys)) cnameArgtysList
+      return (dtname, (locvars, tyvars, target_cnameArgtysList))
+
+compBindingTypeInfo :: Monad m => SE.BindingTypeInfo -> m TE.BindingTypeInfo
+compBindingTypeInfo bindingTypeInfo = mapM compBindingTypeInfo' bindingTypeInfo
+  where
+    compBindingTypeInfo' (x,ty) = do
+      target_ty <- compValType ty
+      return (x,target_ty)
 
 ----------------------
 -- Compile value types

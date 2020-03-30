@@ -3,7 +3,7 @@
 module CSExpr where
 
 import Location
-import Type
+import CSType
 import qualified Expr as SE
 import Text.JSON.Generic
 
