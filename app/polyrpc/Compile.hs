@@ -142,6 +142,10 @@ compExpr t_gti env funStore (SE.Var x) = do
   (funStore1, target_var_x) <- compVal t_gti env funStore (SE.Var x)
   return (funStore1, TE.UnitM target_var_x)
 
+compExpr t_gti env funStore (SE.Lit lit) = do
+  (funStore1, target_lit) <- compVal t_gti env funStore (SE.Lit lit)
+  return (funStore1, TE.UnitM target_lit)
+
 compExpr t_gti env funStore (SE.TypeAbs tyvars expr) = do
   (funStore1, target_tyabs) <- compVal t_gti env funStore (SE.TypeAbs tyvars expr)
   return (funStore1, TE.UnitM target_tyabs)
@@ -152,4 +156,7 @@ compVal :: Monad m => TE.GlobalTypeInfo -> TE.Env -> TE.FunctionStore ->
                       SE.Expr -> m (TE.FunctionStore, TE.Value)
 compVal t_gti env funStore (SE.Var x) = return (funStore, TE.Var x)
 
-compVal t_gti evn funStore (SE.Lit lit) = return (funStore, TE.Lit lit)
+compVal t_gti env funStore (SE.Lit lit) = return (funStore, TE.Lit lit)
+
+--compVal t_gti env funStore (SE.TypeAbs tyvars expr) = do
+  
