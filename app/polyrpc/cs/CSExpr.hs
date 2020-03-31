@@ -3,6 +3,8 @@
 module CSExpr where
 
 import Location
+import Prim
+import Literal
 import CSType
 import qualified Expr as SE
 import Text.JSON.Generic
@@ -14,12 +16,12 @@ data Expr =
   | App Value Value
   | TypeApp Expr [Type]
   | LocApp Expr [Location]
-  | Prim SE.PrimOp [Value]
+  | Prim PrimOp [Value]
   deriving (Show, Typeable, Data)
 
 data Value =
     Var String
-  | Lit SE.Literal
+  | Lit Literal
   | Tuple [Value]
   | Constr String [Type] [Value]
   | Closure [Value] CodeName  
@@ -31,7 +33,7 @@ data Value =
   deriving (Show, Typeable, Data)
 
 data BindingDecl =
-    Binding String Type Expr
+    Binding String Type Value   -- Not Expr but Value!
     deriving (Show, Typeable, Data)
 
 data DataTypeDecl =
@@ -96,3 +98,4 @@ data Env = Env
        , _typeVarEnv :: [String]
        , _varEnv     :: BindingTypeInfo }
 
+initEnv = Env { _locVarEnv=[], _typeVarEnv=[], _varEnv=[] }

@@ -4,15 +4,17 @@ import Location
 
 import qualified Type as ST
 import qualified Expr as SE
+import Literal
 
 import qualified CSType as TT
 import qualified CSExpr as TE
 
--- compile :: SE.GlobalTypeInfo -> [SE.TopLevelDecl] -> (TE.GlobalTypeInfo, [TE.TopLevelDecl])
+compile :: Monad m => SE.GlobalTypeInfo -> [SE.TopLevelDecl] -> m (TE.GlobalTypeInfo, [TE.TopLevelDecl])
 compile s_gti s_topleveldecls = do
   t_gti <- compileGTI s_gti
-  t_topleveldecls <- mapM compTopLevel s_topleveldecls
-  return []
+  t_topleveldecls' <- mapM (compTopLevel t_gti) s_topleveldecls
+  let t_topleveldecls = concat t_topleveldecls'
+  return (t_gti, t_topleveldecls)
 
 -----
 
@@ -99,26 +101,39 @@ compType ty = do
 --------------------
 -- Compile toplevels
 --------------------
-compTopLevel :: Monad m => SE.TopLevelDecl -> m [TE.TopLevelDecl]
-compTopLevel (SE.LibDeclTopLevel x ty) = return []
+compTopLevel :: Monad m => TE.GlobalTypeInfo -> SE.TopLevelDecl -> m [TE.TopLevelDecl]
+compTopLevel gti (SE.LibDeclTopLevel x ty) = return []
 
-compTopLevel (SE.DataTypeTopLevel
+compTopLevel gti (SE.DataTypeTopLevel
                (SE.DataType dtname locvars tyvars tycondecls)) = return []
 
-compTopLevel (SE.BindingTopLevel bindingDecl) = do
-  target_bindingDecl <- compBindingDecl bindingDecl
+compTopLevel gti (SE.BindingTopLevel bindingDecl) = do
+  target_bindingDecl <- compBindingDecl gti bindingDecl
   return [TE.BindingTopLevel target_bindingDecl]
 
 -------------------------------
 -- Compile binding declarations
 -------------------------------
-compBindingDecl :: Monad m => SE.BindingDecl -> m TE.BindingDecl
-compBindingDecl (SE.Binding x ty expr) = do
+--
+-- Note: InterTE.Binding x ty expr as do x:ty <- expr
+--
+compBindingDecl :: Monad m => TE.GlobalTypeInfo -> SE.BindingDecl -> m TE.BindingDecl
+compBindingDecl gti (SE.Binding x ty expr) = do
   target_ty <- compValType ty
-  target_expr <- compExpr expr
-  return (TE.Binding x target_ty target_expr)
+  target_val <- compExpr gti TE.initEnv expr
+  return (TE.Binding x target_ty target_val)
 
-compExpr :: Monad m => SE.Expr -> m TE.Expr
-compExpr expr = error "Not implemented yet"
+-- compExpr
+compExpr :: Monad m => TE.GlobalTypeInfo -> TE.Env -> SE.Expr -> m TE.Value
+compExpr gti env (SE.Var x) = do
+  target_var_x <- compVal gti env (SE.Var x)
+  return (TE.UnitM target_var_x)
 
-  
+compExpr gti env (SE.TypeAbs tyvars expr) = error "compExpr: Not implemented"
+
+
+-- compVal
+compVal :: Monad m => TE.GlobalTypeInfo -> TE.Env -> SE.Expr -> m TE.Value
+compVal gti env (SE.Var x) = return (TE.Var x)
+
+compVal gti evn (SE.Lit lit) = return (TE.Lit lit)
