@@ -88,14 +88,39 @@ type BindingTypeInfo = [(String, Type)]
 type DataTypeInfo = [(String, ([String], [String], [(String,[Type])]))]
 
 data GlobalTypeInfo = GlobalTypeInfo
-       { _typeInfo :: TypeInfo
-       , _conTypeInfo :: ConTypeInfo
-       , _dataTypeInfo :: DataTypeInfo
-       , _bindingTypeInfo :: BindingTypeInfo }
+   { _typeInfo :: TypeInfo
+   , _conTypeInfo :: ConTypeInfo
+   , _dataTypeInfo :: DataTypeInfo
+   , _bindingTypeInfo :: BindingTypeInfo }
        
 data Env = Env
-       { _locVarEnv  :: [String]
-       , _typeVarEnv :: [String]
-       , _varEnv     :: BindingTypeInfo }
+   { _locVarEnv  :: [String]
+   , _typeVarEnv :: [String]
+   , _varEnv     :: BindingTypeInfo }
 
 initEnv = Env { _locVarEnv=[], _typeVarEnv=[], _varEnv=[] }
+
+--
+data FunctionStore = FunctionStore
+   { _clientstore :: [(String, (Type, Code))]
+   , _serverstore :: [(String, (Type, Code))]
+   , _new   :: Int
+   }
+
+addClientFun :: FunctionStore -> String -> Type -> Code -> FunctionStore
+addClientFun fnstore name ty code =
+   fnstore {_clientstore = (name,(ty,code)) : (_clientstore fnstore)}
+
+addServerFun :: FunctionStore -> String -> Type -> Code -> FunctionStore
+addServerFun fnstore name ty code =
+   fnstore {_serverstore = (name,(ty,code)) : (_serverstore fnstore)}
+
+newName :: FunctionStore -> (Int, FunctionStore)
+newName fnstore = let n = _new fnstore in (n, fnstore{_new =n+1})
+
+initFunctionStore = FunctionStore
+   { _clientstore=[]
+   , _serverstore=[]
+   , _new        = 1
+   }
+   

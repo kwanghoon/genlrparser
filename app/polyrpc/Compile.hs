@@ -9,12 +9,12 @@ import Literal
 import qualified CSType as TT
 import qualified CSExpr as TE
 
-compile :: Monad m => SE.GlobalTypeInfo -> [SE.TopLevelDecl] -> m (TE.GlobalTypeInfo, [TE.TopLevelDecl])
+compile :: Monad m => SE.GlobalTypeInfo -> [SE.TopLevelDecl] ->
+                      m (TE.GlobalTypeInfo, [TE.TopLevelDecl], TE.FunctionStore)
 compile s_gti s_topleveldecls = do
   t_gti <- compileGTI s_gti
-  t_topleveldecls' <- mapM (compTopLevel t_gti) s_topleveldecls
-  let t_topleveldecls = concat t_topleveldecls'
-  return (t_gti, t_topleveldecls)
+  (funStore, t_topleveldecls) <- compTopLevels t_gti TE.initFunctionStore s_topleveldecls
+  return (t_gti, t_topleveldecls, funStore)
 
 -----
 
@@ -101,15 +101,26 @@ compType ty = do
 --------------------
 -- Compile toplevels
 --------------------
-compTopLevel :: Monad m => TE.GlobalTypeInfo -> SE.TopLevelDecl -> m [TE.TopLevelDecl]
-compTopLevel gti (SE.LibDeclTopLevel x ty) = return []
 
-compTopLevel gti (SE.DataTypeTopLevel
-               (SE.DataType dtname locvars tyvars tycondecls)) = return []
+compTopLevels :: Monad m => TE.GlobalTypeInfo -> TE.FunctionStore ->
+                            [SE.TopLevelDecl] -> m (TE.FunctionStore, [TE.TopLevelDecl])
+compTopLevels t_gti funStore [] = return (funStore, [])
+compTopLevels t_gti funStore (toplevel:toplevels) = do
+  (funStore1,t_toplevel) <- compTopLevel t_gti funStore toplevel
+  (funStore2,t_toplevels) <- compTopLevels t_gti funStore1 toplevels
+  return (funStore2, t_toplevel++t_toplevels)
 
-compTopLevel gti (SE.BindingTopLevel bindingDecl) = do
-  target_bindingDecl <- compBindingDecl gti bindingDecl
-  return [TE.BindingTopLevel target_bindingDecl]
+
+compTopLevel :: Monad m => TE.GlobalTypeInfo -> TE.FunctionStore ->
+                           SE.TopLevelDecl -> m (TE.FunctionStore, [TE.TopLevelDecl])
+compTopLevel t_gti funStore (SE.LibDeclTopLevel x ty) = return (funStore, [])
+
+compTopLevel t_gti funStore (SE.DataTypeTopLevel
+               (SE.DataType dtname locvars tyvars tycondecls)) = return (funStore, [])
+
+compTopLevel t_gti funStore (SE.BindingTopLevel bindingDecl) = do
+  (funStore1, target_bindingDecl) <- compBindingDecl t_gti funStore bindingDecl
+  return (funStore1, [TE.BindingTopLevel target_bindingDecl])
 
 -------------------------------
 -- Compile binding declarations
@@ -117,23 +128,28 @@ compTopLevel gti (SE.BindingTopLevel bindingDecl) = do
 --
 -- Note: InterTE.Binding x ty expr as do x:ty <- expr
 --
-compBindingDecl :: Monad m => TE.GlobalTypeInfo -> SE.BindingDecl -> m TE.BindingDecl
-compBindingDecl gti (SE.Binding x ty expr) = do
+compBindingDecl :: Monad m => TE.GlobalTypeInfo -> TE.FunctionStore ->
+                              SE.BindingDecl -> m (TE.FunctionStore, TE.BindingDecl)
+compBindingDecl t_gti funStore (SE.Binding x ty expr) = do
   target_ty <- compValType ty
-  target_val <- compExpr gti TE.initEnv expr
-  return (TE.Binding x target_ty target_val)
+  (funStore1, target_val) <- compExpr t_gti TE.initEnv funStore expr
+  return (funStore1, TE.Binding x target_ty target_val)
 
 -- compExpr
-compExpr :: Monad m => TE.GlobalTypeInfo -> TE.Env -> SE.Expr -> m TE.Value
-compExpr gti env (SE.Var x) = do
-  target_var_x <- compVal gti env (SE.Var x)
-  return (TE.UnitM target_var_x)
+compExpr :: Monad m => TE.GlobalTypeInfo -> TE.Env -> TE.FunctionStore ->
+                       SE.Expr -> m (TE.FunctionStore, TE.Value)
+compExpr t_gti env funStore (SE.Var x) = do
+  (funStore1, target_var_x) <- compVal t_gti env funStore (SE.Var x)
+  return (funStore1, TE.UnitM target_var_x)
 
-compExpr gti env (SE.TypeAbs tyvars expr) = error "compExpr: Not implemented"
+compExpr t_gti env funStore (SE.TypeAbs tyvars expr) = do
+  (funStore1, target_tyabs) <- compVal t_gti env funStore (SE.TypeAbs tyvars expr)
+  return (funStore1, TE.UnitM target_tyabs)
 
 
 -- compVal
-compVal :: Monad m => TE.GlobalTypeInfo -> TE.Env -> SE.Expr -> m TE.Value
-compVal gti env (SE.Var x) = return (TE.Var x)
+compVal :: Monad m => TE.GlobalTypeInfo -> TE.Env -> TE.FunctionStore ->
+                      SE.Expr -> m (TE.FunctionStore, TE.Value)
+compVal t_gti env funStore (SE.Var x) = return (funStore, TE.Var x)
 
-compVal gti evn (SE.Lit lit) = return (TE.Lit lit)
+compVal t_gti evn funStore (SE.Lit lit) = return (funStore, TE.Lit lit)

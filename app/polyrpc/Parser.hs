@@ -4,6 +4,7 @@ import CommonParserUtil
 import Location
 import Token
 import Type
+import Prim
 import Literal
 import Expr
 

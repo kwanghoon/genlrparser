@@ -2,6 +2,7 @@ module BasicLib where
 
 import Location
 import Type
+import Prim
 import Expr
 
 

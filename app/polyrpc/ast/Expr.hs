@@ -1,8 +1,25 @@
 {-# LANGUAGE DeriveDataTypeable, DeriveGeneric #-}
 
-module Expr where
+module Expr(Expr(..), AST(..), BindingDecl(..), DataTypeDecl(..)
+  , TopLevelDecl(..), TypeConDecl(..), Alternative(..)
+  , TypeInfo, ConTypeInfo, BindingTypeInfo, DataTypeInfo
+  , GlobalTypeInfo(..), Env(..)
+  , singleTypeAbs, singleLocAbs, singleAbs
+  , singleTypeApp, singleLocApp
+  , toASTExprSeq, toASTExpr
+  , toASTIdSeq, toASTId
+  , toASTTypeSeq, toASTType
+  , toASTLocationSeq, toASTLocation
+  , toASTBindingDeclSeq, toASTBindingDecl
+  , toASTDataTypeDecl, toASTTopLevelDeclSeq
+  , toASTTypeConDeclSeq, toASTTypeConDecl
+  , toASTIdTypeLocSeq, toASTIdTypeLoc
+  , toASTAlternativeSeq, toASTAlternative
+  , toASTTriple, toASTLit
+  ) where
 
 import Location
+import Prim
 import Literal
 import Type
 -- For aeson

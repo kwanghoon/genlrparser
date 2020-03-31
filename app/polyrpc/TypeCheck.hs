@@ -3,6 +3,7 @@ module TypeCheck where
 import Location
 import Type
 import Literal
+import Prim
 import Expr
 import BasicLib
 
