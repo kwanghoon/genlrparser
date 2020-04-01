@@ -234,6 +234,9 @@ compVal t_gti env loc s_ty funStore (SE.Let bindingDecls expr) = do
   (funStore3, t_expr) <- compExpr t_gti env loc s_ty funStore2 expr
   return (funStore3, TE.BindM t_bindingDecls t_expr)
 
+--Case
+-- compVal t_gti env loc s_ty funStore (SE.Case expr alternatives) = do
+--   (funStore1, target_expr) <- compExpr t_gti env loc s
 
 -- Lit
 compVal t_gti env loc s_ty funStore (SE.Lit lit) = return (funStore, TE.Lit lit)
