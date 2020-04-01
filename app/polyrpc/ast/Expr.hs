@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable, DeriveGeneric #-}
 
 module Expr(Expr(..), AST(..), BindingDecl(..), DataTypeDecl(..)
+  , initEnv
   , TopLevelDecl(..), TypeConDecl(..), Alternative(..)
   , TypeInfo, ConTypeInfo, BindingTypeInfo, DataTypeInfo
   , GlobalTypeInfo(..), Env(..)
@@ -144,6 +145,7 @@ data Env = Env
        , _typeVarEnv :: [String]
        , _varEnv     :: BindingTypeInfo }
 
+initEnv = Env { _locVarEnv=[], _typeVarEnv=[], _varEnv=[] }
 
 --
 data AST =

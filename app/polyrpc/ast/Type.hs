@@ -61,10 +61,6 @@ boolType   = "Bool"
 stringType = "String"
 refType    = "Ref"
 
--- Predefined location names
-clientLoc = Location "client"
-serverLoc = Location "server"
-
 
 --
 doSubstOne :: String -> Type -> Type -> Type

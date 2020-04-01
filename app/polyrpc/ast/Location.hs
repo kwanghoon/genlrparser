@@ -34,4 +34,20 @@ type LocationVar = String
 -- unifyLocation (LocVar x) (Location s) = Just [(x, Location s)]
 -- unifyLocation (LocVar x) (LocVar y) =
 --   if ==y then Just [] else Just [(x, LocVary)]
-  
+
+-- Predefined location names
+clientLoc = Location clientLocName
+serverLoc = Location serverLocName
+
+clientLocName = "client"
+serverLocName = "server"
+
+isClient (Location str) = str == clientLocName
+isClient _ = False
+
+isServer (Location str) = str == serverLocName
+isServer _ = False
+
+
+
+

@@ -65,14 +65,14 @@ data Code =
     deriving (Show, Typeable, Data)
 
 data OpenCode =
-    CodeAbs     [(String, Type)] Expr
-  | CodeTypeAbs [String] Expr
-  | CodeLocAbs  [String] Expr
+    CodeAbs     [(String, Type)] Value
+  | CodeTypeAbs [String] Value
+  | CodeLocAbs  [String] Value
   deriving (Show, Typeable, Data)
   
 
 data CodeName =
-    CodeName String [Type] [Location]
+    CodeName String [Location] [Type]
     deriving (Show, Typeable, Data)
 
 --
@@ -102,21 +102,27 @@ initEnv = Env { _locVarEnv=[], _typeVarEnv=[], _varEnv=[] }
 
 --
 data FunctionStore = FunctionStore
-   { _clientstore :: [(String, (Type, Code))]
-   , _serverstore :: [(String, (Type, Code))]
+   { _clientstore :: [(String, (CodeType, Code))]
+   , _serverstore :: [(String, (CodeType, Code))]
    , _new   :: Int
    }
 
-addClientFun :: FunctionStore -> String -> Type -> Code -> FunctionStore
+addClientFun :: FunctionStore -> String -> CodeType -> Code -> FunctionStore
 addClientFun fnstore name ty code =
    fnstore {_clientstore = (name,(ty,code)) : (_clientstore fnstore)}
 
-addServerFun :: FunctionStore -> String -> Type -> Code -> FunctionStore
+addServerFun :: FunctionStore -> String -> CodeType -> Code -> FunctionStore
 addServerFun fnstore name ty code =
    fnstore {_serverstore = (name,(ty,code)) : (_serverstore fnstore)}
 
-newName :: FunctionStore -> (Int, FunctionStore)
-newName fnstore = let n = _new fnstore in (n, fnstore{_new =n+1})
+addFun :: Location -> FunctionStore -> String -> CodeType -> Code -> FunctionStore
+addFun loc funstore name ty code
+  | isClient loc = addClientFun funstore name ty code
+  | isServer loc = addServerFun funstore name ty code
+  | otherwise    = addServerFun (addClientFun funstore name ty code) name ty code
+
+newName :: FunctionStore -> (String, FunctionStore)
+newName fnstore = let n = _new fnstore in ("f" ++ show n, fnstore{_new =n+1})
 
 initFunctionStore = FunctionStore
    { _clientstore=[]

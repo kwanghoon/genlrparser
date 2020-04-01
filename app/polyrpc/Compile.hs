@@ -132,31 +132,53 @@ compBindingDecl :: Monad m => TE.GlobalTypeInfo -> TE.FunctionStore ->
                               SE.BindingDecl -> m (TE.FunctionStore, TE.BindingDecl)
 compBindingDecl t_gti funStore (SE.Binding x ty expr) = do
   target_ty <- compValType ty
-  (funStore1, target_val) <- compExpr t_gti TE.initEnv funStore expr
+  (funStore1, target_val) <- compExpr t_gti SE.initEnv clientLoc ty funStore expr 
   return (funStore1, TE.Binding x target_ty target_val)
 
 -- compExpr
-compExpr :: Monad m => TE.GlobalTypeInfo -> TE.Env -> TE.FunctionStore ->
-                       SE.Expr -> m (TE.FunctionStore, TE.Value)
-compExpr t_gti env funStore (SE.Var x) = do
-  (funStore1, target_var_x) <- compVal t_gti env funStore (SE.Var x)
+compExpr :: Monad m =>
+  TE.GlobalTypeInfo -> SE.Env -> Location -> ST.Type ->
+  TE.FunctionStore -> SE.Expr -> m (TE.FunctionStore, TE.Value)
+compExpr t_gti env loc s_ty funStore (SE.Var x) = do
+  (funStore1, target_var_x) <- compVal t_gti env loc s_ty funStore (SE.Var x)
   return (funStore1, TE.UnitM target_var_x)
 
-compExpr t_gti env funStore (SE.Lit lit) = do
-  (funStore1, target_lit) <- compVal t_gti env funStore (SE.Lit lit)
-  return (funStore1, TE.UnitM target_lit)
-
-compExpr t_gti env funStore (SE.TypeAbs tyvars expr) = do
-  (funStore1, target_tyabs) <- compVal t_gti env funStore (SE.TypeAbs tyvars expr)
+compExpr t_gti env loc s_ty funStore (SE.TypeAbs tyvars expr) = do
+  (funStore1, target_tyabs) <- compExpr t_gti env loc s_ty funStore (SE.TypeAbs tyvars expr)
   return (funStore1, TE.UnitM target_tyabs)
+  
+compExpr t_gti env loc s_ty funStore (SE.Lit lit) = do
+  (funStore1, target_lit) <- compVal t_gti env loc s_ty funStore (SE.Lit lit)
+  return (funStore1, TE.UnitM target_lit)
 
 
 -- compVal
-compVal :: Monad m => TE.GlobalTypeInfo -> TE.Env -> TE.FunctionStore ->
-                      SE.Expr -> m (TE.FunctionStore, TE.Value)
-compVal t_gti env funStore (SE.Var x) = return (funStore, TE.Var x)
+compVal :: Monad m =>
+  TE.GlobalTypeInfo -> SE.Env -> Location -> ST.Type ->
+  TE.FunctionStore -> SE.Expr -> m (TE.FunctionStore, TE.Value)
+compVal t_gti env loc s_ty funStore (SE.Var x) = return (funStore, TE.Var x)
 
-compVal t_gti env funStore (SE.Lit lit) = return (funStore, TE.Lit lit)
+compVal t_gti env loc (ST.TypeAbsType tyvars0 s_ty) funStore (SE.TypeAbs tyvars1 expr) = do
+  -- Assume tyvars0 == tyvars1
+  let (fname,funStore1) = TE.newName funStore
+  let locvars = SE._locVarEnv env
+  let tyvars  = SE._typeVarEnv env
+  let freevars = [x  | (x,_)  <- SE._varEnv env]
+  let freetys  = [ty | (_,ty) <- SE._varEnv env]
+  (funStore2, target_expr) <- compExpr t_gti env loc s_ty funStore1 expr
+  target_freetys <- mapM compValType freetys
+  target_ty <- compValType s_ty
+  let codety = TT.CodeType locvars tyvars target_freetys (TT.TypeAbsType tyvars0 target_ty)
+  let opencode = TE.CodeTypeAbs tyvars0 target_expr
+  let codename = TE.CodeName fname (map Location locvars) (map TT.TypeVarType tyvars)
+  let code = TE.Code locvars tyvars freevars opencode
+  let funStore2 = TE.addFun loc funStore1 fname codety code
+  return (funStore2, TE.Closure (map TE.Var freevars) codename)
 
---compVal t_gti env funStore (SE.TypeAbs tyvars expr) = do
+compVal t_gti env loc s_ty funStore (SE.TypeAbs tyvars1 expr) =
+  error $ "[compVal] Not type-abstraction type: " ++ show s_ty
+
+
+compVal t_gti env loc s_ty funStore (SE.Lit lit) = return (funStore, TE.Lit lit)
+
   
