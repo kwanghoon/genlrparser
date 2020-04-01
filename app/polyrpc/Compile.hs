@@ -146,6 +146,10 @@ compExpr t_gti env loc s_ty funStore (SE.Var x) = do
 compExpr t_gti env loc s_ty funStore (SE.TypeAbs tyvars expr) = do
   (funStore1, target_tyabs) <- compExpr t_gti env loc s_ty funStore (SE.TypeAbs tyvars expr)
   return (funStore1, TE.UnitM target_tyabs)
+
+compExpr t_gti env loc s_ty funStore (SE.LocAbs tyvars expr) = do
+  (funStore1, target_locabs) <- compExpr t_gti env loc s_ty funStore (SE.LocAbs tyvars expr)
+  return (funStore1, TE.UnitM target_locabs)
   
 compExpr t_gti env loc s_ty funStore (SE.Lit lit) = do
   (funStore1, target_lit) <- compVal t_gti env loc s_ty funStore (SE.Lit lit)
@@ -160,25 +164,50 @@ compVal t_gti env loc s_ty funStore (SE.Var x) = return (funStore, TE.Var x)
 
 compVal t_gti env loc (ST.TypeAbsType tyvars0 s_ty) funStore (SE.TypeAbs tyvars1 expr) = do
   -- Assume tyvars0 == tyvars1
-  let (fname,funStore1) = TE.newName funStore
-  let locvars = SE._locVarEnv env
-  let tyvars  = SE._typeVarEnv env
-  let freevars = [x  | (x,_)  <- SE._varEnv env]
-  let freetys  = [ty | (_,ty) <- SE._varEnv env]
-  (funStore2, target_expr) <- compExpr t_gti env loc s_ty funStore1 expr
-  target_freetys <- mapM compValType freetys
-  target_ty <- compValType s_ty
-  let codety = TT.CodeType locvars tyvars target_freetys (TT.TypeAbsType tyvars0 target_ty)
-  let opencode = TE.CodeTypeAbs tyvars0 target_expr
-  let codename = TE.CodeName fname (map Location locvars) (map TT.TypeVarType tyvars)
-  let code = TE.Code locvars tyvars freevars opencode
-  let funStore2 = TE.addFun loc funStore1 fname codety code
-  return (funStore2, TE.Closure (map TE.Var freevars) codename)
+  t_ty <- compValType s_ty
+  let target_ty = TT.TypeAbsType tyvars0 t_ty
+  let env1 = env {SE._typeVarEnv = tyvars1++SE._typeVarEnv env}
+  (funStore1, target_expr) <- compExpr t_gti env1 loc s_ty funStore expr
+  let opencode = TE.CodeTypeAbs tyvars1 target_expr
+
+  mkClosure env loc funStore1 target_ty opencode
+
+  -- let (fname,funStore2) = TE.newName funStore1
+  -- let locvars = SE._locVarEnv env
+  -- let tyvars  = SE._typeVarEnv env
+  -- let (freevars, freetys) = unzip $ SE._varEnv env 
+  -- let target_freevars = map TE.Var freevars
+  
+  -- target_freetys <- mapM compValType freetys
+  -- let codename = TE.CodeName fname (map Location locvars) (map TT.TypeVarType tyvars)
+  -- let codety = TT.CodeType locvars tyvars target_freetys target_ty
+  -- let code = TE.Code locvars tyvars freevars opencode
+
+  -- let funStore3 = TE.addFun loc funStore2 fname codety code
+  -- return (funStore3, TE.Closure target_freevars codename)
 
 compVal t_gti env loc s_ty funStore (SE.TypeAbs tyvars1 expr) =
   error $ "[compVal] Not type-abstraction type: " ++ show s_ty
 
+-- compVal t_gti env loc (ST.LocAbsType tyvars0 s_ty) funStore (SE.LocAbs tyvars1 expr) = do
 
 compVal t_gti env loc s_ty funStore (SE.Lit lit) = return (funStore, TE.Lit lit)
 
+--
+-- Utility shared by compVal(SE.TypeAbs), compVal(SE.LocAbs), compVal(SE.Abs)
+--
+mkClosure env loc funStore target_ty opencode = do
+  let (fname,funStore1) = TE.newName funStore
+  let locvars = SE._locVarEnv env
+  let tyvars  = SE._typeVarEnv env
+  let (freevars, freetys) = unzip $ SE._varEnv env 
+  let target_freevars = map TE.Var freevars
   
+  target_freetys <- mapM compValType freetys
+  let codename = TE.CodeName fname (map Location locvars) (map TT.TypeVarType tyvars)
+  let codety = TT.CodeType locvars tyvars target_freetys target_ty
+  let code = TE.Code locvars tyvars freevars opencode
+
+  let funStore2 = TE.addFun loc funStore1 fname codety code
+  return (funStore2, TE.Closure target_freevars codename)
+
