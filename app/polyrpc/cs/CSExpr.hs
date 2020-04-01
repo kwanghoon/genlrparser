@@ -26,7 +26,7 @@ data Value =
   | Constr String [Type] [Value]
   | Closure [Value] CodeName  
   | UnitM Value
-  | BindM String Expr Expr
+  | BindM [BindingDecl] Value
   | Req Value Value
   | Call Value Value
   | GenApp Location Value Value

@@ -9,6 +9,8 @@ import Literal
 import qualified CSType as TT
 import qualified CSExpr as TE
 
+import Control.Monad
+
 compile :: Monad m => SE.GlobalTypeInfo -> [SE.TopLevelDecl] ->
                       m (TE.GlobalTypeInfo, [TE.TopLevelDecl], TE.FunctionStore)
 compile s_gti s_topleveldecls = do
@@ -119,7 +121,7 @@ compTopLevel t_gti funStore (SE.DataTypeTopLevel
                (SE.DataType dtname locvars tyvars tycondecls)) = return (funStore, [])
 
 compTopLevel t_gti funStore (SE.BindingTopLevel bindingDecl) = do
-  (funStore1, target_bindingDecl) <- compBindingDecl t_gti funStore bindingDecl
+  (funStore1, target_bindingDecl) <- compBindingDecl t_gti SE.initEnv clientLoc funStore bindingDecl
   return (funStore1, [TE.BindingTopLevel target_bindingDecl])
 
 -------------------------------
@@ -128,12 +130,18 @@ compTopLevel t_gti funStore (SE.BindingTopLevel bindingDecl) = do
 --
 -- Note: InterTE.Binding x ty expr as do x:ty <- expr
 --
-compBindingDecl :: Monad m => TE.GlobalTypeInfo -> TE.FunctionStore ->
-                              SE.BindingDecl -> m (TE.FunctionStore, TE.BindingDecl)
-compBindingDecl t_gti funStore (SE.Binding x ty expr) = do
+compBindingDecl :: Monad m =>
+  TE.GlobalTypeInfo -> SE.Env -> Location ->
+  TE.FunctionStore -> SE.BindingDecl -> m (TE.FunctionStore, TE.BindingDecl)
+compBindingDecl t_gti env loc funStore (SE.Binding x ty expr) = do
   target_ty <- compValType ty
-  (funStore1, target_val) <- compExpr t_gti SE.initEnv clientLoc ty funStore expr 
+  (funStore1, target_val) <- compExpr t_gti env loc ty funStore expr 
   return (funStore1, TE.Binding x target_ty target_val)
+
+-- partialCompBindingDecl :: Monad m => SE.BindingDecl -> m (String, TT.Type)
+-- partialCompBindingDecl (SE.Binding x s_ty _) = do
+--   target_ty <- compValType s_ty
+--   return (x, target_ty)
 
 -- compExpr
 compExpr :: Monad m =>
@@ -212,8 +220,19 @@ compVal t_gti env loc s_ty funStore (SE.Abs xtylocs expr) =
   error $ "[compVal] Not abstraction type: " ++ show s_ty
 
 -- Let
-
--- compVal t_gti env loc s_ty funStore (SE.Let bindingDecls expr) = do
+compVal t_gti env loc s_ty funStore (SE.Let bindingDecls expr) = do
+  let bindingTypeInfo = [(x,ty) | SE.Binding x ty expr <- bindingDecls]
+  let bindingTypeInfo1 = (bindingTypeInfo ++ SE._varEnv env)
+  let env1 = env { SE._varEnv=bindingTypeInfo1 }
+  (funStore2, t_bindingDecls) <-
+    foldM (\(funStore0, bindingDecls0) -> \bindingDecl0 -> do
+              (funStore1,bindingDecl1)
+                 <- compBindingDecl t_gti env1 loc funStore0 bindingDecl0
+              return (funStore1, bindingDecl1:bindingDecls0))
+          (funStore, [])
+          bindingDecls
+  (funStore3, t_expr) <- compExpr t_gti env loc s_ty funStore2 expr
+  return (funStore3, TE.BindM t_bindingDecls t_expr)
 
 
 -- Lit
