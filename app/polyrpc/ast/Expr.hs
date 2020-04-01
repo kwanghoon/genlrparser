@@ -35,10 +35,10 @@ data Expr =
   | LocAbs [String] Expr
   | Abs [(String, Type, Location)] Expr
   | Let [BindingDecl] Expr
-  | Case Expr [Alternative]
-  | App Expr Expr (Maybe Location)
-  | TypeApp Expr [Type]
-  | LocApp Expr [Location]
+  | Case Expr (Maybe Type) [Alternative]
+  | App Expr (Maybe Type) Expr (Maybe Location)
+  | TypeApp Expr (Maybe Type) [Type]
+  | LocApp Expr (Maybe Type) [Location]
   | Tuple [Expr]
   | Prim PrimOp [Expr]
   | Lit Literal
@@ -64,16 +64,28 @@ singleAbs (Abs [t] expr) = Abs [t] expr
 singleAbs (Abs (t:ts) expr) = Abs [t] (singleAbs (Abs ts expr))
 singleAbs other = other
 
-singleTypeApp (TypeApp expr []) = expr
-singleTypeApp (TypeApp expr [ty]) = TypeApp expr [ty]
-singleTypeApp (TypeApp expr (ty:tys)) = singleTypeApp (TypeApp (TypeApp expr [ty]) tys)
+singleTypeApp (TypeApp expr maybe []) = expr
+singleTypeApp (TypeApp expr maybe [ty]) = TypeApp expr maybe [ty]
+singleTypeApp (TypeApp expr maybe (ty:tys)) =
+  singleTypeApp
+    (TypeApp
+       (TypeApp expr maybe [ty]) (skimTypeAbsType maybe) tys)
 singleTypeApp other = other
 
-singleLocApp (LocApp expr []) = expr
-singleLocApp (LocApp expr [l]) = LocApp expr [l]
-singleLocApp (LocApp expr (l:ls)) = singleLocApp (LocApp (LocApp expr [l]) ls)
+skimTypeAbsType Nothing = Nothing
+skimTypeAbsType (Just (TypeAbsType (tyvar:tyvars) ty)) = Just (TypeAbsType tyvars ty)
+skimTypeAbsType maybe = error $ "[skimTypeAbsType]: " ++ show maybe
+
+singleLocApp (LocApp expr maybe []) = expr
+singleLocApp (LocApp expr maybe [l]) = LocApp expr maybe [l]
+singleLocApp (LocApp expr maybe (l:ls)) =
+  singleLocApp
+     (LocApp (LocApp expr maybe [l]) (skimLocAbsType maybe) ls)
 singleLocApp other = other
 
+skimLocAbsType Nothing = Nothing
+skimLocAbsType (Just (LocAbsType (locvar:locvars) ty)) = Just (LocAbsType locvars ty)
+skimLocAbsType maybe = error $ "[skimLocAbsType]: " ++ show maybe
 
 data BindingDecl =
     Binding String Type Expr

@@ -228,12 +228,12 @@ parserSpec = ParserSpec
         \rhs -> toASTExpr (Let (fromASTBindingDeclSeq (get rhs 3)) (fromASTExpr (get rhs 5))) ),
 
       ("LExpr -> if Expr then LExpr else LExpr",
-        \rhs -> toASTExpr (Case (fromASTExpr (get rhs 2))
+        \rhs -> toASTExpr (Case (fromASTExpr (get rhs 2)) Nothing
                   [ Alternative trueLit  [] (fromASTExpr (get rhs 4))
                   , Alternative falseLit [] (fromASTExpr (get rhs 6)) ]) ),
 
       ("LExpr -> case Expr { Alternatives }",
-        \rhs -> toASTExpr (Case (fromASTExpr (get rhs 2)) (fromASTAlternativeSeq (get rhs 4))) ),
+        \rhs -> toASTExpr (Case (fromASTExpr (get rhs 2)) Nothing (fromASTAlternativeSeq (get rhs 4))) ),
 
       ("LExpr -> Expr", \rhs -> get rhs 1 ),
 
@@ -269,13 +269,13 @@ parserSpec = ParserSpec
 
       {- Expr -}
       ("Expr -> Expr Term",
-        \rhs -> toASTExpr (App (fromASTExpr (get rhs 1)) (fromASTExpr (get rhs 2)) Nothing) ),
+        \rhs -> toASTExpr (App (fromASTExpr (get rhs 1)) Nothing (fromASTExpr (get rhs 2)) Nothing) ),
 
       ("Expr -> Expr [ LocFunTypes ]",
-        \rhs -> toASTExpr (singleTypeApp (TypeApp (fromASTExpr (get rhs 1)) (fromASTTypeSeq (get rhs 3)))) ),
+        \rhs -> toASTExpr (singleTypeApp (TypeApp (fromASTExpr (get rhs 1)) Nothing (fromASTTypeSeq (get rhs 3)))) ),
 
       ("Expr -> Expr { Identifiers }",
-        \rhs -> toASTExpr (singleLocApp (LocApp (fromASTExpr (get rhs 1)) (map Location (fromASTIdSeq (get rhs 3))))) ),
+        \rhs -> toASTExpr (singleLocApp (LocApp (fromASTExpr (get rhs 1)) Nothing (map Location (fromASTIdSeq (get rhs 3))))) ),
 
       ("Expr -> Tuple", \rhs -> get rhs 1 ),
 
@@ -303,10 +303,15 @@ parserSpec = ParserSpec
          (App
           (App
            (singleTypeApp (TypeApp
-            (singleLocApp ( LocApp (Var ":=") (map Location (fromASTIdSeq (get rhs 4))) ) )
+            (singleLocApp ( LocApp (Var ":=")
+                                   Nothing
+                                   (map Location (fromASTIdSeq (get rhs 4))) ) )
+            Nothing
             (fromASTTypeSeq (get rhs 7)) ) )
+           Nothing
            (fromASTExpr (get rhs 1))
            Nothing )
+          Nothing
           (fromASTExpr (get rhs 9))
           Nothing) ),
 
@@ -319,8 +324,12 @@ parserSpec = ParserSpec
          toASTExpr
          (App
           (singleTypeApp (TypeApp
-           (singleLocApp (LocApp (Var "!") (map Location (fromASTIdSeq (get rhs 3)))))
+           (singleLocApp (LocApp (Var "!")
+                                 Nothing
+                                 (map Location (fromASTIdSeq (get rhs 3)))))
+           Nothing
            (fromASTTypeSeq (get rhs 6)) ))
+          Nothing
           (fromASTExpr (get rhs 8)) Nothing) ),
 
       ("DerefExpr -> LogicOr", \rhs -> get rhs 1 ),

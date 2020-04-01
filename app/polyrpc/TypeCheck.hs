@@ -356,50 +356,50 @@ elabExpr gti env loc (Let letBindingDecls expr) = do
   (elab_expr, elab_ty) <- elabExpr gti (env {_varEnv=varEnv}) loc expr
   return (Let elab_letBindingDecls elab_expr, elab_ty)
 
-elabExpr gti env loc (Case expr []) =
+elabExpr gti env loc (Case expr _ []) =
   error $ "[TypeCheck] empty alternatives"
 
-elabExpr gti env loc (Case expr alts) = do
+elabExpr gti env loc (Case expr _ alts) = do
   (elab_caseexpr, casety) <- elabExpr gti env loc expr
   case casety of
     ConType tyconName locs tys ->
       case lookupDataTypeName gti tyconName of
         ((locvars, tyvars, tycondecls):_) -> do
           (elab_alts, altty) <- elabAlts gti env loc locs locvars tys tyvars tycondecls alts
-          return (Case elab_caseexpr elab_alts, altty)
+          return (Case elab_caseexpr (Just casety) elab_alts, altty)
         [] -> error $ "[TypeCheck] elabExpr: invalid constructor type: " ++ tyconName
 
     TupleType tys -> do
       (elab_alts, altty) <- elabAlts gti env loc [] [] tys [] [] alts
-      return (Case elab_caseexpr elab_alts, altty)
+      return (Case elab_caseexpr (Just casety) elab_alts, altty)
     
     _ -> error $ "[TypeCheck] elabExpr: case expr not constructor type"
 
-elabExpr gti env loc (App left_expr right_expr l) = do
+elabExpr gti env loc (App left_expr maybe right_expr l) = do
   (elab_left_expr, left_ty) <- elabExpr gti env loc left_expr
   (elab_right_expr, right_ty) <- elabExpr gti env loc right_expr
   case left_ty of
     FunType argty loc0 retty ->
       if equalType argty right_ty
-      then return (App elab_left_expr elab_right_expr (Just loc0), retty)
+      then return (App elab_left_expr (Just left_ty) elab_right_expr (Just loc0), retty)
       else error $ "[TypeCheck] elabExpr: not equal arg type in app:\n"
-                   ++ show (App left_expr right_expr l) ++ "\n" ++ show argty ++ "\n" ++ show right_ty
+                   ++ show (App left_expr maybe right_expr l) ++ "\n" ++ show argty ++ "\n" ++ show right_ty
     _ -> error $ "[TypeCheck] elabExpr: not function type in app:\n"
-                   ++ show (App left_expr right_expr l) ++ "\n" ++ show left_ty ++ "\n" ++ show right_ty
+                   ++ show (App left_expr maybe right_expr l) ++ "\n" ++ show left_ty ++ "\n" ++ show right_ty
 
-elabExpr gti env loc (TypeApp expr tys) = do
+elabExpr gti env loc (TypeApp expr maybe tys) = do
   elab_tys <- mapM (elabType (_typeInfo gti) (_typeVarEnv env) (_locVarEnv env)) tys
   (elab_expr, elab_ty) <- elabExpr gti env loc expr
   case elab_ty of
     TypeAbsType tyvars ty0 ->
       if length tyvars == length elab_tys
-      then return (singleTypeApp (TypeApp elab_expr elab_tys), doSubst (zip tyvars elab_tys) ty0)
+      then return (singleTypeApp (TypeApp elab_expr (Just elab_ty) elab_tys), doSubst (zip tyvars elab_tys) ty0)
       else error $ "[TypeCheck] elabExpr: not equal length of arg types in type app: "
     _ -> error $ "[TypeCheck] elabExpr: not type-abstraction type in type app: " ++ "\n" 
                    ++ show elab_ty ++ "\n"
-                   ++ show (TypeApp expr tys) ++ "\n"
+                   ++ show (TypeApp expr maybe tys) ++ "\n"
 
-elabExpr gti env loc (LocApp expr locs) = 
+elabExpr gti env loc (LocApp expr maybe locs) = 
   let f (Location loc0) = if loc0 `elem` (_locVarEnv env) then LocVar loc0 else Location loc0
       f (LocVar x)      = error $ "[TypeCheck] elabExpr: LocApp: LocVar: " ++ x
   in do
@@ -408,7 +408,7 @@ elabExpr gti env loc (LocApp expr locs) =
   case elab_ty of
     LocAbsType locvars ty0 ->
       if length locvars == length locs
-      then return (singleLocApp (LocApp elab_expr locs0), doSubstLoc (zip locvars locs0) ty0)
+      then return (singleLocApp (LocApp elab_expr (Just elab_ty) locs0), doSubstLoc (zip locvars locs0) ty0)
       else error $ "[TypeCheck] elabExpr: not equal length of arg locations in location app: " ++ show locvars ++ " " ++ show locs
     _ -> error $ "[TypeCheck] elabExpr: not location-abstraction type in type app: "
 

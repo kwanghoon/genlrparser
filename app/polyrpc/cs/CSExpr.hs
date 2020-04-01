@@ -12,10 +12,10 @@ import Text.JSON.Generic
 data Expr =
     ValExpr Value
   | Let [BindingDecl] Expr
-  | Case Expr [Alternative]  -- including pi_i (V)
-  | App Value Value
-  | TypeApp Expr [Type]
-  | LocApp Expr [Location]
+  | Case Expr (Maybe Type) [Alternative]  -- including pi_i (V)
+  | App Value (Maybe Type) Value
+  | TypeApp Expr (Maybe Type) [Type]
+  | LocApp Expr (Maybe Type) [Location]
   | Prim PrimOp [Value]
   deriving (Show, Typeable, Data)
 
