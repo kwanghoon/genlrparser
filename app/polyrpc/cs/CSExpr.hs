@@ -12,10 +12,10 @@ import Text.JSON.Generic
 data Expr =
     ValExpr Value
   | Let [BindingDecl] Expr
-  | Case Expr (Maybe Type) [Alternative]  -- including pi_i (V)
+  | Case Value (Maybe Type) [Alternative]  -- including pi_i (V)
   | App Value (Maybe Type) Value
-  | TypeApp Expr (Maybe Type) [Type]
-  | LocApp Expr (Maybe Type) [Location]
+  | TypeApp Value (Maybe Type) [Type]
+  | LocApp Value (Maybe Type) [Location]
   | Prim PrimOp [Value]
   deriving (Show, Typeable, Data)
 
@@ -23,10 +23,10 @@ data Value =
     Var String
   | Lit Literal
   | Tuple [Value]
-  | Constr String [Type] [Value]
+  | Constr String [Location] [Type] [Value]
   | Closure [Value] CodeName  
   | UnitM Value
-  | BindM [BindingDecl] Value
+  | BindM [BindingDecl] Expr
   | Req Value Value
   | Call Value Value
   | GenApp Location Value Value
@@ -58,7 +58,8 @@ data TypeConDecl =
     
 data Alternative =
     Alternative String [String] Expr
-    deriving (Show, Typeable, Data)
+  | TupleAlternative [String] Expr    
+  deriving (Show, Typeable, Data)
 
 data Code =
     Code [String] [String] [String] OpenCode  -- [alpha] [loc]. [x]. OpenCode
@@ -123,6 +124,16 @@ addFun loc funstore name ty code
 
 newName :: FunctionStore -> (String, FunctionStore)
 newName fnstore = let n = _new fnstore in ("f" ++ show n, fnstore{_new =n+1})
+
+newVar :: FunctionStore -> (String, FunctionStore)
+newVar fnstore = let n = _new fnstore in ("x" ++ show n, fnstore{_new =n+1})
+
+newVars :: Int -> FunctionStore -> ([String], FunctionStore)
+newVars 0 funStore = ([], funStore)
+newVars n funStore = do
+    (x,  funStore1) <- newVar funStore
+    (xs, funStore2) <- newVars (n-1) funStore1
+    return (x:xs, funStore2)
 
 initFunctionStore = FunctionStore
    { _clientstore=[]

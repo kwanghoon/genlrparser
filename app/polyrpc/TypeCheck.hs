@@ -1,4 +1,4 @@
-module TypeCheck where
+module TypeCheck(typeCheck, lookupCon, lookupDataTypeName) where
 
 import Location
 import Type

@@ -131,7 +131,6 @@ data Alternative =
 -- instance ToJSON TypeConDecl where
 -- instance ToJSON Alternative where
 
-
 --
 -- For type-checker
 
