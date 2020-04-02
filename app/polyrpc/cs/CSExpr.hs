@@ -33,7 +33,7 @@ data Value =
   deriving (Show, Typeable, Data)
 
 data BindingDecl =
-    Binding String Type Value   -- Not Expr but Value!
+    Binding String Type Expr
     deriving (Show, Typeable, Data)
 
 data DataTypeDecl =
@@ -66,9 +66,9 @@ data Code =
     deriving (Show, Typeable, Data)
 
 data OpenCode =
-    CodeAbs     [(String, Type)] Value
-  | CodeTypeAbs [String] Value
-  | CodeLocAbs  [String] Value
+    CodeAbs     [(String, Type)] Expr
+  | CodeTypeAbs [String] Expr
+  | CodeLocAbs  [String] Expr
   deriving (Show, Typeable, Data)
   
 
@@ -107,6 +107,7 @@ data FunctionStore = FunctionStore
    , _serverstore :: [(String, (CodeType, Code))]
    , _new   :: Int
    }
+   deriving (Show, Typeable, Data)
 
 addClientFun :: FunctionStore -> String -> CodeType -> Code -> FunctionStore
 addClientFun fnstore name ty code =
@@ -130,10 +131,10 @@ newVar fnstore = let n = _new fnstore in ("x" ++ show n, fnstore{_new =n+1})
 
 newVars :: Int -> FunctionStore -> ([String], FunctionStore)
 newVars 0 funStore = ([], funStore)
-newVars n funStore = do
-    (x,  funStore1) <- newVar funStore
-    (xs, funStore2) <- newVars (n-1) funStore1
-    return (x:xs, funStore2)
+newVars n funStore = 
+    let (x,  funStore1) = newVar funStore
+        (xs, funStore2) = newVars (n-1) funStore1
+    in  (x:xs, funStore2)
 
 initFunctionStore = FunctionStore
    { _clientstore=[]

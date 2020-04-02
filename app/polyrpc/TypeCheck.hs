@@ -1,4 +1,4 @@
-module TypeCheck(typeCheck, lookupCon, lookupDataTypeName) where
+module TypeCheck(typeCheck, lookupCon) where
 
 import Location
 import Type
@@ -129,8 +129,8 @@ elabTypeConDecl typeInfo locvars tyvars (TypeCon con tys) = do
 
 -- type ConTypeInfo = [(String, ([Type], String, [String], [String]))] 
 
-lookupConstr :: GlobalTypeInfo -> String -> [([Type], String, [String], [String])]
-lookupConstr gti x = [z | (con, z) <- _conTypeInfo gti, x==con]
+-- lookupConstr :: GlobalTypeInfo -> String -> [([Type], String, [String], [String])]
+-- lookupConstr gti x = [z | (con, z) <- _conTypeInfo gti, x==con]
 
 elabConTypeDecls :: Monad m => [DataTypeDecl] -> m ConTypeInfo
 elabConTypeDecls elab_datatypeDecls = do
@@ -258,7 +258,7 @@ lookupTypeVar env x = elem x (_typeVarEnv env)
 --
 -- type DataTypeInfo = [(String, ([String], [(String,[Type])]))]
 
-lookupDataTypeName gti x = [info | (y,info) <- _dataTypeInfo gti, x==y]
+-- lookupDataTypeName gti x = [info | (y,info) <- _dataTypeInfo gti, x==y]
 
 collectDataTypeInfo :: Monad m => [DataTypeDecl] -> m DataTypeInfo
 collectDataTypeInfo datatypeDecls = do
@@ -285,7 +285,7 @@ mkTypeAbs loc cname tyname locvars tyvars argtys =
 mkAbs loc cname tyname locvars tyvars [] =
   let locs = map LocVar locvars
       tys  = map TypeVarType tyvars
-  in  (Constr cname locs tys [], ConType tyname locs tys)
+  in  (Constr cname locs tys [] [], ConType tyname locs tys)
 
 mkAbs loc cname tyname locvars tyvars argtys =
   let locs = map LocVar locvars
@@ -294,7 +294,7 @@ mkAbs loc cname tyname locvars tyvars argtys =
       vars = map Var varNames
       abslocs = loc : abslocs
       varTypeLocList = zip3 varNames argtys abslocs
-  in  (singleAbs (Abs varTypeLocList (Constr cname locs tys vars))
+  in  (singleAbs (Abs varTypeLocList (Constr cname locs tys vars argtys))
       , foldr ( \ ty ty0 -> FunType ty loc ty0) (ConType tyname locs tys) argtys)
 
 elabExpr :: Monad m =>
@@ -429,7 +429,7 @@ elabExpr gti env loc (Prim op exprs) = do
 
 elabExpr gti env loc (Lit literal) = return (Lit literal, typeOfLiteral literal)
 
-elabExpr gti env loc (Constr conname locs contys exprs) = do
+elabExpr gti env loc (Constr conname locs contys exprs _argtys) = do 
   elab_locs <- mapM (elabLocation (_locVarEnv env)) locs
   elab_contys <- mapM (elabType (_typeInfo gti) (_typeVarEnv env) (_locVarEnv env)) contys
   elabExprTyList <- mapM (elabExpr gti env loc) exprs
@@ -439,6 +439,7 @@ elabExpr gti env loc (Constr conname locs contys exprs) = do
       case (unifyTypes argtys elab_tys) of
         (Just subst) ->
           return (Constr conname elab_locs elab_contys elab_exprs            -- BUG: subt0???
+                   (map (doSubst subst) elab_tys)
                  , doSubst subst (ConType tyname (map LocVar locvars) (map TypeVarType tyvars)))
         (Nothing) -> error $ "[TypeCheck] elabExpr: constructor arg types incorrect: " ++ conname
             
@@ -465,8 +466,8 @@ elabAlts gti env loc locs locvars tys tyvars tycondecls (alt:alts) = do
                                Alternative con args _ -> con ++ show args;
                                TupleAlternative args _ -> show args })
 
-lookupCon tycondecls con =
-  [tys | (conname, tys) <- tycondecls, con==conname]
+-- lookupCon tycondecls con =
+--  [tys | (conname, tys) <- tycondecls, con==conname]
 
 elabAlt gti env loc substLoc substTy tycondecls externTys (Alternative con args expr) = do
 -- externTys only for TupleAlternative

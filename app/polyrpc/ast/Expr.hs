@@ -5,6 +5,7 @@ module Expr(Expr(..), AST(..), BindingDecl(..), DataTypeDecl(..)
   , TopLevelDecl(..), TypeConDecl(..), Alternative(..)
   , TypeInfo, ConTypeInfo, BindingTypeInfo, DataTypeInfo
   , GlobalTypeInfo(..), Env(..)
+  , lookupConstr, lookupCon, lookupDataTypeName
   , singleTypeAbs, singleLocAbs, singleAbs
   , singleTypeApp, singleLocApp
   , toASTExprSeq, toASTExpr
@@ -42,13 +43,19 @@ data Expr =
   | Tuple [Expr]
   | Prim PrimOp [Expr]
   | Lit Literal
-  | Constr String [Location] [Type] [Expr]
+  | Constr String [Location] [Type] [Expr] [Type]
 -- For aeson  
 --  deriving (Show, Generic)
   deriving (Show, Typeable, Data)
 
+--
+lookupDataTypeName gti x = [info | (y,info) <- _dataTypeInfo gti, x==y]
+
+lookupCon tycondecls con =
+  [tys | (conname, tys) <- tycondecls, con==conname]
 
 
+--
 singleTypeAbs (TypeAbs [] expr) = expr
 singleTypeAbs (TypeAbs [a] expr) = TypeAbs [a] expr
 singleTypeAbs (TypeAbs (a:as) expr) = TypeAbs [a] (singleTypeAbs (TypeAbs as expr))
@@ -138,7 +145,11 @@ data Alternative =
 type TypeInfo = [(String, [String], [String])] 
 
 -- [(ConName, (ConArgTypes, DTName, LocationVars, TypeVars))]
-type ConTypeInfo = [(String, ([Type], String, [String], [String]))] 
+type ConTypeInfo = [(String, ([Type], String, [String], [String]))]
+
+lookupConstr :: GlobalTypeInfo -> String -> [([Type], String, [String], [String])]
+lookupConstr gti x = [z | (con, z) <- _conTypeInfo gti, x==con]
+
 
 type BindingTypeInfo = [(String, Type)]
 

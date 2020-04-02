@@ -46,7 +46,7 @@ executable conv-exe
 executable polyrpc-exe
   hs-source-dirs:      app/polyrpc app/polyrpc/ast app/polyrpc/cs
   main-is:             Main.hs
-  other-modules:       Location, Type, Prim, Literal, Expr, BasicLib, Token, Lexer, Parser, TypeCheck, CSType, CSExpr
+  other-modules:       Location, Type, Prim, Literal, Expr, BasicLib, Token, Lexer, Parser, TypeCheck, CSType, CSExpr, Compile
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -O2
   build-depends:       base
                      , regex-tdfa
