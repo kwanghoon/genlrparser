@@ -192,7 +192,7 @@ compExpr s_gti env loc (ST.FunType s_argty s_loc s_resty) funStore (SE.Abs xtylo
   return (funStore2, TE.ValExpr $ TE.UnitM closure)
   
 compExpr s_gti env loc s_ty funStore (SE.Abs xtylocs expr) = do
-  error $ "[compExpr] Not abstraction type: " ++ show s_ty
+  error $ "[compExpr] Not abstraction type: " ++ show s_ty ++ ", " ++ show (SE.Abs xtylocs expr)
 
 
 compExpr s_gti env loc (ST.TupleType tys) funStore (SE.Tuple exprs) = do
@@ -264,7 +264,7 @@ compExpr s_gti env loc s_ty funStore (SE.Case expr maybe alternatives) = do
 compExpr s_gti env loc s_ty funStore (SE.App left (Just (ST.FunType argty locfun resty)) right maybeLoc) = do
    let ([f,x], funStore1) = TE.newVars 2 funStore
    (funStore2, target_left) <- compExpr s_gti env loc (ST.FunType argty locfun resty) funStore1 left
-   (funStore3, target_right) <- compExpr s_gti env loc argty funStore2 left
+   (funStore3, target_right) <- compExpr s_gti env loc argty funStore2 right
    target_funty <- compValType (ST.FunType argty locfun resty)
    target_argty <- compValType argty
    let app = if loc==locfun then TE.App (TE.Var f) (Just target_funty) (TE.Var x)

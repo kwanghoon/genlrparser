@@ -10,6 +10,8 @@ import Terminal
 import Parser
 import Type
 import Expr
+import qualified CSType as TT
+import qualified CSExpr as TE
 import TypeCheck
 import Compile
 
@@ -27,38 +29,57 @@ main :: IO ()
 main = do
   args <- getArgs
   cmd  <- getCmd args
-  let bool  = _flag_print_json cmd
+  
   let files = _files cmd
-  let build bool file jsonfile toplevels =
-        if bool == False
-        then return ()
-        else writeFile jsonfile $ render $ pp_value $ toJSON (toplevels :: [TopLevelDecl])
-  mapM_ (uncurry doProcess)
-    [((build bool file jsonfile), file) | file <- files, let jsonfile = file++".json"]
+  
+  mapM_ (doProcess cmd) files -- [ ((build cmd file), file) | file <- files ]
 
-doProcess cont line = do
-  text <- readFile line 
-  putStrLn "Lexing..."
+doProcess cmd file = do
+  text <- readFile file
+
+  putStrLn "[Lexing]"
   terminalList <- lexing lexerSpec text
   mapM_ (putStrLn) (map terminalToString terminalList)
-  putStrLn "Parsing..."
+
+  putStrLn "[Parsing]"
   exprSeqAst <- parsing parserSpec terminalList
   putStrLn "Dumping..."
   putStrLn $ show $ fromASTTopLevelDeclSeq exprSeqAst
   let toplevelDecls = fromASTTopLevelDeclSeq exprSeqAst
-  putStrLn "Type checking..."
+
+  putStrLn "[Type checking]"
   (gti, elab_toplevelDecls) <- typeCheck toplevelDecls
   putStrLn "Dumping..."
   putStrLn $ show $ elab_toplevelDecls
-  putStrLn "Compiling..."
+
+  print_rpc cmd file elab_toplevelDecls
+
+  putStrLn "[Compiling]"
   (t_gti, cs_toplevelDecls, funStore) <- compile gti elab_toplevelDecls
   putStrLn "Dumping..."
   putStrLn $ show $ funStore
   putStrLn "Dumping..."
   putStrLn $ show $ cs_toplevelDecls
-  putStrLn "Success..."
-  cont elab_toplevelDecls
-  
+
+  print_cs cmd file funStore cs_toplevelDecls
+
+  putStrLn "[Success]"
+
+--
+print_rpc cmd file elab_toplevelDecls = do
+  let jsonfile = file ++ ".json"
+  if _flag_print_rpc_json cmd
+  then writeFile jsonfile $ render
+          $ pp_value $ toJSON (elab_toplevelDecls :: [TopLevelDecl])
+  else return ()
+
+print_cs cmd file funStore cs_toplevelDecls = do
+  let jsonfile = file ++ "_cs.json"
+  if _flag_print_cs_json cmd
+  then writeFile jsonfile $ render
+          $ pp_value $ toJSON (funStore :: TE.FunctionStore
+                              , cs_toplevelDecls :: [TE.TopLevelDecl])
+  else return ()
   
 readline msg = do
   putStr msg
@@ -74,15 +95,29 @@ readline' = do
        return (ch:line)
 
 --
-data Cmd = Cmd { _flag_print_json :: Bool, _files :: [String] }
+data Cmd = Cmd { _flag_print_rpc_json :: Bool
+               , _flag_print_cs_json :: Bool
+               , _files :: [String] }
+
+initCmd =
+  Cmd { _flag_print_rpc_json = False
+      , _flag_print_cs_json  = False
+      , _files = []
+      }
 
 getCmd :: Monad m => [String] -> m Cmd
-getCmd args = collect (Cmd {_flag_print_json=False, _files=[]}) args 
+getCmd args = collect initCmd args 
 
 collect :: Monad m => Cmd -> [String] -> m Cmd
 collect cmd [] = return cmd
 collect cmd ("--output-json":args) = do
-  let new_cmd = cmd { _flag_print_json = True }
+  let new_cmd = cmd { _flag_print_rpc_json = True }
+  collect new_cmd args
+collect cmd ("--output-rpc-json":args) = do  
+  let new_cmd = cmd { _flag_print_rpc_json = True }
+  collect new_cmd args
+collect cmd ("--output-cs-json":args) = do  
+  let new_cmd = cmd { _flag_print_cs_json = True }
   collect new_cmd args
 collect cmd (arg:args) = do
   let old_files = _files cmd 

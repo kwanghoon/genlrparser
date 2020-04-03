@@ -48,6 +48,11 @@
  {"BindingTopLevel": ["main", {"ConType": ["Int", [], []]},
                       {"Case": [{"App": [{"Abs": [[["arg1", {"ConType": ["Int", [], []]},
                                                     {"Location": "client"}]],
-                                                  {"Constr": ["F", [], [], [{"Var": "arg1"}]]}]},
+                                                  {"Constr": ["F", [], [], [{"Var": "arg1"}],
+                                                              [{"ConType": ["Int", [], []]}]]}]},
+                                         {"Just": {"FunType": [{"ConType": ["Int", [], []]},
+                                                               {"Location": "client"},
+                                                               {"ConType": ["F", [], []]}]}},
                                          {"Lit": {"IntLit": 5}}, {"Just": {"Location": "client"}}]},
+                                {"Just": {"ConType": ["F", [], []]}},
                                 [{"Alternative": ["F", ["i"], {"Var": "i"}]}]]}]}]
