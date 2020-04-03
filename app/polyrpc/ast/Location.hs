@@ -7,7 +7,7 @@ import Text.JSON.Generic
 data Location =
     Location String
   | LocVar LocationVar
-  deriving (Show, Typeable, Data)
+  deriving (Eq, Show, Typeable, Data)
 
 equalLoc (Location x) (Location y) = x==y
 equalLoc (LocVar x) (LocVar y) = x==y

@@ -267,11 +267,15 @@ compExpr s_gti env loc s_ty funStore (SE.App left (Just (ST.FunType argty locfun
    (funStore3, target_right) <- compExpr s_gti env loc argty funStore2 left
    target_funty <- compValType (ST.FunType argty locfun resty)
    target_argty <- compValType argty
+   let app = if loc==locfun then TE.App (TE.Var f) (Just target_funty) (TE.Var x)
+             else if loc==clientLoc && locfun==serverLoc then TE.ValExpr $ TE.Req (TE.Var f) (TE.Var x)
+             else if loc==serverLoc && locfun==clientLoc then TE.ValExpr $ TE.Call (TE.Var f) (TE.Var x)
+             else TE.ValExpr $ TE.GenApp locfun (TE.Var f) (TE.Var x)
    return (funStore3,
            TE.ValExpr $ TE.BindM [TE.Binding f target_funty target_left]
                           (TE.ValExpr
                             (TE.BindM [TE.Binding x target_argty target_right]
-                             (TE.App (TE.Var f) (Just target_funty) (TE.Var x)))))
+                             app)))
 
 compExpr s_gti env loc s_ty funStore (SE.App left Nothing right maybeLoc) = do
    error $ "[compExpr] App"
