@@ -93,6 +93,7 @@ data GlobalTypeInfo = GlobalTypeInfo
    , _conTypeInfo :: ConTypeInfo
    , _dataTypeInfo :: DataTypeInfo
    , _bindingTypeInfo :: BindingTypeInfo }
+    deriving (Show, Typeable, Data)
        
 data Env = Env
    { _locVarEnv  :: [String]

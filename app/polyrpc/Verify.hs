@@ -7,7 +7,7 @@ import CSExpr
 
 verify :: Monad m => GlobalTypeInfo -> FunctionStore -> [TopLevelDecl] -> m ()
 verify gti funStore toplevelDecls = do
-  return ()
+  
 
 
 

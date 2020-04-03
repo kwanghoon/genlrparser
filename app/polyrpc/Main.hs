@@ -55,32 +55,32 @@ doProcess cmd file = do
   print_rpc cmd file elab_toplevelDecls
 
   putStrLn "[Compiling]"
-  (t_gti, cs_toplevelDecls, funStore) <- compile gti elab_toplevelDecls
-  putStrLn "Dumping..."
-  putStrLn $ show $ funStore
-  putStrLn "Dumping..."
-  putStrLn $ show $ cs_toplevelDecls
+  (t_gti, t_libs, funStore, t_expr) <- compile gti elab_toplevelDecls
+  putStrLn "Dumping...\nGlobal type information:\n"
+  putStrLn $ (show t_gti ++ "\n\nLibrary:")
+  putStrLn $ (show t_libs ++ "\n\nFunctionstore:")
+  putStrLn $ (show funStore ++ "\n\nMain expression:")
+  putStrLn $ (show t_expr ++ "\n")
 
-  print_cs cmd file funStore cs_toplevelDecls
+  print_cs cmd file funStore t_expr
 
   putStrLn "[Success]"
 
 --
 print_rpc cmd file elab_toplevelDecls = do
   let jsonfile = prefixOf file ++ ".json"
-  putStrLn $ "Writing to " ++ jsonfile
   if _flag_print_rpc_json cmd
-  then writeFile jsonfile $ render
-          $ pp_value $ toJSON (elab_toplevelDecls :: [TopLevelDecl])
+  then do putStrLn $ "Writing to " ++ jsonfile
+          writeFile jsonfile $ render
+             $ pp_value $ toJSON (elab_toplevelDecls :: [TopLevelDecl])
   else return ()
 
-print_cs cmd file funStore cs_toplevelDecls = do
+print_cs cmd file funStore t_expr = do
   let jsonfile = prefixOf file ++ "_cs.json"
-  putStrLn $ "Writing to " ++ jsonfile  
   if _flag_print_cs_json cmd
-  then writeFile jsonfile $ render
-          $ pp_value $ toJSON (funStore :: TE.FunctionStore
-                              , cs_toplevelDecls :: [TE.TopLevelDecl])
+  then do putStrLn $ "Writing to " ++ jsonfile
+          writeFile jsonfile $ render
+             $ pp_value $ toJSON (funStore :: TE.FunctionStore, t_expr :: TE.Expr)
   else return ()
 
 prefixOf str = reverse (removeDot (dropWhile (/='.') (reverse str)))

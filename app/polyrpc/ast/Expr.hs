@@ -6,6 +6,7 @@ module Expr(Expr(..), AST(..), BindingDecl(..), DataTypeDecl(..)
   , TypeInfo, ConTypeInfo, BindingTypeInfo, DataTypeInfo
   , GlobalTypeInfo(..), Env(..)
   , lookupConstr, lookupCon, lookupDataTypeName
+  , mainName
   , singleTypeAbs, singleLocAbs, singleAbs
   , singleTypeApp, singleLocApp
   , toASTExprSeq, toASTExpr
@@ -161,6 +162,7 @@ data GlobalTypeInfo = GlobalTypeInfo
        , _conTypeInfo :: ConTypeInfo
        , _dataTypeInfo :: DataTypeInfo
        , _bindingTypeInfo :: BindingTypeInfo }
+    deriving (Show, Typeable, Data)
        
 data Env = Env
        { _locVarEnv  :: [String]
@@ -229,3 +231,5 @@ toASTTriple triple = ASTTriple triple
 
 toASTLit lit     = ASTLit lit
 
+--
+mainName = "main"
