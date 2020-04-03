@@ -188,7 +188,7 @@ compExpr s_gti env loc (ST.FunType s_argty s_loc s_resty) funStore (SE.Abs xtylo
   (funStore1, target_expr) <- compExpr s_gti env1 s_loc s_resty funStore expr
   let opencode = TE.CodeAbs t_xtys target_expr
 
-  (funStore2, closure) <- mkClosure env loc funStore1 target_ty opencode
+  (funStore2, closure) <- mkClosure env s_loc funStore1 target_ty opencode
   return (funStore2, TE.ValExpr $ TE.UnitM closure)
   
 compExpr s_gti env loc s_ty funStore (SE.Abs xtylocs expr) = do

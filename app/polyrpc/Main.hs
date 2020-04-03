@@ -67,20 +67,27 @@ doProcess cmd file = do
 
 --
 print_rpc cmd file elab_toplevelDecls = do
-  let jsonfile = file ++ ".json"
+  let jsonfile = prefixOf file ++ ".json"
+  putStrLn $ "Writing to " ++ jsonfile
   if _flag_print_rpc_json cmd
   then writeFile jsonfile $ render
           $ pp_value $ toJSON (elab_toplevelDecls :: [TopLevelDecl])
   else return ()
 
 print_cs cmd file funStore cs_toplevelDecls = do
-  let jsonfile = file ++ "_cs.json"
+  let jsonfile = prefixOf file ++ "_cs.json"
+  putStrLn $ "Writing to " ++ jsonfile  
   if _flag_print_cs_json cmd
   then writeFile jsonfile $ render
           $ pp_value $ toJSON (funStore :: TE.FunctionStore
                               , cs_toplevelDecls :: [TE.TopLevelDecl])
   else return ()
-  
+
+prefixOf str = reverse (removeDot (dropWhile (/='.') (reverse str)))
+  where removeDot []     = []
+        removeDot (x:xs) = xs  -- x must be '.'
+
+--
 readline msg = do
   putStr msg
   hFlush stdout
