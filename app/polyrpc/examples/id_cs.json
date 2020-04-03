@@ -24,10 +24,11 @@
                      {"CodeAbs": [[["x", {"TypeVarType": "a"}]],
                                   {"ValExpr": {"UnitM": {"Var": "x"}}}]}]]]],
   "new": 3},
- [{"BindingTopLevel": ["id",
-                       {"CloType": {"LocAbsType": [["l"],
-                                                   {"MonType": {"CloType": {"TypeAbsType": [["a"],
-                                                                                            {"MonType": {"CloType": {"FunType": [{"TypeVarType": "a"},
-                                                                                                                                 {"LocVar": "l"},
-                                                                                                                                 {"MonType": {"TypeVarType": "a"}}]}}}]}}}]}},
-                       {"ValExpr": {"UnitM": {"Closure": [[], ["f3", [], []]]}}}]}]]
+ {"ValExpr": {"BindM": [[["id",
+                          {"CloType": {"LocAbsType": [["l"],
+                                                      {"MonType": {"CloType": {"TypeAbsType": [["a"],
+                                                                                               {"MonType": {"CloType": {"FunType": [{"TypeVarType": "a"},
+                                                                                                                                    {"LocVar": "l"},
+                                                                                                                                    {"MonType": {"TypeVarType": "a"}}]}}}]}}}]}},
+                          {"ValExpr": {"UnitM": {"Closure": [[], ["f3", [], []]]}}}]],
+                        {"ValExpr": {"UnitM": {"Var": "main"}}}]}}]
