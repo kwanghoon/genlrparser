@@ -1,4 +1,3 @@
 [{"clientstore": [], "serverstore": [], "new": 1},
- {"ValExpr": {"BindM": [[["main", {"ConType": ["Unit", [], []]},
-                          {"ValExpr": {"UnitM": {"Lit": "UnitLit"}}}]],
-                        {"ValExpr": {"UnitM": {"Var": "main"}}}]}}]
+ {"ValExpr": {"BindM": [[],
+                        {"ValExpr": {"UnitM": {"Lit": "UnitLit"}}}]}}]

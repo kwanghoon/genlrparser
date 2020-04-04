@@ -105,6 +105,4 @@
                                                                       {"ConType": ["List", [],
                                                                                    [{"TypeVarType": "a"}]]}]}},
                                             [{"ConType": ["Int", [], []]}]]},
-                               {"Just": {"Location": "client"}}]}]},
- {"BindingTopLevel": ["main", {"ConType": ["Unit", [], []]},
-                      {"Lit": "UnitLit"}]}]
+                               {"Just": {"Location": "client"}}]}]}]

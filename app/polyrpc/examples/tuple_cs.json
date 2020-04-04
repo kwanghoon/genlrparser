@@ -22,4 +22,4 @@
                                                                                        []]}]},
                                                            [{"TupleAlternative": [["x", "y"],
                                                                                   {"ValExpr": {"UnitM": {"Var": "x"}}}]}]]}]}}]],
-                        {"ValExpr": {"UnitM": {"Var": "main"}}}]}}]
+                        {"ValExpr": {"UnitM": {"Lit": "UnitLit"}}}]}}]

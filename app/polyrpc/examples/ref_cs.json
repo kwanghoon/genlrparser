@@ -336,7 +336,5 @@
                                                                                                           {"MonType": {"ConType": ["Unit",
                                                                                                                                    [],
                                                                                                                                    []]}}]}},
-                                                                                 {"Var": "x14"}]}]}}]}}],
-                         ["main", {"ConType": ["Unit", [], []]},
-                          {"ValExpr": {"UnitM": {"Lit": "UnitLit"}}}]],
-                        {"ValExpr": {"UnitM": {"Var": "main"}}}]}}]
+                                                                                 {"Var": "x14"}]}]}}]}}]],
+                        {"ValExpr": {"UnitM": {"Lit": "UnitLit"}}}]}}]

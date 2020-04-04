@@ -114,11 +114,11 @@ data FunctionStore = FunctionStore
 
 addClientFun :: FunctionStore -> String -> CodeType -> Code -> FunctionStore
 addClientFun fnstore name ty code =
-   fnstore {_clientstore = (name,(ty,code)) : (_clientstore fnstore)}
+   fnstore {_clientstore = _clientstore fnstore ++ [(name,(ty,code))] }
 
 addServerFun :: FunctionStore -> String -> CodeType -> Code -> FunctionStore
 addServerFun fnstore name ty code =
-   fnstore {_serverstore = (name,(ty,code)) : (_serverstore fnstore)}
+   fnstore {_serverstore = (_serverstore fnstore) ++ [(name,(ty,code))] }
 
 addFun :: Location -> FunctionStore -> String -> CodeType -> Code -> FunctionStore
 addFun loc funstore name ty code

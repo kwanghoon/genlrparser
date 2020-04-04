@@ -129,7 +129,7 @@ verifyCodeName :: Monad m => GlobalInfo -> Type -> [Type] -> CodeName -> m ()
 verifyCodeName (gti, gci) someAbsTy freeVarTys (CodeName f locs tys) =
   case [(codeType, code) | (g, (codeType, code)) <- gci, f==g] of
     [] -> error $ "[verifyCodeName] Code not found: " ++ f
-    ((CodeType locvars0 tyvars0 freeVarTys0 ty, Code locvars1 tyvars1 freeVarTys1 _):_) -> do
+    ((CodeType locvars0 tyvars0 freeVarTys0 ty, Code locvars1 tyvars1 freeVars1 _):_) -> do
 
       assert (locvars0 == locvars1)  --   (1) locvars0 == locvars1
         ("[verifyCodeName] No equal loc var names: "
@@ -139,11 +139,9 @@ verifyCodeName (gti, gci) someAbsTy freeVarTys (CodeName f locs tys) =
         ("[verifyCodeName] No equal type var names: "
                        ++ show tyvars0 ++ " != " ++ show tyvars1)
 
-      let _freeVarTys1 = map TypeVarType freeVarTys1
-      
-      assert (and $ map (uncurry equalType) (zip freeVarTys0 _freeVarTys1))  --  (3) freeVarTys0 == freeVarTys1
-        ("[verifyCodeName] Not equal free var types: "
-                       ++ show freeVarTys0 ++ " != " ++ show freeVarTys1)
+      -- assert (and $ map (uncurry equalType) (zip freeVarTys0 freeVarTys))  --  (3) freeVarTys0 == freeVarTys
+      --   ("[verifyCodeName] Not equal free var types: "
+      --                  ++ show freeVarTys0 ++ " != " ++ show freeVarTys1)
 
       --  freeVarTys0 {locs/locvars0} [tys/tyvars0] == freeVarTys
       --  ty {locs/locvars0} [tys/tyvars0] == someAbsTy
@@ -256,12 +254,13 @@ verifyValue :: Monad m => GlobalInfo -> Location -> Env -> Type -> Value -> m ()
 
 verifyValue gtigci loc env ty (Var x) = do
   case [ty | (y,ty) <- _varEnv env, x==y] of
-    (_:_) -> return ()
+    (yty:_) -> assert (equalType yty ty)
+                  ("[verifyValue] Not equal type: " ++ show yty ++ " != " ++ show ty)
     []    ->
       case [ty | (z,ty) <- _libInfo $ fst $ gtigci, x==z] of
         (zty:_) -> assert (equalType zty ty)
                      ("[verifyValue] Not equal type: " ++ show zty ++ " != " ++ show ty)
-        [] -> error $ "[verifyExpr] Variable not found: " ++ x
+        [] -> error $ "[verifyExpr] Variable not found: " ++ x ++ " in " ++ show (_varEnv env)
 
 verifyValue gtigci loc env ty (Lit lit) =
   case lit of
@@ -289,8 +288,8 @@ verifyValue gtigci loc env ty (Constr cname locs tys args argtys) = do
     [] -> error $ "[verifyValue] Constructor not found: " ++ cname
 
 verifyValue gtigci loc env (CloType ty) (Closure vs tys codeName) = do
-  let env0 = env {_varEnv = [] }
-  mapM_ ( \ (ty,v) -> verifyValue gtigci loc env0 ty v) (zip tys vs)
+  -- let env0 = env {_varEnv = [] }
+  mapM_ ( \ (ty,v) -> verifyValue gtigci loc env ty v) (zip tys vs)
   verifyCodeName gtigci ty tys codeName
 
 verifyValue gtigci loc env (MonType ty) (UnitM v) = verifyValue gtigci loc env ty v

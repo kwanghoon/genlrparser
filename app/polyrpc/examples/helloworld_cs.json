@@ -40,4 +40,4 @@
                                                                                                                                    [],
                                                                                                                                    []]}}]}},
                                                                                  {"Var": "x2"}]}]}}]}}]],
-                        {"ValExpr": {"UnitM": {"Var": "main"}}}]}}]
+                        {"ValExpr": {"UnitM": {"Lit": "UnitLit"}}}]}}]

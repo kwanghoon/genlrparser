@@ -209,7 +209,7 @@ compExpr s_gti env loc (ST.TupleType tys) funStore (SE.Tuple exprs) = do
        (funStore1, target_expr) <- compExpr s_gti env loc s_ty funStore0 expr
        t_ty <- compValType s_ty
        let g = TE.BindM [TE.Binding x t_ty target_expr] . TE.ValExpr . f
-       return (funStore1, g)) (funStore1, \x->x) (zip3 xs tys exprs)
+       return (funStore1, g)) (funStore1, \x->x) (reverse (zip3 xs tys exprs))
   return (funStore2, TE.ValExpr $ h (TE.UnitM (TE.Tuple (map TE.Var xs))))
 
 
@@ -228,7 +228,7 @@ compExpr s_gti env loc s_ty funStore (SE.Constr cname locs argtys exprs tys) = d
        (funStore1, target_expr) <- compExpr s_gti env loc s_ty funStore0 expr
        t_ty <- compValType s_ty
        let g = TE.BindM [TE.Binding x t_ty target_expr] . TE.ValExpr . f
-       return (funStore1, g)) (funStore1, \x->x) (zip3 xs tys exprs)
+       return (funStore1, g)) (funStore1, \x->x) (reverse (zip3 xs tys exprs))
   return (funStore2, TE.ValExpr $ h $ TE.UnitM $ TE.Constr cname locs t_argtys (map TE.Var xs) t_tys)
 
 compExpr s_gti env loc s_ty funStore (SE.Let bindingDecls expr) = do
@@ -241,7 +241,7 @@ compExpr s_gti env loc s_ty funStore (SE.Let bindingDecls expr) = do
                  <- compBindingDecl s_gti env1 loc funStore0 bindingDecl0
               return (funStore1, bindingDecl1:bindingDecls0))
           (funStore, [])
-          bindingDecls
+          (reverse bindingDecls)
   (funStore3, t_expr) <- compExpr s_gti env loc s_ty funStore2 expr
   return (funStore3, TE.ValExpr $ TE.BindM t_bindingDecls t_expr)
    
@@ -326,7 +326,7 @@ compExpr s_gti env loc s_ty funStore (SE.Prim primop exprs) = do
           (funStore1, target_expr) <- compExpr s_gti env loc s_ty funStore0 expr
           t_ty <- compValType s_ty
           let g = TE.ValExpr . TE.BindM [TE.Binding x t_ty target_expr] . f
-          return (funStore1, g)) (funStore1, \x->x) (zip3 xs argtys exprs)
+          return (funStore1, g)) (funStore1, \x->x) (reverse (zip3 xs argtys exprs))
       target_retty <- compValType retty
       return (funStore2,
                h (TE.Let [TE.Binding y target_retty (TE.Prim primop (map TE.Var xs))]

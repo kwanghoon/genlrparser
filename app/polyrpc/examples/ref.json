@@ -180,6 +180,4 @@
                                                               {"Location": "client"},
                                                               {"ConType": ["String", [], []]}]}},
                                         {"Var": "x"}, {"Just": {"Location": "client"}}]},
-                               {"Just": {"Location": "client"}}]}]},
- {"BindingTopLevel": ["main", {"ConType": ["Unit", [], []]},
-                      {"Lit": "UnitLit"}]}]
+                               {"Just": {"Location": "client"}}]}]}]
