@@ -14,6 +14,7 @@ import qualified CSType as TT
 import qualified CSExpr as TE
 import TypeCheck
 import Compile
+import Verify
 
 import Text.JSON.Generic
 import Text.JSON.Pretty
@@ -63,6 +64,9 @@ doProcess cmd file = do
   putStrLn $ (show t_expr ++ "\n")
 
   print_cs cmd file funStore t_expr
+
+  putStrLn "[Verifying generated codes]"
+  verify t_gti t_libs funStore t_expr
 
   putStrLn "[Success]"
 
