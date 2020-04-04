@@ -12,34 +12,29 @@ import CSExpr
 -- Verify CS programs
 ---------------------
 
-
-
 verify :: Monad m => GlobalTypeInfo -> FunctionStore -> Expr -> m ()
 verify gti funStore mainexpr = do
   verifyFunStore gti funStore
   let clientFunStore = _clientstore funStore
-  verifyExpr (gti,clientFunStore) clientLoc initEnv (MonType unit_type) mainexpr
+  verifyExpr (gti,funStore) clientLoc initEnv (MonType unit_type) mainexpr
 
 -------------------------
 -- Verify function stores
 -------------------------
 
-type GlobalInfo = (GlobalTypeInfo, GlobalCodeInfo)
-
-type GlobalCodeInfo = [(String, (CodeType, Code))]
+type GlobalInfo = (GlobalTypeInfo, FunctionStore)
 
 verifyFunStore :: Monad m => GlobalTypeInfo -> FunctionStore -> m()
   
 verifyFunStore gti funStore = do
-  let clientFunStore = _clientstore funStore
-  let serverFunStore = _serverstore funStore
-  verifyFunStoreAt gti clientLoc clientFunStore
-  verifyFunStoreAt gti serverLoc serverFunStore
+  verifyFunStoreAt gti clientLoc funStore
+  verifyFunStoreAt gti serverLoc funStore
 
-verifyFunStoreAt :: Monad m => GlobalTypeInfo -> Location -> GlobalCodeInfo -> m()
+verifyFunStoreAt :: Monad m => GlobalTypeInfo -> Location -> FunctionStore -> m()
   
-verifyFunStoreAt gti loc gci = 
-  mapM_ (\(f, (codety, code)) -> verifyCode (gti,gci) loc codety code) gci
+verifyFunStoreAt gti loc funStore =
+  let gci = if loc==clientLoc then _clientstore funStore else _serverstore funStore in
+  mapM_ (\(f, (codety, code)) -> verifyCode (gti,funStore) loc codety code) gci
 
 
 ---------------
@@ -124,9 +119,12 @@ verifyOpenCode gtigci loc env ty openCode =
 -- Verify code names
 --------------------
 
-verifyCodeName :: Monad m => GlobalInfo -> Type -> [Type] -> CodeName -> m ()
+verifyCodeName :: Monad m => GlobalInfo -> Location -> Type -> [Type] -> CodeName -> m ()
 
-verifyCodeName (gti, gci) someAbsTy freeVarTys (CodeName f locs tys) =
+verifyCodeName (gti, funStore) loc someAbsTy freeVarTys (CodeName f locs tys) = 
+  let locLookFor = getLoc loc someAbsTy funStore in
+  let gci = if locLookFor==clientLoc then _clientstore funStore else _serverstore funStore in
+        
   case [(codeType, code) | (g, (codeType, code)) <- gci, f==g] of
     [] -> error $ "[verifyCodeName] Code not found: " ++ f
     ((CodeType locvars0 tyvars0 freeVarTys0 ty, Code locvars1 tyvars1 freeVars1 _):_) -> do
@@ -160,6 +158,12 @@ verifyCodeName (gti, gci) someAbsTy freeVarTys (CodeName f locs tys) =
       equal (substed_ty, someAbsTy)
       mapM_ equal $ zip substed_freeVarTys0 freeVarTys
 
+
+getLoc loc0 (FunType _ (Location loc) _) funStore = Location loc
+getLoc loc0 (FunType _ (LocVar _) _) funStore = loc0
+getLoc loc0 (TypeAbsType _ _) funStore = loc0
+getLoc loc0 (LocAbsType _ _) funStore = loc0
+getLoc loc0 ty funStore = error $ "[getLoc] unexpected type: " ++ show ty
 
 ---------------------
 -- Verify expressions
@@ -290,7 +294,7 @@ verifyValue gtigci loc env ty (Constr cname locs tys args argtys) = do
 verifyValue gtigci loc env (CloType ty) (Closure vs tys codeName) = do
   -- let env0 = env {_varEnv = [] }
   mapM_ ( \ (ty,v) -> verifyValue gtigci loc env ty v) (zip tys vs)
-  verifyCodeName gtigci ty tys codeName
+  verifyCodeName gtigci loc ty tys codeName
 
 verifyValue gtigci loc env (MonType ty) (UnitM v) = verifyValue gtigci loc env ty v
 

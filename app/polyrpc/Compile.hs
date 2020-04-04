@@ -128,7 +128,9 @@ compTopLevel s_gti funStore (SE.DataTypeTopLevel
                (SE.DataType dtname locvars tyvars tycondecls)) = return (funStore, [], [])
 
 compTopLevel s_gti funStore (SE.BindingTopLevel bindingDecl) = do
-  (funStore1, t_bindingDecl) <- compBindingDecl s_gti SE.initEnv clientLoc funStore bindingDecl
+  let env = SE.initEnv
+  let env1 = env {SE._varEnv = SE._bindingTypeInfo s_gti  ++ SE._varEnv env}  -- TODO: Need to be optimized!!
+  (funStore1, t_bindingDecl) <- compBindingDecl s_gti env1 clientLoc funStore bindingDecl
   return ( funStore1, [], [t_bindingDecl] )
 
 -------------------------------
@@ -189,7 +191,7 @@ compExpr s_gti env loc (ST.FunType s_argty s_loc s_resty) funStore (SE.Abs xtylo
   t_argty <- compValType s_argty
   t_resty <- compType s_resty
   let target_ty = TT.FunType t_argty s_loc t_resty
-  let s_xtys = [(x,ty) | (x,ty,_) <- xtylocs]
+  let s_xtys = [(x,ty) | (x,ty,_) <- xtylocs] 
   t_xtys <- mapM (\(x,ty) -> do { t_ty <- compValType ty; return (x,t_ty) }) s_xtys
   let env1 = env {SE._varEnv = (s_xtys ++ SE._varEnv env)}
   (funStore1, target_expr) <- compExpr s_gti env1 s_loc s_resty funStore expr
