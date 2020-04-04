@@ -89,6 +89,6 @@ serverToclient
 	  Cons {client} [Int] y
 	    ( \unit:Unit@client. serverToclient (ys ()) )
       }
+;
 
-
-
+main : Stream {client} [Int] = serverToclient server_list1

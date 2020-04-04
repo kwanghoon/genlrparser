@@ -36,6 +36,7 @@ main = do
   mapM_ (doProcess cmd) files -- [ ((build cmd file), file) | file <- files ]
 
 doProcess cmd file = do
+  putStrLn $ "[Reading] " ++ file
   text <- readFile file
 
   putStrLn "[Lexing]"

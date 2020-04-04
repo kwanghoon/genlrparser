@@ -1,6 +1,7 @@
 module Verify where
 
 import Location
+import qualified Expr as SE
 import CSType
 import CSExpr
 
@@ -12,8 +13,17 @@ import CSExpr
 type LibDecl = TopLevelDecl
 
 verify :: Monad m => GlobalTypeInfo -> [LibDecl] -> FunctionStore -> Expr -> m ()
-verify gti libs funStore mainexpr = do
-  return ()
+verify gti libs funStore mainexpr =
+  case mainExprType gti of
+    [] -> error $ "[verify] no main binding"
+    (mainty:_) -> do
+      verifyFunStore gti funStore
+      let clientFunStore = _clientstore funStore
+      verifyExpr (gti,clientFunStore) clientLoc initEnv mainty mainexpr
+
+
+mainExprType gti =
+  [ty | (x,ty) <- _bindingTypeInfo gti, x==SE.mainName]
 
 -------------------------
 -- Verify function stores

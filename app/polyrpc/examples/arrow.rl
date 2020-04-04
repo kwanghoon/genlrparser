@@ -54,3 +54,7 @@ addA
       (arr_plus {client})
 
 
+;
+
+main : Unit = ()
+
