@@ -143,10 +143,10 @@ verifyValue gtigci loc env ty (UnitM v) = return ()
 
 verifyValue gtigci loc env ty (BindM bindingDecls expr) = return ()
 
-verifyValue gtigci loc env ty (Req left right) = return ()
+verifyValue gtigci loc env ty (Req left funtype right) = return ()
 
-verifyValue gtigci loc env ty (Call left right) = return ()
+verifyValue gtigci loc env ty (Call left funtype right) = return ()
 
-verifyValue gtigci loc env ty (GenApp funloc left right) = return ()
+verifyValue gtigci loc env ty (GenApp funloc left funtype right) = return ()
 
 

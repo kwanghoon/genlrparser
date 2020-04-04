@@ -257,14 +257,14 @@ compExpr s_gti env loc s_ty funStore (SE.Case expr (Just case_ty) alts) = do
               compAlts s_gti env loc locs locvars tys tyvars tycondecls s_ty funStore1 alts
            return (funStore2, TE.ValExpr $
                                 TE.BindM [ TE.Binding x target_case_ty target_expr ]
-                                 (TE.Case (TE.Var x) (Just target_case_ty) target_alts))
+                                 (TE.Case (TE.Var x) target_case_ty target_alts))
         [] -> error $ "[compExpr] invalid constructor type: " ++ tyconName
  
     ST.TupleType tys -> do
       (funStore3, target_alts) <- compAlts s_gti env loc [] [] tys [] [] s_ty funStore1 alts
       return (funStore3, TE.ValExpr $
                            TE.BindM [ TE.Binding x target_case_ty target_expr ]
-                             (TE.Case (TE.Var x) (Just target_case_ty) target_alts))
+                             (TE.Case (TE.Var x) target_case_ty target_alts))
 
 compExpr s_gti env loc s_ty funStore (SE.Case expr maybe alternatives) = do
   error $ "[compExpr] No case expression type: " ++ show (SE.Case expr maybe alternatives)
@@ -275,10 +275,14 @@ compExpr s_gti env loc s_ty funStore (SE.App left (Just (ST.FunType argty locfun
    (funStore3, target_right) <- compExpr s_gti env loc argty funStore2 right
    target_funty <- compValType (ST.FunType argty locfun resty)
    target_argty <- compValType argty
-   let app = if loc==locfun then TE.App (TE.Var f) (Just target_funty) (TE.Var x)
-             else if loc==clientLoc && locfun==serverLoc then TE.ValExpr $ TE.Req (TE.Var f) (TE.Var x)
-             else if loc==serverLoc && locfun==clientLoc then TE.ValExpr $ TE.Call (TE.Var f) (TE.Var x)
-             else TE.ValExpr $ TE.GenApp locfun (TE.Var f) (TE.Var x)
+   let app = if loc==locfun then
+                TE.App (TE.Var f) target_funty (TE.Var x)
+             else if loc==clientLoc && locfun==serverLoc then
+                TE.ValExpr $ TE.Req (TE.Var f) target_funty (TE.Var x)
+             else if loc==serverLoc && locfun==clientLoc then
+                TE.ValExpr $ TE.Call (TE.Var f) target_funty (TE.Var x)
+             else
+                TE.ValExpr $ TE.GenApp locfun (TE.Var f) target_funty (TE.Var x)
    return (funStore3,
            TE.ValExpr $ TE.BindM [TE.Binding f target_funty target_left]
                           (TE.ValExpr
@@ -296,7 +300,7 @@ compExpr s_gti env loc s_ty funStore (SE.TypeApp expr (Just left_s_ty) tys) = do
    target_tys <- mapM compValType tys
    return (funStore2,
            TE.ValExpr $ TE.BindM [TE.Binding f target_left_s_ty target_expr]
-                         (TE.TypeApp (TE.Var f) (Just target_left_s_ty) target_tys))
+                         (TE.TypeApp (TE.Var f) target_left_s_ty target_tys))
 
 compExpr s_gti env loc s_ty funStore (SE.TypeApp expr Nothing tys) =
    error $ "[compExpr] TypeApp"
@@ -307,7 +311,7 @@ compExpr s_gti env loc s_ty funStore (SE.LocApp expr (Just left_s_ty) locs) = do
    target_left_s_ty <- compValType left_s_ty
    return (funStore2,
            TE.ValExpr $ TE.BindM [TE.Binding f target_left_s_ty target_expr]
-                         (TE.LocApp (TE.Var f) (Just target_left_s_ty) locs))
+                         (TE.LocApp (TE.Var f) target_left_s_ty locs))
 
 compExpr s_gti env loc s_ty funStore (SE.LocApp expr Nothing locs) =
    error $ "[compExpr] LocApp"
