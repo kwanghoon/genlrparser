@@ -66,8 +66,8 @@ doProcess cmd file = do
 
   print_cs cmd file funStore t_expr
 
-  putStrLn "[Verifying generated codes]"
-  verify t_gti t_libs funStore t_expr
+  -- putStrLn "[Verifying generated codes]"
+  -- verify t_gti t_libs funStore t_expr
 
   putStrLn "[Success]"
 

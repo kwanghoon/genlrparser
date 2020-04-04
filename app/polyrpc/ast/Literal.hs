@@ -2,7 +2,7 @@
 
 module Literal where
 
-import Prim
+import Type
 import Text.JSON.Generic
 
 data Literal =

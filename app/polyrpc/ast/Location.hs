@@ -49,5 +49,10 @@ isServer (Location str) = str == serverLocName
 isServer _ = False
 
 
+--
+doSubstLocOverLoc :: String -> Location -> Location -> Location
 
-
+doSubstLocOverLoc x loc (Location name) = Location name
+doSubstLocOverLoc x loc (LocVar y)
+  | x == y = loc
+  | otherwise = LocVar y

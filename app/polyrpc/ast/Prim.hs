@@ -2,7 +2,6 @@
 
 module Prim where
 
-import Type
 import Text.JSON.Generic
 
 data PrimOp =
@@ -24,30 +23,11 @@ data PrimOp =
 --  deriving (Show, Eq, Generic)
   deriving (Show, Eq, Typeable, Data)
 
-primType tyname = ConType tyname [] []
+-- Predefined type names
+unitType   = "Unit"
+intType    = "Int"
+boolType   = "Bool"
+stringType = "String"
+refType    = "Ref"
 
-bool_type = primType boolType
-int_type  = primType intType
-unit_type = primType unitType
-string_type = primType stringType
 
-primOpTypes :: [(PrimOp, ([Type], Type))]
-primOpTypes =
-  [ (NotPrimOp, ([bool_type], bool_type))
-  , (OrPrimOp,  ([bool_type, bool_type], bool_type))
-  , (AndPrimOp, ([bool_type, bool_type], bool_type))
-  , (EqPrimOp,  ([bool_type, bool_type], bool_type))
-  , (NeqPrimOp, ([bool_type, bool_type], bool_type))
-  , (LtPrimOp,  ([int_type, int_type], bool_type))
-  , (LePrimOp,  ([int_type, int_type], bool_type))
-  , (GtPrimOp,  ([int_type, int_type], bool_type))
-  , (GePrimOp,  ([int_type, int_type], bool_type))
-  , (AddPrimOp, ([int_type, int_type], int_type))
-  , (SubPrimOp, ([int_type, int_type], int_type))
-  , (MulPrimOp, ([int_type, int_type], int_type))
-  , (DivPrimOp, ([int_type, int_type], int_type))
-  , (NegPrimOp, ([int_type], int_type))
-  ]
-
-lookupPrimOpType primop =
-  [ (tys,ty) | (primop1,(tys,ty)) <- primOpTypes, primop==primop1]

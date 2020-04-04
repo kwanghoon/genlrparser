@@ -2,6 +2,7 @@
 
 module Type where
 
+import Prim
 import Data.Char
 -- For aeson
 -- import GHC.Generics
@@ -54,12 +55,13 @@ isConstructorName (c:s) = isUpper c
 isConstructorName _     = False
 
 
--- Predefined type names
-unitType   = "Unit"
-intType    = "Int"
-boolType   = "Bool"
-stringType = "String"
-refType    = "Ref"
+--
+primType tyname = ConType tyname [] []
+
+bool_type = primType boolType
+int_type  = primType intType
+unit_type = primType unitType
+string_type = primType stringType
 
 
 --
@@ -74,8 +76,8 @@ doSubstOne x ty (FunType argty loc retty) =
 doSubstOne x ty (TypeAbsType tyvars bodyty)
   | elem x tyvars = (TypeAbsType tyvars bodyty)
   | otherwise = (TypeAbsType tyvars (doSubstOne x ty bodyty))
-doSubstOne x ty (LocAbsType tyvars bodyty) =
-  LocAbsType tyvars (doSubstOne x ty bodyty)
+doSubstOne x ty (LocAbsType locvars bodyty) =
+  LocAbsType locvars (doSubstOne x ty bodyty)
 doSubstOne x ty (ConType name locs tys) =
   ConType name locs (map (doSubstOne x ty) tys)
 
@@ -85,12 +87,6 @@ doSubst ((x,ty):subst) ty0 =
   doSubst subst (doSubstOne x ty ty0)
 
 --
-doSubstLocOverLoc :: String -> Location -> Location -> Location
-doSubstLocOverLoc x loc (Location name) = Location name
-doSubstLocOverLoc x loc (LocVar y)
-  | x == y = loc
-  | otherwise = LocVar y
-
 doSubstLocOne :: String -> Location -> Type -> Type
 doSubstLocOne x loc (TypeVarType y) = (TypeVarType y)
 doSubstLocOne x loc (TupleType tys) =
