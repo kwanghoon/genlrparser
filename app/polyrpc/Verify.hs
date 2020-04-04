@@ -1,6 +1,8 @@
 module Verify where
 
 import Location
+import Prim
+import Literal
 import qualified Expr as SE
 import CSType
 import CSExpr
@@ -67,6 +69,10 @@ verifyCode gtigci loc (CodeType _freeLocVars _freeTyVars freeVarTys ty)
 
   verifyOpenCode gtigci loc env ty openCode
 
+--------------------
+-- Verify open codes
+--------------------
+
 verifyOpenCode gtigci loc env (FunType argty locfun resty) (CodeAbs ((x,ty):xTys) expr) = do
   -- Assertion
   --   (1) xTys == []
@@ -104,8 +110,43 @@ verifyOpenCode gtigci loc env ty openCode =
 -- Verify expressions
 ---------------------
 
-verifyExpr :: Monad m =>
-  GlobalInfo -> Location -> Env -> Type -> Expr -> m ()
+verifyExpr :: Monad m => GlobalInfo -> Location -> Env -> Type -> Expr -> m ()
 
-verifyExpr gtigci loc env ty expr = return ()
+verifyExpr gtigci loc env ty (ValExpr v) = return ()
+
+verifyExpr gtigci loc env ty (Let bindingDecls expr) = return ()
+
+verifyExpr gtigci loc env ty (App left maybetype right) = return ()
+
+verifyExpr gtigci loc env ty (TypeApp left maybetype tys) = return ()
+
+verifyExpr gtigci loc env ty (LocApp left maybetype locs) = return ()
+
+verifyExpr gtigci loc env ty (Prim prim vs) = return ()
+
+
+----------------
+-- Verify values
+----------------
+
+verifyValue :: Monad m => GlobalInfo -> Location -> Env -> Type -> Value -> m ()
+
+verifyValue gtigci loc env ty (Var x) = return ()
+
+verifyValue gtigci loc env ty (Lit lit) = return ()
+
+verifyValue gtigci loc env ty (Tuple vs) = return ()
+
+verifyValue gtigci loc env ty (Closure vs codeName) = return ()
+
+verifyValue gtigci loc env ty (UnitM v) = return ()
+
+verifyValue gtigci loc env ty (BindM bindingDecls expr) = return ()
+
+verifyValue gtigci loc env ty (Req left right) = return ()
+
+verifyValue gtigci loc env ty (Call left right) = return ()
+
+verifyValue gtigci loc env ty (GenApp funloc left right) = return ()
+
 
