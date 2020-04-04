@@ -124,6 +124,9 @@ verifyExpr gtigci loc env ty (LocApp left maybetype locs) = return ()
 
 verifyExpr gtigci loc env ty (Prim prim vs) = return ()
 
+verifyExpr gtigci loc env ty expr = 
+  error $ "[verifyExpr]: not well-typed: " ++ show expr ++ " : " ++ show ty
+
 
 ----------------
 -- Verify values
@@ -131,15 +134,19 @@ verifyExpr gtigci loc env ty (Prim prim vs) = return ()
 
 verifyValue :: Monad m => GlobalInfo -> Location -> Env -> Type -> Value -> m ()
 
-verifyValue gtigci loc env ty (Var x) = return ()
+verifyValue gtigci loc env ty (Var x) = do
+  case [ty | (y,ty) <- _varEnv env, x==y] of
+    []    -> error $ "[verifyExpr] Variable not found: " ++ x
+    (_:_) -> return ()
 
 verifyValue gtigci loc env ty (Lit lit) = return ()
 
-verifyValue gtigci loc env ty (Tuple vs) = return ()
+verifyValue gtigci loc env (TupleType tys) (Tuple vs) =
+  mapM_ ( \ (ty,v) -> verifyValue gtigci loc env ty v ) (zip tys vs)
 
-verifyValue gtigci loc env ty (Closure vs codeName) = return ()
+verifyValue gtigci loc env (CloType ty) (Closure vs tys codeName) = return ()
 
-verifyValue gtigci loc env ty (UnitM v) = return ()
+verifyValue gtigci loc env (MonType ty) (UnitM v) = verifyValue gtigci loc env ty v
 
 verifyValue gtigci loc env ty (BindM bindingDecls expr) = return ()
 
@@ -149,4 +156,5 @@ verifyValue gtigci loc env ty (Call left funtype right) = return ()
 
 verifyValue gtigci loc env ty (GenApp funloc left funtype right) = return ()
 
-
+verifyValue gtigci loc env ty value =
+  error $ "[verifyValue]: not well-typed: " ++ show value ++ " : " ++ show ty

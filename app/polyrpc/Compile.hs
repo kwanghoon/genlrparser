@@ -389,5 +389,5 @@ mkClosure env loc funStore target_ty opencode = do
   let code = TE.Code locvars tyvars freevars opencode
 
   let funStore2 = TE.addFun loc funStore1 fname codety code
-  return (funStore2, TE.Closure target_freevars codename)
+  return (funStore2, TE.Closure target_freevars target_freetys codename)
 

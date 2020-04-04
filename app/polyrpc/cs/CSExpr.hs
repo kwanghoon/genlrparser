@@ -24,7 +24,7 @@ data Value =
   | Lit Literal
   | Tuple [Value]
   | Constr String [Location] [Type] [Value]
-  | Closure [Value] CodeName  
+  | Closure [Value] [Type] CodeName  
   | UnitM Value
   | BindM [BindingDecl] Expr
   | Req Value Type Value
