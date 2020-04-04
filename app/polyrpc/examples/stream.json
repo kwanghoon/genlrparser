@@ -1648,4 +1648,17 @@
                                                                                                {"Lit": "UnitLit"},
                                                                                                {"Just": {"Location": "server"}}]},
                                                                                       {"Just": {"Location": "client"}}]}]},
-                                                                    {"Just": {"Location": "client"}}]}]}]]}]}]}]
+                                                                    {"Just": {"Location": "client"}}]}]}]]}]}]},
+ {"BindingTopLevel": ["main",
+                      {"ConType": ["Stream", [{"Location": "client"}],
+                                   [{"ConType": ["Int", [], []]}]]},
+                      {"App": [{"Var": "serverToclient"},
+                               {"Just": {"FunType": [{"ConType": ["Stream",
+                                                                  [{"Location": "server"}],
+                                                                  [{"ConType": ["Int", [], []]}]]},
+                                                     {"Location": "client"},
+                                                     {"ConType": ["Stream",
+                                                                  [{"Location": "client"}],
+                                                                  [{"ConType": ["Int", [],
+                                                                                []]}]]}]}},
+                               {"Var": "server_list1"}, {"Just": {"Location": "client"}}]}]}]
