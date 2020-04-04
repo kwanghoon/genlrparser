@@ -12,20 +12,13 @@ import CSExpr
 -- Verify CS programs
 ---------------------
 
-type LibDecl = TopLevelDecl
-
-verify :: Monad m => GlobalTypeInfo -> [LibDecl] -> FunctionStore -> Expr -> m ()
-verify gti libs funStore mainexpr =
-  case mainExprType gti of
-    [] -> error $ "[verify] no main binding"
-    (mainty:_) -> do
-      verifyFunStore gti funStore
-      let clientFunStore = _clientstore funStore
-      verifyExpr (gti,clientFunStore) clientLoc initEnv mainty mainexpr
 
 
-mainExprType gti =
-  [ty | (x,ty) <- _bindingTypeInfo gti, x==SE.mainName]
+verify :: Monad m => GlobalTypeInfo -> FunctionStore -> Expr -> m ()
+verify gti funStore mainexpr = do
+  verifyFunStore gti funStore
+  let clientFunStore = _clientstore funStore
+  verifyExpr (gti,clientFunStore) clientLoc initEnv (MonType unit_type) mainexpr
 
 -------------------------
 -- Verify function stores
@@ -159,13 +152,15 @@ verifyCodeName (gti, gci) someAbsTy freeVarTys (CodeName f locs tys) =
       let substLoc = zip locvars0 locs
       
       let substed_freeVarTys0 = map (doSubstLoc substLoc . doSubst substTy) freeVarTys0
-      let substed_ty = (doSubstLoc substLoc . doSubst substTy) ty
+      let substed_ty = doSubstLoc substLoc (doSubst substTy ty)
 
       let equal (ty1, ty2) =
             assert (equalType ty1 ty2)
-              ("[verifyCodeName] Not equal type: " ++ show ty1 ++ " != " ++ show ty2)
+              ("[verifyCodeName] Not equal type: "
+                 ++ show ty1 ++ " != " ++ show ty2 ++ " in " ++ f)
 
-      mapM_ equal $ zip (substed_ty : substed_freeVarTys0) (someAbsTy : freeVarTys)
+      equal (substed_ty, someAbsTy)
+      mapM_ equal $ zip substed_freeVarTys0 freeVarTys
 
 
 ---------------------
@@ -182,6 +177,10 @@ verifyExpr gtigci loc env ty (Let bindingDecls expr) = do
   let env1 = env {_varEnv = xtys ++ _varEnv env}
   mapM_ (\ (vty, expr) -> verifyExpr gtigci loc env1 vty expr) $ zip tys exprs
   verifyExpr gtigci loc env1 ty expr
+
+verifyExpr gtigci loc env ty (Case caseval casety alts) = do
+  verifyValue gtigci loc env casety caseval
+  mapM_ (verifyAlt gtigci loc env casety ty) alts 
 
 verifyExpr gtigci loc env ty (App left (CloType (FunType argty funloc resty)) right) = do
   assert (equalLoc loc funloc)  --   (1) loc == funloc
@@ -226,6 +225,29 @@ verifyExpr gtigci loc env ty expr =
   error $ "[verifyExpr]: not well-typed: " ++ show expr ++ " : " ++ show ty
 
 
+verifyAlt :: Monad m => GlobalInfo -> Location -> Env -> Type -> Type -> Alternative -> m ()
+
+verifyAlt gtigci loc env (ConType tyconname locs tys) retty (Alternative cname args expr) =
+  case lookupConstr (fst gtigci) cname of
+    ((bare_argtys, tyconname1, locvars, tyvars):_) -> do
+      assert (tyconname==tyconname1)
+        ("[verifyAlt] Not equal type con name: "
+          ++ tyconname ++ " != " ++ tyconname1 ++ " for " ++ cname)
+      assert (length bare_argtys==length args)
+        ("[verifyAlt] Not equal arg length: "
+          ++ tyconname ++ " != " ++ tyconname1 ++ " for " ++ cname)
+      let substLoc = zip locvars locs
+      let substTy  = zip tyvars  tys
+      let argstys = map (doSubst substTy . doSubstLoc substLoc) bare_argtys
+      let env1 = env {_varEnv = zip args argstys ++ _varEnv env}
+      verifyExpr gtigci loc env1 retty expr
+      
+    [] -> error $ "[verifyAlt] Constructor not found " ++ cname
+
+verifyAlt gtigci loc env (TupleType argtys) retty (TupleAlternative args expr) = do
+  let env1 = env {_varEnv = zip args argtys ++ _varEnv env}
+  verifyExpr gtigci loc env1 retty expr
+
 ----------------
 -- Verify values
 ----------------
@@ -234,13 +256,37 @@ verifyValue :: Monad m => GlobalInfo -> Location -> Env -> Type -> Value -> m ()
 
 verifyValue gtigci loc env ty (Var x) = do
   case [ty | (y,ty) <- _varEnv env, x==y] of
-    []    -> error $ "[verifyExpr] Variable not found: " ++ x
     (_:_) -> return ()
+    []    ->
+      case [ty | (z,ty) <- _libInfo $ fst $ gtigci, x==z] of
+        (zty:_) -> assert (equalType zty ty)
+                     ("[verifyValue] Not equal type: " ++ show zty ++ " != " ++ show ty)
+        [] -> error $ "[verifyExpr] Variable not found: " ++ x
 
-verifyValue gtigci loc env ty (Lit lit) = return ()
+verifyValue gtigci loc env ty (Lit lit) =
+  case lit of
+    IntLit i  -> assert (equalType ty int_type) "[verifyValue] Not Int type"
+    StrLit s  -> assert (equalType ty string_type) "[verifyValue] Not String type"
+    BoolLit b -> assert (equalType ty bool_type) "[verifyValue] Not Bool type"
+    UnitLit   -> assert (equalType ty unit_type) "[verifyValue] Not Unit type"
 
 verifyValue gtigci loc env (TupleType tys) (Tuple vs) =
   mapM_ ( \ (ty,v) -> verifyValue gtigci loc env ty v ) (zip tys vs)
+
+verifyValue gtigci loc env ty (Constr cname locs tys args argtys) = do
+  mapM_ ( \ (ty,v) -> verifyValue gtigci loc env ty v ) (zip argtys args)
+  case lookupConstr (fst gtigci) cname of
+    ((bare_argtys, tyconname, locvars, tyvars):_) -> do
+      let substLoc = zip locvars locs
+      let substTy  = zip tyvars tys
+      let argtys1 = map (doSubst substTy . doSubstLoc substLoc) bare_argtys
+      assert (and (map (uncurry equalType) (zip argtys1 argtys)))  -- argstys1 == argtys
+        ("[verifyValue] Not equal constructor arg types: " ++ cname ++ " "
+           ++ show argtys1 ++ " != " ++ show argtys)
+      assert (equalType (ConType tyconname locs tys) ty)  -- ConType tyconname locs tys == ty
+        ("[verifyValue] Not equal constructor type: " ++ cname 
+           ++ show ty ++ " != " ++ show (ConType tyconname locs tys))
+    [] -> error $ "[verifyValue] Constructor not found: " ++ cname
 
 verifyValue gtigci loc env (CloType ty) (Closure vs tys codeName) = do
   let env0 = env {_varEnv = [] }

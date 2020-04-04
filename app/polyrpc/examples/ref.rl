@@ -5,7 +5,6 @@ y : Unit = x := {server client} [String] "four five six" ;
 
 z : Unit = print {client} ( ! {server client} [String] x )
 
-;
 
-main : Unit = ()
+
 

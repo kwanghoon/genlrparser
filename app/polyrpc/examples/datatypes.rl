@@ -13,7 +13,7 @@ data D3 = {l} . C3_1 | C3_2 Int String | C3_3 Int -l-> String
 
 data D4 = {l} . [a b] . C4_1 | C4_2 a b | C4_3 a -l-> D4 {l} [a b]
 
-;
 
-main : Unit = ()
+
+
 

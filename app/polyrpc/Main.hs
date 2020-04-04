@@ -57,17 +57,16 @@ doProcess cmd file = do
   print_rpc cmd file elab_toplevelDecls
 
   putStrLn "[Compiling]"
-  (t_gti, t_libs, funStore, t_expr) <- compile gti elab_toplevelDecls
+  (t_gti, funStore, t_expr) <- compile gti elab_toplevelDecls
   putStrLn "Dumping...\nGlobal type information:\n"
-  putStrLn $ (show t_gti ++ "\n\nLibrary:")
-  putStrLn $ (show t_libs ++ "\n\nFunctionstore:")
+  putStrLn $ (show t_gti ++ "\n\nFunction stores:")
   putStrLn $ (show funStore ++ "\n\nMain expression:")
   putStrLn $ (show t_expr ++ "\n")
 
   print_cs cmd file funStore t_expr
 
-  -- putStrLn "[Verifying generated codes]"
-  -- verify t_gti t_libs funStore t_expr
+  putStrLn "[Verifying generated codes]"
+  verify t_gti funStore t_expr
 
   putStrLn "[Success]"
 

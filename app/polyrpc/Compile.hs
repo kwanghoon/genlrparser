@@ -14,12 +14,12 @@ import Control.Monad
 
 compile :: Monad m =>
   SE.GlobalTypeInfo -> [SE.TopLevelDecl] ->
-  m (TE.GlobalTypeInfo, [TE.TopLevelDecl],TE.FunctionStore, TE.Expr)
+  m (TE.GlobalTypeInfo, TE.FunctionStore, TE.Expr)
 compile s_gti s_topleveldecls = do
-  t_gti <- compileGTI s_gti
   (funStore, t_libs, t_bindingDecls) <- compTopLevels s_gti TE.initFunctionStore s_topleveldecls
-  let main = TE.ValExpr (TE.UnitM (TE.Var SE.mainName))
-  return (t_gti, t_libs, funStore, TE.ValExpr $ TE.BindM t_bindingDecls main)
+  t_gti <- compileGTI s_gti t_libs
+  let main = TE.ValExpr (TE.UnitM (TE.Lit UnitLit))
+  return (t_gti, funStore, TE.ValExpr $ TE.BindM t_bindingDecls main)
 
 
 -----
@@ -27,21 +27,20 @@ compile s_gti s_topleveldecls = do
 --------------
 -- Compile GTI
 --------------
-compileGTI :: Monad m => SE.GlobalTypeInfo -> m TE.GlobalTypeInfo
+compileGTI :: Monad m => SE.GlobalTypeInfo -> TE.LibInfo -> m TE.GlobalTypeInfo
 compileGTI (SE.GlobalTypeInfo
     { SE._typeInfo        = typeInfo,
       SE._conTypeInfo     = conTypeInfo,
       SE._dataTypeInfo    = dataTypeInfo,
-      SE._bindingTypeInfo = bindingTypeInfo }) = do
+      SE._bindingTypeInfo = bindingTypeInfo }) t_libs = do
   target_typeInfo <- compTypeInfo typeInfo
   target_conTypeInfo <- compConTypeInfo conTypeInfo
   target_dataTypeInfo <- compDataTypeInfo dataTypeInfo
-  target_bindingTypeInfo <- compBindingTypeInfo bindingTypeInfo
   return (TE.GlobalTypeInfo
     { TE._typeInfo        = target_typeInfo,
       TE._conTypeInfo     = target_conTypeInfo,
       TE._dataTypeInfo    = target_dataTypeInfo,
-      TE._bindingTypeInfo = target_bindingTypeInfo })
+      TE._libInfo = t_libs })
 
 compTypeInfo :: Monad m => SE.TypeInfo -> m TE.TypeInfo
 compTypeInfo typeInfo = return typeInfo
@@ -110,20 +109,20 @@ compType ty = do
 
 compTopLevels :: Monad m =>
   SE.GlobalTypeInfo -> TE.FunctionStore ->
-  [SE.TopLevelDecl] -> m (TE.FunctionStore, [TE.TopLevelDecl], [TE.BindingDecl])
+  [SE.TopLevelDecl] -> m (TE.FunctionStore, TE.LibInfo, [TE.BindingDecl])
 compTopLevels s_gti funStore [] = return (funStore, [], [])
 compTopLevels s_gti funStore (toplevel:toplevels) = do
-  (funStore1, t_toplevel, bindingDecls1) <- compTopLevel s_gti funStore toplevel
-  (funStore2, t_toplevels, bindingDecls2) <- compTopLevels s_gti funStore1 toplevels
-  return (funStore2, t_toplevel++t_toplevels, bindingDecls1++bindingDecls2)
+  (funStore1, t_toplevels1, bindingDecls1) <- compTopLevel s_gti funStore toplevel
+  (funStore2, t_toplevels2, bindingDecls2) <- compTopLevels s_gti funStore1 toplevels
+  return (funStore2, t_toplevels1++t_toplevels2, bindingDecls1++bindingDecls2)
 
 compTopLevel :: Monad m =>
   SE.GlobalTypeInfo -> TE.FunctionStore ->
-  SE.TopLevelDecl -> m (TE.FunctionStore, [TE.TopLevelDecl], [TE.BindingDecl])
+  SE.TopLevelDecl -> m (TE.FunctionStore, TE.LibInfo, [TE.BindingDecl])
   
 compTopLevel s_gti funStore (SE.LibDeclTopLevel x ty) = do
   target_ty <- compValType ty
-  return (funStore, [TE.LibDeclTopLevel x target_ty], [])
+  return (funStore, [(x, target_ty)], [])
 
 compTopLevel s_gti funStore (SE.DataTypeTopLevel
                (SE.DataType dtname locvars tyvars tycondecls)) = return (funStore, [], [])
@@ -157,7 +156,7 @@ compExpr s_gti env loc s_ty funStore (SE.Var x) =
 
 compExpr s_gti env loc (ST.TypeAbsType tyvars0 s_ty) funStore (SE.TypeAbs tyvars1 expr) = do
   -- Assume tyvars0 == tyvars1
-  t_ty <- compValType s_ty
+  t_ty <- compType s_ty
   let target_ty = TT.TypeAbsType tyvars0 t_ty
   let env1 = env {SE._typeVarEnv = tyvars1++SE._typeVarEnv env}
   (funStore1, target_expr) <- compExpr s_gti env1 loc s_ty funStore expr
@@ -172,14 +171,14 @@ compExpr s_gti env loc s_ty funStore (SE.TypeAbs tyvars expr) = do
 
 compExpr s_gti env loc (ST.LocAbsType locvars0 s_ty) funStore (SE.LocAbs locvars1 expr) = do
   -- Assume tyvars0 == tyvars1
-  t_ty <- compValType s_ty
+  t_ty <- compType s_ty
   let target_ty = TT.LocAbsType locvars0 t_ty
   let env1 = env {SE._locVarEnv = locvars1++SE._locVarEnv env}
   (funStore1, target_expr) <- compExpr s_gti env1 loc s_ty funStore expr
   let opencode = TE.CodeLocAbs locvars1 target_expr
 
   (funStore2, closure) <- mkClosure env loc funStore1 target_ty opencode
-  return (funStore1, TE.ValExpr $ TE.UnitM closure)
+  return (funStore2, TE.ValExpr $ TE.UnitM closure)
 
 compExpr s_gti env loc s_ty funStore (SE.LocAbs locvars1 expr) = do
   error $ "[compExpr] Not location-abstraction type: " ++ show s_ty
@@ -222,6 +221,7 @@ compExpr s_gti env loc s_ty funStore (SE.Lit lit) =
 
 compExpr s_gti env loc s_ty funStore (SE.Constr cname locs argtys exprs tys) = do
   let (xs, funStore1) = TE.newVars (length exprs) funStore
+  t_tys <- mapM compValType tys
   t_argtys <- mapM compValType argtys
   (funStore2, h) <-
      foldM (\ (funStore0, f) -> \ (x, s_ty, expr) -> do
@@ -229,7 +229,7 @@ compExpr s_gti env loc s_ty funStore (SE.Constr cname locs argtys exprs tys) = d
        t_ty <- compValType s_ty
        let g = TE.BindM [TE.Binding x t_ty target_expr] . TE.ValExpr . f
        return (funStore1, g)) (funStore1, \x->x) (zip3 xs tys exprs)
-  return (funStore2, TE.ValExpr $ h $ TE.UnitM $ TE.Constr cname locs t_argtys (map TE.Var xs))
+  return (funStore2, TE.ValExpr $ h $ TE.UnitM $ TE.Constr cname locs t_argtys (map TE.Var xs) t_tys)
 
 compExpr s_gti env loc s_ty funStore (SE.Let bindingDecls expr) = do
   let bindingTypeInfo = [(x,ty) | SE.Binding x ty expr <- bindingDecls]
@@ -384,7 +384,7 @@ mkClosure env loc funStore target_ty opencode = do
   let target_freevars = map TE.Var freevars
   
   target_freetys <- mapM compValType freetys
-  let codename = TE.CodeName fname (map Location locvars) (map TT.TypeVarType tyvars)
+  let codename = TE.CodeName fname (map LocVar locvars) (map TT.TypeVarType tyvars)
   let codety = TT.CodeType locvars tyvars target_freetys target_ty
   let code = TE.Code locvars tyvars freevars opencode
 

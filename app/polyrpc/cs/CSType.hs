@@ -39,7 +39,7 @@ doSubstOne x ty (LocAbsType locvars bodyty) =
 doSubstOne x ty (ConType name locs tys) =
   ConType name locs (map (doSubstOne x ty) tys)
 doSubstOne x ty (CloType innerty) =  CloType (doSubstOne x ty innerty)
-doSubstOne x ty (MonType valty) = CloType (doSubstOne x ty valty)
+doSubstOne x ty (MonType valty) = MonType (doSubstOne x ty valty)
 
 doSubst :: [(String,Type)] -> Type -> Type
 doSubst [] ty0 = ty0

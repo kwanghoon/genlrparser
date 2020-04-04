@@ -8,7 +8,10 @@
                                                            {"ValExpr": {"UnitM": {"Var": "arg1"}}}]],
                                                          {"ValExpr": {"UnitM": {"Constr": ["F", [],
                                                                                            [],
-                                                                                           [{"Var": "x4"}]]}}}]}}]}]]]],
+                                                                                           [{"Var": "x4"}],
+                                                                                           [{"ConType": ["Int",
+                                                                                                         [],
+                                                                                                         []]}]]}}}]}}]}]]]],
   "serverstore": [], "new": 6},
  {"ValExpr": {"BindM": [[["main", {"ConType": ["Int", [], []]},
                           {"ValExpr": {"BindM": [[["x1", {"ConType": ["F", [], []]},
@@ -43,4 +46,4 @@
                                                            {"ConType": ["F", [], []]},
                                                            [{"Alternative": ["F", ["i"],
                                                                              {"ValExpr": {"UnitM": {"Var": "i"}}}]}]]}]}}]],
-                        {"ValExpr": {"UnitM": {"Var": "main"}}}]}}]
+                        {"ValExpr": {"UnitM": {"Lit": "UnitLit"}}}]}}]

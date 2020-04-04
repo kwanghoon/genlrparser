@@ -23,7 +23,7 @@ data Value =
     Var String
   | Lit Literal
   | Tuple [Value]
-  | Constr String [Location] [Type] [Value]
+  | Constr String [Location] [Type] [Value] [Type]
   | Closure [Value] [Type] CodeName  
   | UnitM Value
   | BindM [BindingDecl] Expr
@@ -88,11 +88,13 @@ type BindingTypeInfo = [(String, Type)]
 -- [ (DTName, LocationVars, TypeVars, [(ConName, ArgTypes)]) ]
 type DataTypeInfo = [(String, ([String], [String], [(String,[Type])]))]
 
+type LibInfo = [(String, Type)]
+
 data GlobalTypeInfo = GlobalTypeInfo
    { _typeInfo :: TypeInfo
    , _conTypeInfo :: ConTypeInfo
    , _dataTypeInfo :: DataTypeInfo
-   , _bindingTypeInfo :: BindingTypeInfo }
+   , _libInfo :: LibInfo } -- library types
     deriving (Show, Typeable, Data)
        
 data Env = Env
@@ -165,3 +167,6 @@ primOpTypes =
 
 lookupPrimOpType primop =
   [ (tys,ty) | (primop1,(tys,ty)) <- primOpTypes, primop==primop1]
+
+lookupConstr :: GlobalTypeInfo -> String -> [([Type], String, [String], [String])]
+lookupConstr gti x = [z | (con, z) <- _conTypeInfo gti, x==con]
