@@ -2,6 +2,8 @@
 
 module CSExpr where
 
+import qualified Data.Set as Set
+
 import Location
 import Prim
 import Literal
@@ -170,3 +172,41 @@ lookupPrimOpType primop =
 
 lookupConstr :: GlobalTypeInfo -> String -> [([Type], String, [String], [String])]
 lookupConstr gti x = [z | (con, z) <- _conTypeInfo gti, x==con]
+
+-----------------
+-- free variables
+-----------------
+
+fvOpenCode :: OpenCode -> Set.Set String
+
+fvOpenCode (CodeAbs xTys expr) = fvExpr expr `Set.difference` Set.fromList (map fst xTys)
+fvOpenCode (CodeTypeAbs tyvars expr) = fvExpr expr
+fvOpenCode (CodeLocAbs locvars expr) = fvExpr expr
+
+fvExpr :: Expr -> Set.Set String
+
+fvExpr (ValExpr val) = fvValue val
+fvExpr (Let bindingDcl expr) = Set.empty
+fvExpr (Case val _ alts) = fvValue val `Set.union` Set.unions (map fvAlt alts)
+fvExpr (App left _ right) = fvValue left `Set.union` fvValue right
+fvExpr (TypeApp left _ _) = fvValue left
+fvExpr (LocApp left _ _) = fvValue left
+fvExpr (Prim primop vs) = Set.unions (map fvValue vs)
+
+fvAlt (Alternative cname xs expr) = fvExpr expr `Set.difference` Set.fromList xs
+fvAlt (TupleAlternative xs expr) = fvExpr expr `Set.difference` Set.fromList xs
+
+fvValue (Var x) = Set.singleton x
+fvValue (Lit lit) = Set.empty
+fvValue (Tuple vs) = Set.unions (map fvValue vs)
+fvValue (Constr cname _ _ vs _) = Set.unions (map fvValue vs)
+fvValue (Closure vs _ codename) = Set.unions (map fvValue vs)
+fvValue (UnitM v) = fvValue v
+fvValue (BindM bindingDecls expr) =
+  (Set.unions (map (\(Binding _ _ expr) -> fvExpr expr) bindingDecls) `Set.union` fvExpr expr)
+  `Set.difference` (Set.fromList (map (\(Binding x _ _) -> x) bindingDecls))
+fvValue (Req left _ right) = fvValue left `Set.union` fvValue right
+fvValue (Call left _ right) = fvValue left `Set.union` fvValue right
+fvValue (GenApp _ left _ right) = fvValue left `Set.union` fvValue right
+
+

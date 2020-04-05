@@ -1,5 +1,9 @@
 module Compile where
 
+import qualified Data.Set as Set
+import qualified Data.List as List
+import qualified Data.Maybe as Maybe
+
 import Location
 
 import qualified Type as ST
@@ -385,8 +389,17 @@ mkClosure env loc funStore target_ty opencode = do
   let (fname,funStore1) = TE.newName funStore
   let locvars = SE._locVarEnv env
   let tyvars  = SE._typeVarEnv env
-  let (freevars, freetys) = unzip $ SE._varEnv env 
+  
+  -- let (_freevars, _freetys) = unzip $ SE._varEnv env 
+
+  let freevars = Set.toList (TE.fvOpenCode opencode)
+  let freetys = [ty | x <- freevars
+                    , let ty = case List.lookup x (SE._varEnv env) of
+                                 Just ty -> ty
+                                 Nothing -> error $ "[mkClosure] freetys: not found " ++ x  ++ " in " ++ fname ++ "\n" ++ show opencode ++ "\n" ++ show freevars ++ "\n" ++ show (SE._varEnv env)]
+  
   let target_freevars = map TE.Var freevars
+
   
   target_freetys <- mapM compValType freetys
   let codename = TE.CodeName fname (map LocVar locvars) (map TT.TypeVarType tyvars)
