@@ -64,7 +64,7 @@ data Alternative =
   deriving (Show, Typeable, Data)
 
 data Code =
-    Code [String] [String] [String] OpenCode  -- [alpha] [loc]. [x]. OpenCode
+    Code [String] [String] [String] OpenCode  -- [loc]. [alpha]. [x]. OpenCode
     deriving (Show, Typeable, Data)
 
 data OpenCode =
