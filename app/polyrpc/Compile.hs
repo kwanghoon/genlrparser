@@ -167,7 +167,7 @@ compExpr s_gti env loc (ST.TypeAbsType tyvars0 s_ty) funStore (SE.TypeAbs tyvars
   -- Assume tyvars0 == tyvars1
   t_ty <- compType s_ty
   let target_ty = TT.TypeAbsType tyvars0 t_ty
-  let env1 = env {SE._typeVarEnv = tyvars1++SE._typeVarEnv env}
+  let env1 = env {SE._typeVarEnv = noDupAppend tyvars1 (SE._typeVarEnv env)}
   (funStore1, target_expr) <- compExpr s_gti env1 loc s_ty funStore expr
   let opencode = TE.CodeTypeAbs tyvars1 target_expr
 
@@ -182,7 +182,7 @@ compExpr s_gti env loc (ST.LocAbsType locvars0 s_ty) funStore (SE.LocAbs locvars
   -- Assume tyvars0 == tyvars1
   t_ty <- compType s_ty
   let target_ty = TT.LocAbsType locvars0 t_ty
-  let env1 = env {SE._locVarEnv = locvars1++SE._locVarEnv env}
+  let env1 = env {SE._locVarEnv = noDupAppend locvars1 (SE._locVarEnv env)}
   (funStore1, target_expr) <- compExpr s_gti env1 loc s_ty funStore expr
   let opencode = TE.CodeLocAbs locvars1 target_expr
 
@@ -396,7 +396,11 @@ mkClosure env loc funStore target_ty opencode = do
   let freetys = [ty | x <- freevars
                     , let ty = case List.lookup x (SE._varEnv env) of
                                  Just ty -> ty
-                                 Nothing -> error $ "[mkClosure] freetys: not found " ++ x  ++ " in " ++ fname ++ "\n" ++ show opencode ++ "\n" ++ show freevars ++ "\n" ++ show (SE._varEnv env)]
+                                 Nothing -> error $ "[mkClosure] freetys: not found "
+                                              ++ x  ++ " in " ++ fname ++ "\n"
+                                              ++ show opencode ++ "\n"
+                                              ++ show freevars ++ "\n"
+                                              ++ show (SE._varEnv env)]
   
   let target_freevars = map TE.Var freevars
 
@@ -409,3 +413,11 @@ mkClosure env loc funStore target_ty opencode = do
   let funStore2 = TE.addFun loc funStore1 fname codety code
   return (funStore2, TE.Closure target_freevars target_freetys codename)
 
+--
+noDupAppend xs [] = xs
+noDupAppend xs (y:ys) =
+  case List.find (y==) xs of
+    Just _ -> noDupAppend xs ys
+    Nothing -> noDupAppend (xs ++ [y]) ys
+
+    

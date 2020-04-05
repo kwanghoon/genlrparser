@@ -183,6 +183,7 @@ fvOpenCode (CodeAbs xTys expr) = fvExpr expr `Set.difference` Set.fromList (map 
 fvOpenCode (CodeTypeAbs tyvars expr) = fvExpr expr
 fvOpenCode (CodeLocAbs locvars expr) = fvExpr expr
 
+
 fvExpr :: Expr -> Set.Set String
 
 fvExpr (ValExpr val) = fvValue val
@@ -193,8 +194,14 @@ fvExpr (TypeApp left _ _) = fvValue left
 fvExpr (LocApp left _ _) = fvValue left
 fvExpr (Prim primop vs) = Set.unions (map fvValue vs)
 
+
+fvAlt :: Alternative -> Set.Set String
+
 fvAlt (Alternative cname xs expr) = fvExpr expr `Set.difference` Set.fromList xs
 fvAlt (TupleAlternative xs expr) = fvExpr expr `Set.difference` Set.fromList xs
+
+
+fvValue :: Value -> Set.Set String
 
 fvValue (Var x) = Set.singleton x
 fvValue (Lit lit) = Set.empty
