@@ -15,6 +15,7 @@ import qualified CSExpr as TE
 import TypeCheck
 import Compile
 import Verify
+import Execute
 
 import Text.JSON.Generic
 import Text.JSON.Pretty
@@ -67,6 +68,10 @@ doProcess cmd file = do
 
   putStrLn "[Verifying generated codes]"
   verify t_gti funStore t_expr
+  putStrLn "[Well-typed]"
+
+  putStrLn "[Executing codes]"
+  execute t_gti funStore t_expr
 
   putStrLn "[Success]"
 
