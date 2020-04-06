@@ -1,3 +1,2 @@
 [{"clientstore": [], "serverstore": [], "new": 1},
- {"ValExpr": {"BindM": [[],
-                        {"ValExpr": {"UnitM": {"Lit": "UnitLit"}}}]}}]
+ {"ValExpr": {"UnitM": {"Lit": "UnitLit"}}}]

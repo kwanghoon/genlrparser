@@ -19,6 +19,7 @@ data PrimOp =
   | MulPrimOp  --{l}. (Int, Int) -l-> Int
   | DivPrimOp  --{l}. (Int, Int) -l-> Int
   | NegPrimOp  --{l}. Int -l-> Int
+  | MkRecOp  -- MkRecOp closure f 
 -- For aeson  
 --  deriving (Show, Eq, Generic)
   deriving (Show, Eq, Typeable, Data)

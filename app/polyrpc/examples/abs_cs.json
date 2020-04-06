@@ -10,5 +10,6 @@
                           {"CloType": {"FunType": [{"ConType": ["Int", [], []]},
                                                    {"Location": "client"},
                                                    {"MonType": {"ConType": ["Int", [], []]}}]}},
-                          {"ValExpr": {"UnitM": {"Closure": [[], [], ["f1", [], []]]}}}]],
+                          {"ValExpr": {"UnitM": {"Closure": [[], [], ["f1", [], []],
+                                                             []]}}}]],
                         {"ValExpr": {"UnitM": {"Lit": "UnitLit"}}}]}}]

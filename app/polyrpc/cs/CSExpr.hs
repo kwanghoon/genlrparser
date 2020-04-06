@@ -26,7 +26,7 @@ data Value =
   | Lit Literal
   | Tuple [Value]
   | Constr String [Location] [Type] [Value] [Type]
-  | Closure [Value] [Type] CodeName  -- [String] -- [] or [rec_f] for now, [rec_f1, ...,, rec_fk] in future
+  | Closure [Value] [Type] CodeName  [String] -- [] or [rec_f] for now, [rec_f1, ...,, rec_fk] in future
   | UnitM Value
   | BindM [BindingDecl] Expr
   | Req Value Type Value
@@ -123,10 +123,14 @@ addServerFun fnstore name ty code =
    fnstore {_serverstore = (_serverstore fnstore) ++ [(name,(ty,code))] }
 
 addFun :: Location -> FunctionStore -> String -> CodeType -> Code -> FunctionStore
-addFun loc funstore name ty code
-  | isClient loc = addClientFun funstore name ty code
-  | isServer loc = addServerFun funstore name ty code
-  | otherwise    = addServerFun (addClientFun funstore name ty code) name ty code
+addFun loc funstore name ty@(CodeType [] [] fvtys (FunType _ funloc _)) code =
+  if isClient funloc then addClientFun funstore name ty code
+  else if isServer funloc then addServerFun funstore name ty code
+  else addServerFun (addClientFun funstore name ty code) name ty code
+addFun loc funstore name ty@(CodeType [] [] fvtys somety) code =
+  addServerFun (addClientFun funstore name ty code) name ty code
+addFun loc funstore name ty@(CodeType locvars tyvars fvtys somety) code =
+  addServerFun (addClientFun funstore name ty code) name ty code
 
 newName :: FunctionStore -> (String, FunctionStore)
 newName fnstore = let n = _new fnstore in ("f" ++ show n, fnstore{_new =n+1})
@@ -207,7 +211,7 @@ fvValue (Var x) = Set.singleton x
 fvValue (Lit lit) = Set.empty
 fvValue (Tuple vs) = Set.unions (map fvValue vs)
 fvValue (Constr cname _ _ vs _) = Set.unions (map fvValue vs)
-fvValue (Closure vs _ codename) = Set.unions (map fvValue vs)
+fvValue (Closure vs _ codename _) = Set.unions (map fvValue vs)
 fvValue (UnitM v) = fvValue v
 fvValue (BindM bindingDecls expr) =
   (Set.unions (map (\(Binding _ _ expr) -> fvExpr expr) bindingDecls) `Set.union` fvExpr expr)

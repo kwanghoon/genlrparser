@@ -97,46 +97,46 @@ clientExpr fun_store evctx (Case (Lit (BoolLit b)) casety alts) client_stack ser
   else error $ "[cilentExpr] Case unexpected: " ++ show b ++ "? " ++ b1 ++ " " ++ b2
 
 -- (E-App)
-clientExpr fun_store evctx (App (Closure vs vstys codename) funty arg) client_stack server_stack = do
+clientExpr fun_store evctx (App clo@(Closure vs vstys codename recf) funty arg) client_stack server_stack = do
   let CodeName fname locs tys = codename
   case [code | (gname,(codetype,code))<-_clientstore fun_store, fname==gname] of
     ((Code locvars tyvars fvvars (CodeAbs [(x,_)] expr)):_) -> do
       let subst    = zip fvvars vs ++ [(x,arg)]
       let substLoc = zip locvars locs
       let substTy  = zip tyvars tys
-      let substed_expr = doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
+      let substed_expr = doRec clo recf $ doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
       return $ ClientConfig (applyEvCxt evctx substed_expr) client_stack server_stack
     
     [] -> error $ "[clientExpr] Client abs code not found: " ++ fname
 
 -- (E-TApp)
-clientExpr fun_store evctx (TypeApp (Closure vs vstys codename) funty [argty]) client_stack server_stack = do
+clientExpr fun_store evctx (TypeApp clo@(Closure vs vstys codename recf) funty [argty]) client_stack server_stack = do
   let CodeName fname locs tys = codename
   case [code | (gname, (codetype,code))<-_clientstore fun_store, fname==gname] of
     ((Code locvars tyvars fvvars (CodeTypeAbs [a] expr)):_) -> do
       let subst    = zip fvvars vs 
       let substLoc = zip locvars locs
       let substTy  = zip tyvars tys ++ [(a,argty)]
-      let substed_expr = doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
+      let substed_expr = doRec clo recf $ doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
       return $ ClientConfig (applyEvCxt evctx substed_expr) client_stack server_stack
       
     [] -> error $ "[clientExpr] Client tyabs code not found: " ++ fname
 
 -- (E-LApp)
-clientExpr fun_store evctx (LocApp (Closure vs vstys codename) funty [argloc]) client_stack server_stack = do
+clientExpr fun_store evctx (LocApp clo@(Closure vs vstys codename recf) funty [argloc]) client_stack server_stack = do
   let CodeName fname locs tys = codename
   case [code | (gname, (codetype,code))<-_clientstore fun_store, fname==gname] of
     ((Code locvars tyvars fvvars (CodeLocAbs [l] expr)):_) -> do
       let subst    = zip fvvars vs
       let substLoc = zip locvars locs ++ [(l,argloc)]
       let substTy  = zip tyvars tys
-      let substed_expr = doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
+      let substed_expr = doRec clo recf $ doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
       return $ ClientConfig (applyEvCxt evctx substed_expr) client_stack server_stack
 
     [] -> error $ "[clientExpr] Client locabs code not found: " ++ fname
 
 clientExpr fun_store evctx (Prim primop vs) client_stack server_stack = do
-  let v = Lit (calc primop (map (\(Lit lit) -> lit) vs))
+  let v = calc primop vs
   return $ ClientConfig (applyEvCxt evctx (ValExpr v)) client_stack server_stack
 
 clientExpr fun_store evctx expr client_stack server_stack = 
@@ -216,46 +216,48 @@ serverExpr fun_store evctx client_stack (Case (Lit (BoolLit b)) casety alts) ser
   else error $ "[cilentExpr] Case unexpected: " ++ show b ++ "? " ++ b1 ++ " " ++ b2
 
 -- (E-App)
-serverExpr fun_store client_stack evctx (App (Closure vs vstys codename) funty arg) server_stack = do
+serverExpr fun_store client_stack evctx (App clo@(Closure vs vstys codename recf) funty arg) server_stack = do
   let CodeName fname locs tys = codename
   case [code | (gname,(codetyps,code))<-_serverstore fun_store, fname==gname] of
     ((Code locvars tyvars fvvars (CodeAbs [(x,_)] expr)):_) -> do
       let subst    = zip fvvars vs ++ [(x,arg)]
       let substLoc = zip locvars locs
       let substTy  = zip tyvars tys
-      let substed_expr = doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
+      let substed_expr = doRec clo recf $ doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
       return $ ServerConfig client_stack (applyEvCxt evctx substed_expr) server_stack
 
-    [] -> error $ "[serverExpr] Client abs code not found: " ++ fname
+    [] -> error $ "[serverExpr] Server abs code not found: " ++ fname
 
 -- (E-TApp)
-serverExpr fun_store client_stack evctx (TypeApp (Closure vs vstys codename) funty [argty]) server_stack = do
+serverExpr fun_store client_stack evctx (TypeApp clo@(Closure vs vstys codename recf) funty [argty]) server_stack = do
   let CodeName fname locs tys = codename
   case [code | (gname, (codetype,code))<-_serverstore fun_store, fname==gname] of
     ((Code locvars tyvars fvvars (CodeTypeAbs [a] expr)):_) -> do
       let subst    = zip fvvars vs
       let substLoc = zip locvars locs
       let substTy  = zip tyvars tys  ++ [(a,argty)]
-      let substed_expr = doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
+      let substed_expr = doRec clo recf $ doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
       return $ ServerConfig client_stack (applyEvCxt evctx substed_expr) server_stack
 
-    [] -> error $ "[clientExpr] Client tyabs code not found: " ++ fname
+    [] -> error $ "[serverExpr] Server tyabs code not found: " ++ fname ++ "\n"
+                      ++ ", " ++ show [gname | (gname,_)<-_serverstore fun_store] ++ "\n"
+                      ++ ", " ++ show [gname | (gname,_)<-_clientstore fun_store] ++ "\n"
       
 -- (E-LApp)
-serverExpr fun_store client_stack evctx (LocApp (Closure vs vstys codename) funty [argloc]) server_stack = do
+serverExpr fun_store client_stack evctx (LocApp clo@(Closure vs vstys codename recf) funty [argloc]) server_stack = do
   let CodeName fname locs tys = codename
   case [code | (gname, (codetype,code))<-_serverstore fun_store, fname==gname] of
     ((Code locvars tyvars fvvars (CodeLocAbs [l] expr)):_) -> do
       let subst    = zip fvvars vs
       let substLoc = zip locvars locs ++ [(l,argloc)]
       let substTy  = zip tyvars tys
-      let substed_expr = doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
+      let substed_expr = doRec clo recf $ doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
       return $ ServerConfig client_stack (applyEvCxt evctx substed_expr) server_stack
 
-    [] -> error $ "[serverExpr] Client locabs code not found: " ++ fname
+    [] -> error $ "[serverExpr] Server locabs code not found: " ++ fname
 
 serverExpr fun_store client_stack evctx (Prim primop vs) server_stack = do
-  let v = Lit (calc primop (map (\(Lit lit) -> lit) vs))
+  let v = calc primop vs
   return $ ServerConfig client_stack (applyEvCxt evctx (ValExpr v)) server_stack
       
 
@@ -293,43 +295,58 @@ serverValue fun_store client_stack evctx (BindM [Binding x ty b@(ValExpr (UnitM 
 serverValue fun_store client_stack evctx (BindM [Binding x ty b@(_)] expr) server_stack = do
   serverExpr fun_store client_stack ((\bexpr->ValExpr (BindM [Binding x ty bexpr] expr)):evctx) b server_stack
 
+serverValue fun_store client_stack evctx v server_stack = do
+  error $ "[serverValue]: Unexpected: " ++ show v ++ "\n"
+                 ++ show [f | (f,_)<-_clientstore fun_store] ++ "\n"
+                 ++ show [f | (f,_)<-_serverstore fun_store] ++ "\n"
 
 -----------------------
 -- Primitive operations
 -----------------------
 
-calc :: PrimOp -> [Literal] -> Literal
+calc MkRecOp [Closure vs tys codename [], Lit (StrLit f)] = Closure vs tys codename [f]
 
-calc NotPrimOp [BoolLit b] = BoolLit (not b)
+calc primop vs = Lit $ calc' primop (map (\(Lit lit)-> lit) vs)
 
-calc OrPrimOp [BoolLit x, BoolLit y] = BoolLit (x || y)
 
-calc AndPrimOp [BoolLit x, BoolLit y] = BoolLit (x && y)
+calc' :: PrimOp -> [Literal] -> Literal
 
-calc EqPrimOp [IntLit x, IntLit y] = BoolLit (x==y)
+calc' NotPrimOp [BoolLit b] = BoolLit (not b)
 
-calc NeqPrimOp [IntLit x, IntLit y] = BoolLit (x/=y)
+calc' OrPrimOp [BoolLit x, BoolLit y] = BoolLit (x || y)
 
-calc LtPrimOp [IntLit x, IntLit y] = BoolLit (x<y)
+calc' AndPrimOp [BoolLit x, BoolLit y] = BoolLit (x && y)
 
-calc LePrimOp [IntLit x, IntLit y] = BoolLit (x<=y)
+calc' EqPrimOp [IntLit x, IntLit y] = BoolLit (x==y)
 
-calc GtPrimOp [IntLit x, IntLit y] = BoolLit (x>y)
+calc' NeqPrimOp [IntLit x, IntLit y] = BoolLit (x/=y)
 
-calc GePrimOp [IntLit x, IntLit y] = BoolLit (x>=y)
+calc' LtPrimOp [IntLit x, IntLit y] = BoolLit (x<y)
 
-calc AddPrimOp [IntLit x, IntLit y] = IntLit (x+y)
+calc' LePrimOp [IntLit x, IntLit y] = BoolLit (x<=y)
 
-calc SubPrimOp [IntLit x, IntLit y] = IntLit (x-y)
+calc' GtPrimOp [IntLit x, IntLit y] = BoolLit (x>y)
 
-calc MulPrimOp [IntLit x, IntLit y] = IntLit (x*y)
+calc' GePrimOp [IntLit x, IntLit y] = BoolLit (x>=y)
 
-calc DivPrimOp [IntLit x, IntLit y] = IntLit (x `div` y)
+calc' AddPrimOp [IntLit x, IntLit y] = IntLit (x+y)
 
-calc NegPrimOp [IntLit x] = IntLit (-x)
+calc' SubPrimOp [IntLit x, IntLit y] = IntLit (x-y)
 
-calc operator operands =
+calc' MulPrimOp [IntLit x, IntLit y] = IntLit (x*y)
+
+calc' DivPrimOp [IntLit x, IntLit y] = IntLit (x `div` y)
+
+calc' NegPrimOp [IntLit x] = IntLit (-x)
+
+calc' operator operands =
   error $ "[PrimOp] Unexpected: " ++ show operator ++ " " ++ show operands
+
+
+--
+doRec clo [] expr = expr
+doRec (Closure vs tys codename recf) [f] expr = doSubstExpr [(f, Closure vs tys codename [f])] expr
+doRec clo recf expr = error $ "[doRec] Unexpected" ++ show clo ++ ", " ++ show recf ++ ", " ++ show expr
 
 
 ----------------
@@ -396,8 +413,8 @@ doSubstValue subst (Tuple vs) = Tuple (map (doSubstValue subst) vs)
 doSubstValue subst (Constr cname locs tys vs argtys) =
   Constr cname locs tys (map (doSubstValue subst) vs) argtys
 
-doSubstValue subst (Closure vs fvtys (CodeName fname locs tys)) =
-  Closure (map (doSubstValue subst) vs) fvtys (CodeName fname locs tys)
+doSubstValue subst (Closure vs fvtys (CodeName fname locs tys) recf) =
+  Closure (map (doSubstValue subst) vs) fvtys (CodeName fname locs tys) recf
 
 doSubstValue subst (UnitM v) = UnitM (doSubstValue subst v)
 
@@ -482,10 +499,11 @@ doSubstLocValue substLoc (Constr cname locs tys vs argtys) =
             (map (doSubstLocValue substLoc) vs)
               (map (doSubstLoc substLoc) argtys)
 
-doSubstLocValue substLoc (Closure vs fvtys (CodeName f locs tys)) =
+doSubstLocValue substLoc (Closure vs fvtys (CodeName f locs tys) recf) =
   Closure (map (doSubstLocValue substLoc) vs)
     (map (doSubstLoc substLoc) fvtys )
     (CodeName f (map (doSubstLocOverLocs substLoc) locs) (map (doSubstLoc substLoc) tys))
+    recf
 
 doSubstLocValue substLoc (UnitM v) = UnitM (doSubstLocValue substLoc v)
 
@@ -565,10 +583,11 @@ doSubstTyValue substTy (Constr cname locs tys vs argtys) =
 
 doSubstTyValue substTy (UnitM v) = UnitM (doSubstTyValue substTy v)
 
-doSubstTyValue substTy (Closure vs fvtys (CodeName fname locs tys)) =
+doSubstTyValue substTy (Closure vs fvtys (CodeName fname locs tys) recf) =
   Closure (map (doSubstTyValue substTy) vs)
           (map (doSubst substTy) fvtys)
           (CodeName fname locs (map (doSubst substTy) tys))
+          recf
 
 doSubstTyValue substTy (BindM bindingDecls expr) =
   let bindingDecls1 =

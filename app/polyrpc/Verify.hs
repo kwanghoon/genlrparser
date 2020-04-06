@@ -215,6 +215,9 @@ verifyExpr gtigci loc env ty (LocApp left (CloType (LocAbsType locvars bodyty)) 
   assert (equalType substed_bodyty ty)
     ("[verifyExpr] Not equal type: " ++ show substed_bodyty ++ " != " ++ show ty)
 
+verifyExpr gtigci loc env ty (Prim MkRecOp vs) = do
+  return ()
+  
 verifyExpr gtigci loc env ty (Prim prim vs) = do
   case lookupPrimOpType prim of
     [] -> error $ "[verifyExpr] Not found prim: " ++ show prim
@@ -291,7 +294,7 @@ verifyValue gtigci loc env ty (Constr cname locs tys args argtys) = do
            ++ show ty ++ " != " ++ show (ConType tyconname locs tys))
     [] -> error $ "[verifyValue] Constructor not found: " ++ cname
 
-verifyValue gtigci loc env (CloType ty) (Closure vs tys codeName) = do
+verifyValue gtigci loc env (CloType ty) (Closure vs tys codeName recf) = do
   -- let env0 = env {_varEnv = [] }
   mapM_ ( \ (ty,v) -> verifyValue gtigci loc env ty v) (zip tys vs)
   verifyCodeName gtigci loc ty tys codeName

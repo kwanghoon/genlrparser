@@ -421,7 +421,7 @@
                                                                                         {"Alternative": ["Cons",
                                                                                                          ["y",
                                                                                                           "ys"],
-                                                                                                         {"Case": [{"Prim": ["GePrimOp",
+                                                                                                         {"Case": [{"Prim": ["LePrimOp",
                                                                                                                              [{"Var": "n"},
                                                                                                                               {"Lit": {"IntLit": 0}}]]},
                                                                                                                    {"Just": {"ConType": ["Bool",

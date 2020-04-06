@@ -152,8 +152,17 @@ compBindingDecl :: Monad m =>
   
 compBindingDecl s_gti env loc funStore (SE.Binding x ty expr) = do
   target_ty <- compValType ty
-  (funStore1, target_expr) <- compExpr s_gti env loc ty funStore expr 
-  return (funStore1, TE.Binding x target_ty target_expr)
+  (funStore1, target_expr) <- compExpr s_gti env loc ty funStore expr
+  let recursion = Set.member x (TE.fvExpr target_expr)
+  if recursion then
+    do let (y, funStore2) = TE.newVar funStore1
+       let (z, funStore3) = TE.newVar funStore2
+       return (funStore3, TE.Binding x target_ty
+                             (TE.ValExpr (TE.BindM [TE.Binding y target_ty target_expr]
+                                             (TE.Let [TE.Binding z target_ty (TE.Prim MkRecOp [TE.Var y, TE.Lit (StrLit x)])]
+                                                 (TE.ValExpr (TE.UnitM (TE.Var z)))))))
+  else
+    return (funStore1, TE.Binding x target_ty target_expr)
 
 -- compExpr
 compExpr :: Monad m =>
@@ -411,7 +420,7 @@ mkClosure env loc funStore target_ty opencode = do
   let code = TE.Code locvars tyvars freevars opencode
 
   let funStore2 = TE.addFun loc funStore1 fname codety code
-  return (funStore2, TE.Closure target_freevars target_freetys codename)
+  return (funStore2, TE.Closure target_freevars target_freetys codename [])
 
 --
 noDupAppend xs [] = xs
