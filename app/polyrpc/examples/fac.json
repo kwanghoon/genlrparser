@@ -66,4 +66,10 @@
                                                                                {"Prim": ["SubPrimOp",
                                                                                          [{"Var": "n"},
                                                                                           {"Lit": {"IntLit": 1}}]]},
-                                                                               {"Just": {"Location": "client"}}]}]]}]}]]}]}]}]
+                                                                               {"Just": {"Location": "client"}}]}]]}]}]]}]}]},
+ {"BindingTopLevel": ["main", {"ConType": ["Int", [], []]},
+                      {"App": [{"Var": "fac"},
+                               {"Just": {"FunType": [{"ConType": ["Int", [], []]},
+                                                     {"Location": "client"},
+                                                     {"ConType": ["Int", [], []]}]}},
+                               {"Lit": {"IntLit": 3}}, {"Just": {"Location": "client"}}]}]}]

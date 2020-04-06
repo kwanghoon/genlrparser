@@ -26,7 +26,7 @@ data Value =
   | Lit Literal
   | Tuple [Value]
   | Constr String [Location] [Type] [Value] [Type]
-  | Closure [Value] [Type] CodeName  
+  | Closure [Value] [Type] CodeName  -- [String] -- [] or [rec_f] for now, [rec_f1, ...,, rec_fk] in future
   | UnitM Value
   | BindM [BindingDecl] Expr
   | Req Value Type Value
@@ -75,7 +75,7 @@ data OpenCode =
   
 
 data CodeName =
-    CodeName String [Location] [Type]
+    CodeName String [Location] [Type] 
     deriving (Show, Typeable, Data)
 
 --
