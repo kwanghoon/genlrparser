@@ -25,7 +25,7 @@ compile s_gti s_topleveldecls = do
     compTopLevels s_gti1 TE.initFunctionStore s_topleveldecls
   t_gti <- compileGTI s_gti t_libs
   let main = TE.ValExpr (TE.UnitM (TE.Lit UnitLit))
-  return (t_gti, funStore, TE.ValExpr $ TE.BindM t_bindingDecls main)
+  return (t_gti, funStore, TE.singleBindM $ TE.BindM t_bindingDecls main)
 
 
 -----
@@ -252,7 +252,7 @@ compExpr s_gti env loc s_ty funStore (SE.Let bindingDecls expr) = do
           (funStore, [])
           (reverse bindingDecls)
   (funStore3, t_expr) <- compExpr s_gti env loc s_ty funStore2 expr
-  return (funStore3, TE.ValExpr $ TE.BindM t_bindingDecls t_expr)
+  return (funStore3, TE.singleBindM $ TE.BindM t_bindingDecls t_expr)
    
 compExpr s_gti env loc s_ty funStore (SE.Case expr (Just case_ty) alts) = do
   let (x, funStore0) = TE.newVar funStore

@@ -217,3 +217,7 @@ fvValue (Call left _ right) = fvValue left `Set.union` fvValue right
 fvValue (GenApp _ left _ right) = fvValue left `Set.union` fvValue right
 
 
+--
+singleBindM (BindM [] expr) = expr
+singleBindM (BindM (bind:binds) expr) =
+  ValExpr $ BindM [bind] (singleBindM (BindM binds expr))

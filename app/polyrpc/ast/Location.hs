@@ -56,3 +56,9 @@ doSubstLocOverLoc x loc (Location name) = Location name
 doSubstLocOverLoc x loc (LocVar y)
   | x == y = loc
   | otherwise = LocVar y
+
+
+doSubstLocOverLocs [] loc0 = loc0
+doSubstLocOverLocs ((x,loc):substLoc) loc0 =
+  doSubstLocOverLocs substLoc (doSubstLocOverLoc x loc loc0)
+  

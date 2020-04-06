@@ -71,7 +71,8 @@ doProcess cmd file = do
   putStrLn "[Well-typed]"
 
   putStrLn "[Executing codes]"
-  execute t_gti funStore t_expr
+  v <- execute t_gti funStore t_expr
+  putStrLn $ "[Result]\n" ++ show v
 
   putStrLn "[Success]"
 

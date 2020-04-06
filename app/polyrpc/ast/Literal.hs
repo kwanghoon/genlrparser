@@ -12,7 +12,7 @@ data Literal =
   | UnitLit
 -- For aeson  
 --  deriving (Show, Generic)
-  deriving (Show, Typeable, Data)
+  deriving (Eq, Show, Typeable, Data)
 
 typeOfLiteral (IntLit _) = int_type
 typeOfLiteral (StrLit _) = string_type
