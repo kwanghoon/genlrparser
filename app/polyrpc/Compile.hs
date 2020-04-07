@@ -338,7 +338,7 @@ compExpr s_gti env loc s_ty funStore (SE.Prim primop exprs) = do
   let (y, funStore0) = TE.newVar funStore
   let (xs, funStore1) = TE.newVars (length exprs) funStore0
   case SE.lookupPrimOpType primop of
-    ((argtys, retty):_) -> do
+    ((_, _, argtys, retty):_) -> do  -- TODO: locvars, tyvars 
       (funStore2, h) <-
         foldM (\ (funStore0, f) -> \ (x, s_ty, expr) -> do
           (funStore1, target_expr) <- compExpr s_gti env loc s_ty funStore0 expr

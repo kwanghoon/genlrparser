@@ -19,6 +19,16 @@ data PrimOp =
   | MulPrimOp  --{l}. (Int, Int) -l-> Int
   | DivPrimOp  --{l}. (Int, Int) -l-> Int
   | NegPrimOp  --{l}. Int -l-> Int
+
+  -- For basic libraries
+  | PrimPrintOp
+  | PrimIntToStringOp
+  | PrimConcatOp
+  | PrimRefCreateOp
+  | PrimRefReadOp
+  | PrimRefWriteOp
+
+  -- For creating recursive closures
   | MkRecOp  -- MkRecOp closure f 
 -- For aeson  
 --  deriving (Show, Eq, Generic)

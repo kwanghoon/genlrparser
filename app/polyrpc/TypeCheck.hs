@@ -441,7 +441,7 @@ elabExpr gti env loc (Prim op exprs) = do
   elabExprTyList <- mapM (elabExpr gti env loc) exprs
   let (elab_exprs, tys) = unzip elabExprTyList
   case lookupPrimOpType op of
-    ((argtys, retty):_) -> do
+    ((_, _, argtys, retty):_) -> do  -- TODO: locvars, tyvars 
       if length tys==length argtys && and (map (uncurry equalType) (zip argtys tys))
       then return (Prim op elab_exprs, retty)
       else error $ "[TypeCheck] elabExpr: incorrect arg types in Prim op: "

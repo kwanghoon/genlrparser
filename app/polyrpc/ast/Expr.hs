@@ -235,26 +235,52 @@ toASTLit lit     = ASTLit lit
 mainName = "main"
 
 --
-primOpTypes :: [(PrimOp, ([Type], Type))]
+primOpTypes :: [(PrimOp, ([String], [String], [Type], Type))]  -- (locvars, tyvars, argtys, retty)
 primOpTypes =
-  [ (NotPrimOp, ([bool_type], bool_type))
-  , (OrPrimOp,  ([bool_type, bool_type], bool_type))
-  , (AndPrimOp, ([bool_type, bool_type], bool_type))
-  , (EqPrimOp,  ([bool_type, bool_type], bool_type))
-  , (NeqPrimOp, ([bool_type, bool_type], bool_type))
-  , (LtPrimOp,  ([int_type, int_type], bool_type))
-  , (LePrimOp,  ([int_type, int_type], bool_type))
-  , (GtPrimOp,  ([int_type, int_type], bool_type))
-  , (GePrimOp,  ([int_type, int_type], bool_type))
-  , (AddPrimOp, ([int_type, int_type], int_type))
-  , (SubPrimOp, ([int_type, int_type], int_type))
-  , (MulPrimOp, ([int_type, int_type], int_type))
-  , (DivPrimOp, ([int_type, int_type], int_type))
-  , (NegPrimOp, ([int_type], int_type))
+  [ (NotPrimOp, (["l"], [], [bool_type], bool_type))            -- [Note]
+  , (OrPrimOp,  (["l"], [], [bool_type, bool_type], bool_type)) -- The typechecker.l will replace l with 
+  , (AndPrimOp, (["l"], [], [bool_type, bool_type], bool_type)) -- the current location.
+  , (EqPrimOp,  (["l"], [], [bool_type, bool_type], bool_type)) -- Programmers will never provide it explicitly. 
+  , (NeqPrimOp, (["l"], [], [bool_type, bool_type], bool_type))
+  , (LtPrimOp,  (["l"], [], [int_type, int_type], bool_type))
+  , (LePrimOp,  (["l"], [], [int_type, int_type], bool_type))
+  , (GtPrimOp,  (["l"], [], [int_type, int_type], bool_type))
+  , (GePrimOp,  (["l"], [], [int_type, int_type], bool_type))
+  , (AddPrimOp, (["l"], [], [int_type, int_type], int_type))
+  , (SubPrimOp, (["l"], [], [int_type, int_type], int_type))
+  , (MulPrimOp, (["l"], [], [int_type, int_type], int_type))
+  , (DivPrimOp, (["l"], [], [int_type, int_type], int_type))
+  , (NegPrimOp, (["l"], [], [int_type], int_type))
+
+  , (PrimPrintOp, (["l"], [], [string_type], unit_type))        -- [Note]
+  , (PrimIntToStringOp, (["l"], [], [int_type], string_type))   -- Programmers will provide them explicitly.
+  , (PrimConcatOp, (["l"], [], [string_type,string_type], string_type))
+  
+  , (PrimRefCreateOp, let l1 = "l1" in                -- [Note]
+                      let l2 = "l2" in                -- Programmers will provide them explicitly.
+                      let a  = "a"  in                 
+                      let tyvar_a = TypeVarType a in
+                      let locvar_l1 = LocVar l1 in
+                        ([l1, l2], [a], [tyvar_a], ConType refType [locvar_l1] [tyvar_a]))
+    
+  , (PrimRefReadOp, let l1 = "l1" in
+                      let l2 = "l2" in
+                      let a  = "a"  in
+                      let tyvar_a = TypeVarType a in
+                      let locvar_l1 = LocVar l1 in
+                        ([l1,l2], [a], [ConType refType [locvar_l1] [tyvar_a]], tyvar_a))
+    
+  , (PrimRefWriteOp, let l1 = "l1" in
+                      let l2 = "l2" in
+                      let a  = "a"  in
+                      let tyvar_a = TypeVarType a in
+                      let locvar_l1 = LocVar l1 in
+                        ([l1,l2], [a], [ConType refType [locvar_l1] [tyvar_a], tyvar_a], unit_type)) -- wrong!!
   ]
 
 lookupPrimOpType primop =
-  [ (tys,ty) | (primop1,(tys,ty)) <- primOpTypes, primop==primop1]
+  [ (locvars, tyvars, tys,ty)
+  | (primop1,(locvars, tyvars, tys,ty)) <- primOpTypes, primop==primop1]
 
 --
 recursive = "$rec"
