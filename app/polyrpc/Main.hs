@@ -76,6 +76,7 @@ doProcess cmd file = do
 
   putStrLn "[Success]"
 
+
 --
 print_rpc cmd file elab_toplevelDecls = do
   let jsonfile = prefixOf file ++ ".json"

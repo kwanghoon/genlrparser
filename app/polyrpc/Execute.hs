@@ -21,33 +21,37 @@ type EvalContextValue = Value -> Expr
 type Stack = [EvalContext]
 
 data Config =
-    ClientConfig Expr Stack Stack   -- <M;Delta_c | Delta_s
-  | ServerConfig Stack Expr Stack   -- <Delta_c | M;Delta_s>
+    ClientConfig [EvalContext] Expr Stack Stack   -- <M;Delta_c | Delta_s
+  | ServerConfig Stack [EvalContext] Expr Stack   -- <Delta_c | M;Delta_s>
   | Stop Value
 --  deriving (Show, Typeable, Data)  
 
 
 --
-execute :: Monad m => GlobalTypeInfo -> FunctionStore -> Expr -> m Value
+execute :: GlobalTypeInfo -> FunctionStore -> Expr -> IO Value
 execute gti funStore mainExpr = do
   v <- run funStore (initConfig mainExpr)
   return v
 
 --
-run :: Monad m => FunctionStore -> Config -> m Value
+run :: FunctionStore -> Config -> IO Value
 
-run funStore (ClientConfig (ValExpr (UnitM v)) [] []) = return v
+run funStore (ClientConfig [] (ValExpr (UnitM v)) [] []) = do
+  putStrLn $ "[DONE]: " ++ show (ValExpr (UnitM v)) ++ "\n"
+  return v
 
-run funStore (ClientConfig expr client_stack server_stack) = do
-  config <- clientExpr funStore [] expr client_stack server_stack
+run funStore (ClientConfig evctx expr client_stack server_stack) = do
+  putStrLn $ "[STEP] [Client] " ++ show expr ++ "\n" 
+  config <- clientExpr funStore [] (applyEvCxt evctx expr) client_stack server_stack
   run funStore config
 
-run funStore (ServerConfig client_stack expr server_stack) = do
-  config <- serverExpr funStore [] client_stack expr server_stack
+run funStore (ServerConfig client_stack evctx expr server_stack) = do
+  putStrLn $ "[STEP] [Server] " ++ show expr ++ "\n"
+  config <- serverExpr funStore [] client_stack (applyEvCxt evctx expr) server_stack
   run funStore config
 
 --
-initConfig main_expr = ClientConfig main_expr [] []
+initConfig main_expr = ClientConfig [] main_expr [] []
 
 --
 applyEvCxt [] expr = expr
@@ -68,7 +72,7 @@ clientExpr fun_store evctx (ValExpr v) client_stack server_stack =
 -- (E-Let)
 clientExpr fun_store evctx (Let [Binding x ty b@(ValExpr v)] expr) client_stack server_stack = do
   let subst = [(x,v)]
-  return $ ClientConfig (applyEvCxt evctx (doSubstExpr subst expr)) client_stack server_stack
+  return $ ClientConfig evctx (doSubstExpr subst expr) client_stack server_stack
 
 -- (let x = Elet[] in M)
 clientExpr fun_store evctx (Let [Binding x ty b@(_)] expr) client_stack server_stack = do
@@ -77,14 +81,14 @@ clientExpr fun_store evctx (Let [Binding x ty b@(_)] expr) client_stack server_s
 -- (E-Proj-i) or (E-Tuple)
 clientExpr fun_store evctx (Case (Tuple vs) casety [TupleAlternative xs expr]) client_stack server_stack = do
   let subst = zip xs vs
-  return $ ClientConfig (applyEvCxt evctx (doSubstExpr subst expr)) client_stack server_stack
+  return $ ClientConfig evctx (doSubstExpr subst expr) client_stack server_stack
 
 -- (E-Proj-i) or (E-Data constructor) or (E-if)
 clientExpr fun_store evctx (Case (Constr cname locs tys vs argtys) casety alts) client_stack server_stack = do
   case [(dname,xs,expr) | Alternative dname xs expr <- alts, cname==dname] of
     ((_,xs,expr):_) -> do
       let subst = zip xs vs
-      return $ ClientConfig (applyEvCxt evctx (doSubstExpr subst expr)) client_stack server_stack
+      return $ ClientConfig evctx (doSubstExpr subst expr) client_stack server_stack
       
     [] -> error $ "[clientExpr] Case alternative not found: " ++ cname
 
@@ -92,8 +96,8 @@ clientExpr fun_store evctx (Case (Constr cname locs tys vs argtys) casety alts) 
 clientExpr fun_store evctx (Case (Lit (BoolLit b)) casety alts) client_stack server_stack = do
   let [Alternative b1 _ expr1,Alternative b2 _ expr2] = alts
   let text_b = show b
-  if text_b==b1 then return $ ClientConfig (applyEvCxt evctx expr1) client_stack server_stack
-  else if text_b==b2 then return $ ClientConfig (applyEvCxt evctx expr2) client_stack server_stack
+  if text_b==b1 then return $ ClientConfig evctx expr1 client_stack server_stack
+  else if text_b==b2 then return $ ClientConfig evctx expr2 client_stack server_stack
   else error $ "[cilentExpr] Case unexpected: " ++ show b ++ "? " ++ b1 ++ " " ++ b2
 
 -- (E-App)
@@ -101,11 +105,11 @@ clientExpr fun_store evctx (App clo@(Closure vs vstys codename recf) funty arg) 
   let CodeName fname locs tys = codename
   case [code | (gname,(codetype,code))<-_clientstore fun_store, fname==gname] of
     ((Code locvars tyvars fvvars (CodeAbs [(x,_)] expr)):_) -> do
-      let subst    = zip fvvars vs ++ [(x,arg)]
+      let subst    = [(x,arg)] ++ zip fvvars vs 
       let substLoc = zip locvars locs
       let substTy  = zip tyvars tys
       let substed_expr = doRec clo recf $ doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
-      return $ ClientConfig (applyEvCxt evctx substed_expr) client_stack server_stack
+      return $ ClientConfig evctx substed_expr client_stack server_stack
     
     [] -> error $ "[clientExpr] Client abs code not found: " ++ fname
 
@@ -116,9 +120,9 @@ clientExpr fun_store evctx (TypeApp clo@(Closure vs vstys codename recf) funty [
     ((Code locvars tyvars fvvars (CodeTypeAbs [a] expr)):_) -> do
       let subst    = zip fvvars vs 
       let substLoc = zip locvars locs
-      let substTy  = zip tyvars tys ++ [(a,argty)]
+      let substTy  = [(a,argty)] ++ zip tyvars tys 
       let substed_expr = doRec clo recf $ doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
-      return $ ClientConfig (applyEvCxt evctx substed_expr) client_stack server_stack
+      return $ ClientConfig evctx substed_expr client_stack server_stack
       
     [] -> error $ "[clientExpr] Client tyabs code not found: " ++ fname
 
@@ -128,16 +132,16 @@ clientExpr fun_store evctx (LocApp clo@(Closure vs vstys codename recf) funty [a
   case [code | (gname, (codetype,code))<-_clientstore fun_store, fname==gname] of
     ((Code locvars tyvars fvvars (CodeLocAbs [l] expr)):_) -> do
       let subst    = zip fvvars vs
-      let substLoc = zip locvars locs ++ [(l,argloc)]
+      let substLoc = [(l,argloc)] ++ zip locvars locs 
       let substTy  = zip tyvars tys
       let substed_expr = doRec clo recf $ doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
-      return $ ClientConfig (applyEvCxt evctx substed_expr) client_stack server_stack
+      return $ ClientConfig evctx substed_expr client_stack server_stack
 
     [] -> error $ "[clientExpr] Client locabs code not found: " ++ fname
 
 clientExpr fun_store evctx (Prim primop vs) client_stack server_stack = do
   let v = calc primop vs
-  return $ ClientConfig (applyEvCxt evctx (ValExpr v)) client_stack server_stack
+  return $ ClientConfig evctx (ValExpr v) client_stack server_stack
 
 clientExpr fun_store evctx expr client_stack server_stack = 
   error $ "[clientExpr] Unexpected: " ++ show expr ++ "\n" ++ show (applyEvCxt evctx expr) ++ "\n"
@@ -147,26 +151,26 @@ clientValue :: Monad m => FunctionStore -> [EvalContext] -> Value -> Stack -> St
 
 -- (E-Unit-C)
 clientValue fun_store [] (UnitM v) client_stack (top_evctx:server_stack) =
-  return $ ServerConfig client_stack (top_evctx (ValExpr (UnitM v))) server_stack
+  return $ ServerConfig client_stack [] (top_evctx (ValExpr (UnitM v))) server_stack
 
 -- (E-Req)
 clientValue fun_store evctx (Req f funty arg) client_stack server_stack = do
   let client_stack1 = if null evctx then client_stack else (toFun evctx):client_stack
-  return $ ServerConfig client_stack1 (App f funty arg) server_stack
+  return $ ServerConfig client_stack1 [] (App f funty arg) server_stack
 
 -- (E-Gen-C-C) and (E-Gen-C-S)
 clientValue fun_store evctx (GenApp loc f funty arg) client_stack server_stack = do
   if loc==clientLoc then
-    return $ ClientConfig (applyEvCxt evctx (App f funty arg)) client_stack server_stack
+    return $ ClientConfig evctx (App f funty arg) client_stack server_stack
   else if loc==serverLoc then
-    return $ ClientConfig (applyEvCxt evctx (ValExpr (Req f funty arg))) client_stack server_stack
+    return $ ClientConfig evctx (ValExpr (Req f funty arg)) client_stack server_stack
   else
     error $ "[clientValue] GenApp: Unexpected location : " ++ show loc
 
 -- (E-Do)
 clientValue fun_store evctx (BindM [Binding x ty b@(ValExpr (UnitM v))] expr) client_stack server_stack = do
   let subst = [(x,v)]
-  return $ ClientConfig (applyEvCxt evctx (doSubstExpr subst expr)) client_stack server_stack
+  return $ ClientConfig evctx (doSubstExpr subst expr) client_stack server_stack
 
 -- ( do x<-E[] in M )
 clientValue fun_store evctx (BindM [Binding x ty b@(_)] expr) client_stack server_stack = do
@@ -188,7 +192,7 @@ serverExpr fun_store client_stack evctx (ValExpr v) server_stack =
 -- (E-Let)
 serverExpr fun_store client_stack evctx (Let [Binding x ty b@(ValExpr v)] expr) server_stack = do
   let subst = [(x,v)]
-  return $ ServerConfig client_stack (applyEvCxt evctx (doSubstExpr subst expr)) server_stack
+  return $ ServerConfig client_stack evctx (doSubstExpr subst expr) server_stack
 
 -- (let x = Elet[] in M)
 serverExpr fun_store client_stack evctx (Let [Binding x ty b@(_)] expr) server_stack = do
@@ -197,22 +201,22 @@ serverExpr fun_store client_stack evctx (Let [Binding x ty b@(_)] expr) server_s
 -- (E-Proj-i) or (E-Tuple) or (E-if)
 serverExpr fun_store client_stack evctx (Case (Tuple vs) casety [TupleAlternative xs expr]) server_stack = do
   let subst = zip xs vs
-  return $ ServerConfig client_stack (applyEvCxt evctx (doSubstExpr subst expr)) server_stack
+  return $ ServerConfig client_stack evctx (doSubstExpr subst expr) server_stack
 
 -- (E-Proj-i) or (E-Data constructor) or (E-if)
 serverExpr fun_store client_stack evctx (Case (Constr cname locs tys vs argtys) casety alts) server_stack = do
   case [(dname,xs,expr) | Alternative dname xs expr <- alts, cname==dname] of
     ((_,xs,expr):_) -> do
       let subst = zip xs vs
-      return $ ServerConfig client_stack (applyEvCxt evctx (doSubstExpr subst expr)) server_stack
+      return $ ServerConfig client_stack evctx (doSubstExpr subst expr) server_stack
       
     [] -> error $ "[serverExpr] Case alternative not found: " ++ cname
 
 serverExpr fun_store evctx client_stack (Case (Lit (BoolLit b)) casety alts) server_stack = do
   let [Alternative b1 _ expr1,Alternative b2 _ expr2] = alts
   let text_b = show b
-  if text_b==b1 then return $ ServerConfig client_stack (applyEvCxt evctx expr1) server_stack
-  else if text_b==b2 then return $ ServerConfig client_stack (applyEvCxt evctx expr2) server_stack
+  if text_b==b1 then return $ ServerConfig client_stack evctx expr1 server_stack
+  else if text_b==b2 then return $ ServerConfig client_stack evctx expr2 server_stack
   else error $ "[cilentExpr] Case unexpected: " ++ show b ++ "? " ++ b1 ++ " " ++ b2
 
 -- (E-App)
@@ -224,7 +228,7 @@ serverExpr fun_store client_stack evctx (App clo@(Closure vs vstys codename recf
       let substLoc = zip locvars locs
       let substTy  = zip tyvars tys
       let substed_expr = doRec clo recf $ doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
-      return $ ServerConfig client_stack (applyEvCxt evctx substed_expr) server_stack
+      return $ ServerConfig client_stack evctx substed_expr server_stack
 
     [] -> error $ "[serverExpr] Server abs code not found: " ++ fname
 
@@ -237,7 +241,7 @@ serverExpr fun_store client_stack evctx (TypeApp clo@(Closure vs vstys codename 
       let substLoc = zip locvars locs
       let substTy  = zip tyvars tys  ++ [(a,argty)]
       let substed_expr = doRec clo recf $ doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
-      return $ ServerConfig client_stack (applyEvCxt evctx substed_expr) server_stack
+      return $ ServerConfig client_stack evctx substed_expr server_stack
 
     [] -> error $ "[serverExpr] Server tyabs code not found: " ++ fname ++ "\n"
                       ++ ", " ++ show [gname | (gname,_)<-_serverstore fun_store] ++ "\n"
@@ -252,13 +256,13 @@ serverExpr fun_store client_stack evctx (LocApp clo@(Closure vs vstys codename r
       let substLoc = zip locvars locs ++ [(l,argloc)]
       let substTy  = zip tyvars tys
       let substed_expr = doRec clo recf $ doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
-      return $ ServerConfig client_stack (applyEvCxt evctx substed_expr) server_stack
+      return $ ServerConfig client_stack evctx substed_expr server_stack
 
     [] -> error $ "[serverExpr] Server locabs code not found: " ++ fname
 
 serverExpr fun_store client_stack evctx (Prim primop vs) server_stack = do
   let v = calc primop vs
-  return $ ServerConfig client_stack (applyEvCxt evctx (ValExpr v)) server_stack
+  return $ ServerConfig client_stack evctx (ValExpr v) server_stack
       
 
 --
@@ -266,30 +270,30 @@ serverValue :: Monad m => FunctionStore -> Stack -> [EvalContext] -> Value -> St
 
 -- (E-Unit-S-E)
 serverValue fun_store [] [] (UnitM v) [] =
-  return $ ClientConfig (ValExpr (UnitM v)) [] []
+  return $ ClientConfig [] (ValExpr (UnitM v)) [] []
 
 -- (E-Unit-S)
 serverValue fun_store (top_evctx:client_stack) [] (UnitM v) server_stack =
-  return $ ClientConfig (top_evctx (ValExpr (UnitM v))) client_stack server_stack
+  return $ ClientConfig [] (top_evctx (ValExpr (UnitM v))) client_stack server_stack
 
 -- (E-Call)
 serverValue fun_store client_stack evctx (Call f funty arg) server_stack = do
   let server_stack1 = if null evctx then server_stack else (toFun evctx):server_stack
-  return $ ClientConfig (App f funty arg) client_stack server_stack1
+  return $ ClientConfig [] (App f funty arg) client_stack server_stack1
 
 -- (E-Gen-C-C) and (E-Gen-S-C)
 serverValue fun_store client_stack evctx (GenApp loc f funty arg) server_stack = do
   if loc==serverLoc then
-    return $ ServerConfig client_stack (applyEvCxt evctx (App f funty arg)) server_stack
+    return $ ServerConfig client_stack evctx (App f funty arg) server_stack
   else if loc==clientLoc then
-    return $ ServerConfig client_stack (applyEvCxt evctx (ValExpr (Call f funty arg))) server_stack
+    return $ ServerConfig client_stack evctx (ValExpr (Call f funty arg)) server_stack
   else
     error $ "[serverValue] GenApp: Unexpected location : " ++ show loc
 
 -- (E-Do)
 serverValue fun_store client_stack evctx (BindM [Binding x ty b@(ValExpr (UnitM v))] expr) server_stack = do
   let subst = [(x,v)]
-  return $ ServerConfig client_stack (applyEvCxt evctx (doSubstExpr subst expr)) server_stack
+  return $ ServerConfig client_stack evctx (doSubstExpr subst expr) server_stack
 
 -- ( do x<-E[] in M ) : b is one of BindM, Call, and GenApp.
 serverValue fun_store client_stack evctx (BindM [Binding x ty b@(_)] expr) server_stack = do
