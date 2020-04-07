@@ -16,14 +16,12 @@ import CSExpr hiding (Env(..))
 -- Configuration
 
 type EvalContext = Expr -> Expr
-type EvalContextValue = Value -> Expr
 
 type Stack = [EvalContext]
 
 data Config =
     ClientConfig [EvalContext] Expr Stack Stack   -- <M;Delta_c | Delta_s
   | ServerConfig Stack [EvalContext] Expr Stack   -- <Delta_c | M;Delta_s>
-  | Stop Value
 --  deriving (Show, Typeable, Data)  
 
 
@@ -37,17 +35,23 @@ execute gti funStore mainExpr = do
 run :: FunctionStore -> Config -> IO Value
 
 run funStore (ClientConfig [] (ValExpr (UnitM v)) [] []) = do
-  putStrLn $ "[DONE]: " ++ show (ValExpr (UnitM v)) ++ "\n"
+  putStrLn $ "[DONE]: [Client] " ++ show (ValExpr (UnitM v)) ++ "\n"
   return v
 
 run funStore (ClientConfig evctx expr client_stack server_stack) = do
-  putStrLn $ "[STEP] [Client] " ++ show expr ++ "\n" 
+  putStrLn $ "[STEP] [Client] " ++ show expr ++ "\n"
+  putStrLn $ "       EvCtx    " ++ showEvCxt evctx ++ "\n"
+  putStrLn $ "       c stk    " ++ showStack client_stack ++ "\n"
+  putStrLn $ "       s stk    " ++ showStack server_stack ++ "\n"
   config <- clientExpr funStore [] (applyEvCxt evctx expr) client_stack server_stack
   run funStore config
 
 run funStore (ServerConfig client_stack evctx expr server_stack) = do
   putStrLn $ "[STEP] [Server] " ++ show expr ++ "\n"
-  config <- serverExpr funStore [] client_stack (applyEvCxt evctx expr) server_stack
+  putStrLn $ "       EvCtx    " ++ showEvCxt evctx ++ "\n"
+  putStrLn $ "       c stk    " ++ showStack client_stack ++ "\n"
+  putStrLn $ "       s stk    " ++ showStack server_stack ++ "\n"
+  config <- serverExpr funStore client_stack [] (applyEvCxt evctx expr) server_stack
   run funStore config
 
 --
@@ -59,6 +63,10 @@ applyEvCxt (evcxt:evcxts) expr = applyEvCxt evcxts (evcxt expr)
 
 toFun [] = \x->x
 toFun (evcxt:evcxts) = toFun evcxts . evcxt
+
+showEvCxt cxt = show $ applyEvCxt cxt (ValExpr (Var "HOLE"))
+
+showStack stk = show $ map showEvCxt [[cxt] | cxt <- stk]
 
 -----------------------------------------------------------
 -- < EvCtx[ Value]; Client stack | Server stack> ==> Config
@@ -224,7 +232,7 @@ serverExpr fun_store client_stack evctx (App clo@(Closure vs vstys codename recf
   let CodeName fname locs tys = codename
   case [code | (gname,(codetyps,code))<-_serverstore fun_store, fname==gname] of
     ((Code locvars tyvars fvvars (CodeAbs [(x,_)] expr)):_) -> do
-      let subst    = zip fvvars vs ++ [(x,arg)]
+      let subst    = [(x,arg)] ++ zip fvvars vs
       let substLoc = zip locvars locs
       let substTy  = zip tyvars tys
       let substed_expr = doRec clo recf $ doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
@@ -239,7 +247,7 @@ serverExpr fun_store client_stack evctx (TypeApp clo@(Closure vs vstys codename 
     ((Code locvars tyvars fvvars (CodeTypeAbs [a] expr)):_) -> do
       let subst    = zip fvvars vs
       let substLoc = zip locvars locs
-      let substTy  = zip tyvars tys  ++ [(a,argty)]
+      let substTy  = [(a,argty)] ++ zip tyvars tys
       let substed_expr = doRec clo recf $ doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
       return $ ServerConfig client_stack evctx substed_expr server_stack
 
@@ -253,7 +261,7 @@ serverExpr fun_store client_stack evctx (LocApp clo@(Closure vs vstys codename r
   case [code | (gname, (codetype,code))<-_serverstore fun_store, fname==gname] of
     ((Code locvars tyvars fvvars (CodeLocAbs [l] expr)):_) -> do
       let subst    = zip fvvars vs
-      let substLoc = zip locvars locs ++ [(l,argloc)]
+      let substLoc = [(l,argloc)] ++ zip locvars locs
       let substTy  = zip tyvars tys
       let substed_expr = doRec clo recf $ doSubstExpr subst (doSubstTyExpr substTy (doSubstLocExpr substLoc expr))
       return $ ServerConfig client_stack evctx substed_expr server_stack
