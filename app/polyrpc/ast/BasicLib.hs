@@ -10,6 +10,20 @@ basicLib :: [(String, Type, Expr)]
 basicLib =
   [
 
+--   read : {l}. Unit -l-> String
+--         = {l}. \x:Unit @l. primRead [l] x
+     let l = "l"
+         x = "x"
+     in 
+     ( "read"
+     , LocAbsType [l]
+          (FunType unit_type (LocVar l) string_type)
+     , LocAbs [l]
+          (Abs [(x,unit_type,LocVar l)]
+               (Prim PrimReadOp [LocVar l] [] [Var x]))
+     ),
+
+    
 --   print : {l}. String -l->unit
 --         = {l}. \x:String @l. primPrint [l] x
 

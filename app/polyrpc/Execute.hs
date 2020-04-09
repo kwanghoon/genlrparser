@@ -102,7 +102,7 @@ showStack stk = show $ map showEvCxt [[cxt] | cxt <- stk]
 -- < EvCtx[ Value]; Client stack | Server stack> ==> Config
 -----------------------------------------------------------
 
-clientExpr :: Monad m => FunctionStore -> [EvalContext] -> Expr -> Stack -> Mem -> Stack -> Mem -> m Config
+clientExpr :: FunctionStore -> [EvalContext] -> Expr -> Stack -> Mem -> Stack -> Mem -> IO Config
 
 clientExpr fun_store evctx (ValExpr v) client_stack mem_c server_stack mem_s =
   clientValue fun_store evctx v client_stack mem_c server_stack mem_s
@@ -178,14 +178,14 @@ clientExpr fun_store evctx (LocApp clo@(Closure vs vstys codename recf) funty [a
     [] -> error $ "[clientExpr] Client locabs code not found: " ++ fname
 
 clientExpr fun_store evctx (Prim primop locs tys vs) client_stack mem_c server_stack mem_s = do
-  let (v, mem_c1) = calc primop locs tys vs mem_c
+  (v, mem_c1) <- calc primop locs tys vs mem_c
   return $ ClientConfig evctx (ValExpr v) client_stack mem_c1 server_stack mem_s
 
 clientExpr fun_store evctx expr client_stack mem_c server_stack mem_s = 
   error $ "[clientExpr] Unexpected: " ++ show expr ++ "\n" ++ show (applyEvCxt evctx expr) ++ "\n"
   
 --
-clientValue :: Monad m => FunctionStore -> [EvalContext] -> Value -> Stack -> Mem -> Stack -> Mem -> m Config
+clientValue :: FunctionStore -> [EvalContext] -> Value -> Stack -> Mem -> Stack -> Mem -> IO Config
 
 -- (E-Unit-C)
 clientValue fun_store [] (UnitM v) client_stack mem_c (top_evctx:server_stack) mem_s =
@@ -222,7 +222,7 @@ clientValue fun_store evctx v client_stack mem_c server_stack mem_s =
 -- < Client stack | EvCtx[ Value ]; Server stack> ==> Config
 ------------------------------------------------------------
 
-serverExpr :: Monad m => FunctionStore -> Stack -> Mem -> [EvalContext] -> Expr -> Stack -> Mem -> m Config
+serverExpr :: FunctionStore -> Stack -> Mem -> [EvalContext] -> Expr -> Stack -> Mem -> IO Config
 
 serverExpr fun_store client_stack mem_c evctx (ValExpr v) server_stack mem_s =
   serverValue fun_store client_stack mem_c evctx v server_stack mem_s
@@ -299,12 +299,12 @@ serverExpr fun_store client_stack mem_c evctx (LocApp clo@(Closure vs vstys code
     [] -> error $ "[serverExpr] Server locabs code not found: " ++ fname
 
 serverExpr fun_store client_stack mem_c evctx (Prim primop locs tys vs) server_stack mem_s = do
-  let (v, mem_s1) = calc primop locs tys vs mem_s
+  (v, mem_s1) <- calc primop locs tys vs mem_s
   return $ ServerConfig client_stack mem_c evctx (ValExpr v) server_stack mem_s1
       
 
 --
-serverValue :: Monad m => FunctionStore -> Stack -> Mem -> [EvalContext] -> Value -> Stack -> Mem -> m Config
+serverValue :: FunctionStore -> Stack -> Mem -> [EvalContext] -> Value -> Stack -> Mem -> IO Config
 
 -- (E-Unit-S-E)
 serverValue fun_store [] mem_c [] (UnitM v) [] mem_s =
@@ -346,34 +346,43 @@ serverValue fun_store client_stack mem_c evctx v server_stack mem_s = do
 -- Primitive operations
 -----------------------
 
-calc :: PrimOp -> [Location] -> [Type] -> [Value] -> Mem -> (Value, Mem)
+calc :: PrimOp -> [Location] -> [Type] -> [Value] -> Mem -> IO (Value, Mem)
 
 calc MkRecOp locs tys [Closure vs fvtys codename [], Lit (StrLit f)] mem =
-  (Closure vs fvtys codename [f], mem)
+  return (Closure vs fvtys codename [f], mem)
 
 
 calc PrimRefCreateOp [loc1] [ty] [v] mem =
-  let (addr, mem1) = allocMem v mem in (Addr addr, mem1)
+  let (addr, mem1) = allocMem v mem in return (Addr addr, mem1)
 
 calc PrimRefCreateOp locs tys vs mem =
   error $ "[PrimOp] PrimRefCreateOp: Unexpected: "
               ++ show locs ++ " " ++ show  tys ++ " " ++ show vs
 
-calc PrimRefReadOp [loc1] [ty] [Addr addr] mem = (readMem addr mem, mem)
+calc PrimRefReadOp [loc1] [ty] [Addr addr] mem = return (readMem addr mem, mem)
 
 calc PrimRefReadOp locs tys vs mem =
   error $ "[PrimOp] PrimRefReadOp: Unexpected: "
               ++ show locs ++ " " ++ show  tys ++ " " ++ show vs
 
 calc PrimRefWriteOp [loc1] [ty] [Addr addr,v] mem =
-  (Lit UnitLit, writeMem addr v mem)
+  return (Lit UnitLit, writeMem addr v mem)
 
 calc PrimRefWriteOp locs tys vs mem =
   error $ "[PrimOp] PrimRefWriteOp: Unexpected: "
               ++ show locs ++ " " ++ show  tys ++ " " ++ show vs
 
+calc PrimReadOp [loc] [] [Lit (UnitLit)] mem = do
+  line <- getLine
+  return (Lit (StrLit line), mem)
+
+calc PrimPrintOp [loc] [] [Lit (StrLit s)] mem = do
+  putStr s 
+  return (Lit UnitLit, mem)
+
+
 calc primop locs tys vs mem =
-  (Lit $ calc' primop locs tys (map (\ (Lit lit)-> lit) vs), mem)
+  return (Lit $ calc' primop locs tys (map (\ (Lit lit)-> lit) vs), mem)
   
 
 -- Primitives
@@ -408,8 +417,6 @@ calc' DivPrimOp [loc] [] [IntLit x, IntLit y] = IntLit (x `div` y)
 calc' NegPrimOp [loc] [] [IntLit x] = IntLit (-x)
 
 -- Libraries
-calc' PrimPrintOp [loc] [] [StrLit s] = UnitLit
-
 calc' PrimIntToStringOp [loc] [] [IntLit i] = StrLit (show i)
 
 calc' PrimConcatOp [loc] [] [StrLit s1, StrLit s2] = StrLit (s1++s2)

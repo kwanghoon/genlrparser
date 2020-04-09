@@ -21,6 +21,7 @@ data PrimOp =
   | NegPrimOp  --{l}. Int -l-> Int
 
   -- For basic libraries
+  | PrimReadOp
   | PrimPrintOp
   | PrimIntToStringOp
   | PrimConcatOp

@@ -394,7 +394,9 @@ parserSpec = ParserSpec
 
       ("Term -> integer", \rhs -> toASTExpr (Lit (IntLit (read (getText rhs 1)))) ),
 
-      ("Term -> string", \rhs -> toASTExpr (Lit (StrLit (getText rhs 1))) ),
+      ("Term -> string", \rhs ->
+          let str = read (getText rhs 1) :: String
+          in  toASTExpr (Lit (StrLit str)) ),
       
       ("Term -> boolean", \rhs -> toASTExpr (Lit (BoolLit (read (getText rhs 1)))) ),
 

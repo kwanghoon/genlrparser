@@ -173,6 +173,7 @@ primOpTypes =
   , (DivPrimOp, (["l"], [], [int_type, int_type], int_type))
   , (NegPrimOp, (["l"], [], [int_type], int_type))
 
+  , (PrimReadOp, (["l"], [], [unit_type], string_type))
   , (PrimPrintOp, (["l"], [], [string_type], unit_type))
   , (PrimIntToStringOp, (["l"], [], [int_type], string_type))
   , (PrimConcatOp, (["l"], [], [string_type,string_type], string_type))
