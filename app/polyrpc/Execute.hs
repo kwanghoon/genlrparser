@@ -47,33 +47,38 @@ data Config =
 
 
 --
-execute :: GlobalTypeInfo -> FunctionStore -> Expr -> IO Value
-execute gti funStore mainExpr = do
-  v <- run funStore (initConfig mainExpr)
+execute :: Bool -> GlobalTypeInfo -> FunctionStore -> Expr -> IO Value
+execute debug gti funStore mainExpr = do
+  v <- run debug funStore (initConfig mainExpr)
   return v
+
+assert b action = if b then action else return ()
 
 --
-run :: FunctionStore -> Config -> IO Value
+run :: Bool -> FunctionStore -> Config -> IO Value
 
-run funStore (ClientConfig [] (ValExpr (UnitM v)) [] mem_c [] mem_s) = do
-  putStrLn $ "[DONE]: [Client] " ++ show (ValExpr (UnitM v)) ++ "\n"
+run debug funStore (ClientConfig [] (ValExpr (UnitM v)) [] mem_c [] mem_s) = do
+  assert debug (putStrLn $ "[DONE]: [Client] " ++ show (ValExpr (UnitM v)) ++ "\n")
+  
   return v
 
-run funStore (ClientConfig evctx expr client_stack mem_c server_stack mem_s) = do
-  putStrLn $ "[STEP] [Client] " ++ show expr ++ "\n"
-  putStrLn $ "       EvCtx    " ++ showEvCxt evctx ++ "\n"
-  putStrLn $ "       c stk    " ++ showStack client_stack ++ "\n"
-  putStrLn $ "       s stk    " ++ showStack server_stack ++ "\n"
+run debug funStore (ClientConfig evctx expr client_stack mem_c server_stack mem_s) = do
+  assert debug (putStrLn $ "[STEP] [Client] " ++ show expr ++ "\n")
+  assert debug (putStrLn $ "       EvCtx    " ++ showEvCxt evctx ++ "\n")
+  assert debug (putStrLn $ "       c stk    " ++ showStack client_stack ++ "\n")
+  assert debug (putStrLn $ "       s stk    " ++ showStack server_stack ++ "\n")
+  
   config <- clientExpr funStore [] (applyEvCxt evctx expr) client_stack mem_c server_stack mem_s
-  run funStore config
+  run debug funStore config
 
-run funStore (ServerConfig client_stack mem_c evctx expr server_stack mem_s) = do
-  putStrLn $ "[STEP] [Server] " ++ show expr ++ "\n"
-  putStrLn $ "       EvCtx    " ++ showEvCxt evctx ++ "\n"
-  putStrLn $ "       c stk    " ++ showStack client_stack ++ "\n"
-  putStrLn $ "       s stk    " ++ showStack server_stack ++ "\n"
+run debug funStore (ServerConfig client_stack mem_c evctx expr server_stack mem_s) = do
+  assert debug (putStrLn $ "[STEP] [Server] " ++ show expr ++ "\n")
+  assert debug (putStrLn $ "       EvCtx    " ++ showEvCxt evctx ++ "\n")
+  assert debug (putStrLn $ "       c stk    " ++ showStack client_stack ++ "\n")
+  assert debug (putStrLn $ "       s stk    " ++ showStack server_stack ++ "\n")
+  
   config <- serverExpr funStore client_stack mem_c [] (applyEvCxt evctx expr) server_stack mem_s
-  run funStore config
+  run debug funStore config
 
 --
 initConfig main_expr = ClientConfig [] main_expr [] initMem [] initMem

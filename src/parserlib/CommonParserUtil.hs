@@ -115,7 +115,7 @@ parsing parserSpec terminalList = do
   -- 4. Run the automaton
   ast <- runAutomaton actionTbl gotoTbl prodRules pFunList terminalList
   
-  putStrLn "done."
+  -- putStrLn "done." -- It was for the interafce with Java-version RPC calculus interpreter.
   
   return ast
 

@@ -42,37 +42,42 @@ doProcess cmd file = do
 
   putStrLn "[Lexing]"
   terminalList <- lexing lexerSpec text
-  mapM_ (putStrLn) (map terminalToString terminalList)
+  verbose (_flag_debug_lex cmd) $ mapM_ (putStrLn) (map terminalToString terminalList)
+
 
   putStrLn "[Parsing]"
   exprSeqAst <- parsing parserSpec terminalList
-  putStrLn "Dumping..."
-  putStrLn $ show $ fromASTTopLevelDeclSeq exprSeqAst
+  
+  verbose (_flag_debug_parse cmd) $ putStrLn "Dumping..."
+  verbose (_flag_debug_parse cmd) $ putStrLn $ show $ fromASTTopLevelDeclSeq exprSeqAst
+  
   let toplevelDecls = fromASTTopLevelDeclSeq exprSeqAst
 
+  
   putStrLn "[Type checking]"
   (gti, elab_toplevelDecls) <- typeCheck toplevelDecls
-  putStrLn "Dumping..."
-  putStrLn $ show $ elab_toplevelDecls
+  verbose (_flag_debug_typecheck cmd) $ putStrLn "Dumping..."
+  verbose (_flag_debug_typecheck cmd) $ putStrLn $ show $ elab_toplevelDecls
 
   print_rpc cmd file elab_toplevelDecls
 
+
   putStrLn "[Compiling]"
   (t_gti, funStore, t_expr) <- compile gti elab_toplevelDecls
-  putStrLn "Dumping...\nGlobal type information:\n"
-  putStrLn $ (show t_gti ++ "\n\nFunction stores:")
-  putStrLn $ (show funStore ++ "\n\nMain expression:")
-  putStrLn $ (show t_expr ++ "\n")
+  verbose (_flag_debug_compile cmd) $ putStrLn "Dumping...\nGlobal type information:\n"
+  verbose (_flag_debug_compile cmd) $ putStrLn $ (show t_gti ++ "\n\nFunction stores:")
+  verbose (_flag_debug_compile cmd) $ putStrLn $ (show funStore ++ "\n\nMain expression:")
+  verbose (_flag_debug_compile cmd) $ putStrLn $ (show t_expr ++ "\n")
 
   print_cs cmd file funStore t_expr
 
   putStrLn "[Verifying generated codes]"
   verify t_gti funStore t_expr
-  putStrLn "[Well-typed]"
+  verbose (_flag_debug_verify cmd) $ putStrLn "[Well-typed]"
 
   putStrLn "[Executing codes]"
-  v <- execute t_gti funStore t_expr
-  putStrLn $ "[Result]\n" ++ show v
+  v <- execute (_flag_debug_run cmd) t_gti funStore t_expr
+  verbose (_flag_debug_run cmd) $ putStrLn $ "[Result]\n" ++ show v
 
   putStrLn "[Success]"
 
@@ -113,13 +118,27 @@ readline' = do
        return (ch:line)
 
 --
-data Cmd = Cmd { _flag_print_rpc_json :: Bool
-               , _flag_print_cs_json :: Bool
-               , _files :: [String] }
+data Cmd =
+  Cmd { _flag_print_rpc_json :: Bool
+      , _flag_print_cs_json :: Bool
+      , _flag_debug_lex :: Bool
+      , _flag_debug_parse :: Bool
+      , _flag_debug_typecheck :: Bool
+      , _flag_debug_compile :: Bool
+      , _flag_debug_verify :: Bool
+      , _flag_debug_run :: Bool
+      , _files :: [String]
+      }
 
 initCmd =
   Cmd { _flag_print_rpc_json = False
       , _flag_print_cs_json  = False
+      , _flag_debug_lex = False
+      , _flag_debug_parse = False
+      , _flag_debug_typecheck = False
+      , _flag_debug_compile = False
+      , _flag_debug_verify = False
+      , _flag_debug_run = False
       , _files = []
       }
 
@@ -131,16 +150,43 @@ collect cmd [] = return cmd
 collect cmd ("--output-json":args) = do
   let new_cmd = cmd { _flag_print_rpc_json = True }
   collect new_cmd args
+  
 collect cmd ("--output-rpc-json":args) = do  
   let new_cmd = cmd { _flag_print_rpc_json = True }
   collect new_cmd args
+  
 collect cmd ("--output-cs-json":args) = do  
   let new_cmd = cmd { _flag_print_cs_json = True }
   collect new_cmd args
+
+collect cmd ("--debug-lex":args) = do    
+  let new_cmd = cmd { _flag_debug_lex = True }
+  collect new_cmd args
+  
+collect cmd ("--debug-parse":args) = do    
+  let new_cmd = cmd { _flag_debug_parse = True }
+  collect new_cmd args
+  
+collect cmd ("--debug-typecheck":args) = do    
+  let new_cmd = cmd { _flag_debug_typecheck = True }
+  collect new_cmd args
+  
+collect cmd ("--debug-compile":args) = do    
+  let new_cmd = cmd { _flag_debug_compile = True }
+  collect new_cmd args
+  
+collect cmd ("--debug-verify":args) = do    
+  let new_cmd = cmd { _flag_debug_verify = True }
+  collect new_cmd args
+  
+collect cmd ("--debug-run":args) = do    
+  let new_cmd = cmd { _flag_debug_run = True }
+  collect new_cmd args
+  
 collect cmd (arg:args) = do
   let old_files = _files cmd 
   let new_cmd = cmd { _files = old_files ++ [arg] }
   collect new_cmd args
 
   
-
+verbose b action = if b then action else return ()
