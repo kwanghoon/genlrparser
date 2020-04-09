@@ -66,7 +66,9 @@ run debug funStore (ClientConfig evctx expr client_stack mem_c server_stack mem_
   assert debug (putStrLn $ "[STEP] [Client] " ++ show expr ++ "\n")
   assert debug (putStrLn $ "       EvCtx    " ++ showEvCxt evctx ++ "\n")
   assert debug (putStrLn $ "       c stk    " ++ showStack client_stack ++ "\n")
+  assert debug (putStrLn $ "         mem    " ++ show (Map.toList $ _map mem_c) ++ "\n")
   assert debug (putStrLn $ "       s stk    " ++ showStack server_stack ++ "\n")
+  assert debug (putStrLn $ "         mem    " ++ show (Map.toList $ _map mem_s) ++ "\n")
   
   config <- clientExpr funStore [] (applyEvCxt evctx expr) client_stack mem_c server_stack mem_s
   run debug funStore config
@@ -75,7 +77,9 @@ run debug funStore (ServerConfig client_stack mem_c evctx expr server_stack mem_
   assert debug (putStrLn $ "[STEP] [Server] " ++ show expr ++ "\n")
   assert debug (putStrLn $ "       EvCtx    " ++ showEvCxt evctx ++ "\n")
   assert debug (putStrLn $ "       c stk    " ++ showStack client_stack ++ "\n")
+  assert debug (putStrLn $ "         mem    " ++ show (Map.toList $ _map mem_c) ++ "\n")
   assert debug (putStrLn $ "       s stk    " ++ showStack server_stack ++ "\n")
+  assert debug (putStrLn $ "         mem    " ++ show (Map.toList $ _map mem_s) ++ "\n")
   
   config <- serverExpr funStore client_stack mem_c [] (applyEvCxt evctx expr) server_stack mem_s
   run debug funStore config

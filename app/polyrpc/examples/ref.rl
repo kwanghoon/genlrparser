@@ -1,9 +1,9 @@
 
-x : Ref {server} [String] = ref {server client} [String] "one two three" ;
+x : Ref {server} [String] = ref {server} [String] "one two three" ;
 
-y : Unit = x := {server client} [String] "four five six" ;
+y : Unit = x := {server} [String] "four five six" ;
 
-z : Unit = print {client} ( ! {server client} [String] x )
+z : Unit = print {client} ( ! {server} [String] x )
 
 
 
