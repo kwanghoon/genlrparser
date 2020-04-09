@@ -33,6 +33,8 @@ typeCheck toplevelDecls = do
   bindingTypeInfo <- bindingTypes partial_elab_bindingDecls
                           
   -- 6. elaborate bindings
+  let basicLibTypeInfo = [(x,ty) | (x,ty,expr)<-basicLib]
+  
   let gti = GlobalTypeInfo
               { _typeInfo=typeInfo
               , _conTypeInfo=conTypeInfo
@@ -40,17 +42,17 @@ typeCheck toplevelDecls = do
 -------------------------------              
 -- for fully recursive bindings
 -------------------------------
---              , _bindingTypeInfo=basicLib ++ bindingTypeInfo }
-              , _bindingTypeInfo=basicLib }
+--              , _bindingTypeInfo=basicLibTypeInfo ++ bindingTypeInfo }
+              , _bindingTypeInfo=basicLibTypeInfo }
             
   elab_bindingDecls <- elaborate gti partial_elab_bindingDecls
 
   -- 7. return elaborated data types and bindings
-  let elab_toplevels = [ LibDeclTopLevel x ty | (x,ty) <- basicLib]
+  let elab_toplevels = [ LibDeclTopLevel x ty | (x,ty) <- basicLibTypeInfo]
                        ++ [ DataTypeTopLevel dt | dt <- elab_datatypeDecls]
                        ++ [ BindingTopLevel bd | bd <- elab_bindingDecls]
 
-  let gti1 = gti {_bindingTypeInfo=basicLib ++ bindingTypeInfo}
+  let gti1 = gti {_bindingTypeInfo=basicLibTypeInfo ++ bindingTypeInfo}
         
   return (gti1, elab_toplevels)
 
@@ -437,14 +439,30 @@ elabExpr gti env loc (Tuple exprs) = do
   let (elab_exprs, tys) = unzip elabExprTyList
   return (Tuple elab_exprs, TupleType tys)
 
-elabExpr gti env loc (Prim op exprs) = do
+elabExpr gti env loc (Prim op op_locs@[] op_tys@[] exprs) =  -- A hack for the primitives with the current loc!
+  elabExpr gti env loc (Prim op [loc] op_tys exprs)
+
+elabExpr gti env loc (Prim op op_locs op_tys exprs) = do
+  elab_op_locs <- mapM (elabLocation (_locVarEnv env)) op_locs
+  elab_op_tys  <- mapM (elabType (_typeInfo gti) (_typeVarEnv env) (_locVarEnv env)) op_tys
   elabExprTyList <- mapM (elabExpr gti env loc) exprs
   let (elab_exprs, tys) = unzip elabExprTyList
   case lookupPrimOpType op of
-    ((_, _, argtys, retty):_) -> do  -- TODO: locvars, tyvars 
-      if length tys==length argtys && and (map (uncurry equalType) (zip argtys tys))
-      then return (Prim op elab_exprs, retty)
+    ((locvars, tyvars, argtys, retty):_) -> do
+      let substTy  = zip tyvars op_tys
+      let substLoc = zip locvars op_locs
+      let substed_argtys = map (doSubstLoc substLoc . doSubst substTy) argtys
+      
+      if length tys==length argtys
+         && and (map (uncurry equalType) (zip substed_argtys tys))
+         && length locvars==length op_locs
+         && length tyvars==length op_tys
+ 
+      then return (Prim op elab_op_locs elab_op_tys elab_exprs, retty)
+      
       else error $ "[TypeCheck] elabExpr: incorrect arg types in Prim op: "
+                     ++ show tys ++ " != " ++ show substed_argtys
+      
     [] -> error $ "[TypeCheck] elabExpr: type not found type in Prim op: "
 
 elabExpr gti env loc (Lit literal) = return (Lit literal, typeOfLiteral literal)

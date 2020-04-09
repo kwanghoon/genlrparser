@@ -19,10 +19,15 @@ import Control.Monad
 
 compile :: Monad m =>
   SE.GlobalTypeInfo -> [SE.TopLevelDecl] -> m (TE.GlobalTypeInfo, TE.FunctionStore, TE.Expr)
+  
 compile s_gti s_topleveldecls = do
-  let s_gti1 = s_gti {SE._bindingTypeInfo = basicLib}
+  let s_topleveldecls_with_basiclib =
+        [SE.BindingTopLevel (SE.Binding x ty expr) | (x,ty,expr) <- basicLib] ++ s_topleveldecls
+  let basicLibTypeInfo = [(x,ty) | (x,ty,expr)<-basicLib]
+
+  let s_gti1 = s_gti {SE._bindingTypeInfo = basicLibTypeInfo}
   (funStore, t_libs, t_bindingDecls, s_gti2) <-
-    compTopLevels s_gti1 TE.initFunctionStore s_topleveldecls
+    compTopLevels s_gti1 TE.initFunctionStore s_topleveldecls_with_basiclib
   t_gti <- compileGTI s_gti t_libs
   let main = TE.ValExpr (TE.UnitM (TE.Lit UnitLit))
   return (t_gti, funStore, TE.singleBindM $ TE.BindM t_bindingDecls main)
@@ -157,10 +162,13 @@ compBindingDecl s_gti env loc funStore (SE.Binding x ty expr) = do
   if recursion then
     do let (y, funStore2) = TE.newVar funStore1
        let (z, funStore3) = TE.newVar funStore2
-       return (funStore3, TE.Binding x target_ty
-                             (TE.ValExpr (TE.BindM [TE.Binding y target_ty target_expr]
-                                             (TE.Let [TE.Binding z target_ty (TE.Prim MkRecOp [TE.Var y, TE.Lit (StrLit x)])]
-                                                 (TE.ValExpr (TE.UnitM (TE.Var z)))))))
+       return (funStore3,
+               TE.Binding x target_ty
+                 (TE.ValExpr
+                  (TE.BindM [TE.Binding y target_ty target_expr]
+                    (TE.Let [TE.Binding z target_ty
+                              (TE.Prim MkRecOp [] [] [TE.Var y, TE.Lit (StrLit x)])]
+                            (TE.ValExpr (TE.UnitM (TE.Var z)))))))
   else
     return (funStore1, TE.Binding x target_ty target_expr)
 
@@ -334,11 +342,12 @@ compExpr s_gti env loc s_ty funStore (SE.LocApp expr (Just left_s_ty) locs) = do
 compExpr s_gti env loc s_ty funStore (SE.LocApp expr Nothing locs) =
    error $ "[compExpr] LocApp"
 
-compExpr s_gti env loc s_ty funStore (SE.Prim primop exprs) = do
+compExpr s_gti env loc s_ty funStore (SE.Prim primop op_locs op_tys exprs) = do
   let (y, funStore0) = TE.newVar funStore
   let (xs, funStore1) = TE.newVars (length exprs) funStore0
   case SE.lookupPrimOpType primop of
-    ((_, _, argtys, retty):_) -> do  -- TODO: locvars, tyvars 
+    ((locvars, tyvars, argtys, retty):_) -> do
+      target_op_tys <- mapM compValType op_tys
       (funStore2, h) <-
         foldM (\ (funStore0, f) -> \ (x, s_ty, expr) -> do
           (funStore1, target_expr) <- compExpr s_gti env loc s_ty funStore0 expr
@@ -347,7 +356,8 @@ compExpr s_gti env loc s_ty funStore (SE.Prim primop exprs) = do
           return (funStore1, g)) (funStore1, \x->x) (reverse (zip3 xs argtys exprs))
       target_retty <- compValType retty
       return (funStore2,
-               h (TE.Let [TE.Binding y target_retty (TE.Prim primop (map TE.Var xs))]
+               h (TE.Let [TE.Binding y target_retty
+                            (TE.Prim primop op_locs target_op_tys (map TE.Var xs))]
                          (TE.ValExpr (TE.UnitM (TE.Var y)))))
       
     [] -> error $ "[compExpr] Not found Prim " ++ show primop

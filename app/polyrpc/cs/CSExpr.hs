@@ -18,7 +18,7 @@ data Expr =
   | App Value Type Value
   | TypeApp Value Type [Type]
   | LocApp Value Type [Location]
-  | Prim PrimOp [Value]
+  | Prim PrimOp [Location] [Type] [Value]
   deriving (Show, Typeable, Data)
 
 data Value =
@@ -32,6 +32,9 @@ data Value =
   | Req Value Type Value
   | Call Value Type Value
   | GenApp Location Value Type Value
+
+  -- Runtime values
+  | Addr Integer  
   deriving (Show, Typeable, Data)
 
 data BindingDecl =
@@ -153,26 +156,53 @@ initFunctionStore = FunctionStore
    
 --
 --
-primOpTypes :: [(PrimOp, ([Type], Type))]
+primOpTypes :: [(PrimOp, ([String], [String], [Type], Type))] -- (locvars, tyvars, argtys, retty)
 primOpTypes =
-  [ (NotPrimOp, ([bool_type], bool_type))
-  , (OrPrimOp,  ([bool_type, bool_type], bool_type))
-  , (AndPrimOp, ([bool_type, bool_type], bool_type))
-  , (EqPrimOp,  ([bool_type, bool_type], bool_type))
-  , (NeqPrimOp, ([bool_type, bool_type], bool_type))
-  , (LtPrimOp,  ([int_type, int_type], bool_type))
-  , (LePrimOp,  ([int_type, int_type], bool_type))
-  , (GtPrimOp,  ([int_type, int_type], bool_type))
-  , (GePrimOp,  ([int_type, int_type], bool_type))
-  , (AddPrimOp, ([int_type, int_type], int_type))
-  , (SubPrimOp, ([int_type, int_type], int_type))
-  , (MulPrimOp, ([int_type, int_type], int_type))
-  , (DivPrimOp, ([int_type, int_type], int_type))
-  , (NegPrimOp, ([int_type], int_type))
+  [ (NotPrimOp, (["l"], [], [bool_type], bool_type))
+  , (OrPrimOp,  (["l"], [], [bool_type, bool_type], bool_type))
+  , (AndPrimOp, (["l"], [], [bool_type, bool_type], bool_type))
+  , (EqPrimOp,  (["l"], [], [bool_type, bool_type], bool_type))
+  , (NeqPrimOp, (["l"], [], [bool_type, bool_type], bool_type))
+  , (LtPrimOp,  (["l"], [], [int_type, int_type], bool_type))
+  , (LePrimOp,  (["l"], [], [int_type, int_type], bool_type))
+  , (GtPrimOp,  (["l"], [], [int_type, int_type], bool_type))
+  , (GePrimOp,  (["l"], [], [int_type, int_type], bool_type))
+  , (AddPrimOp, (["l"], [], [int_type, int_type], int_type))
+  , (SubPrimOp, (["l"], [], [int_type, int_type], int_type))
+  , (MulPrimOp, (["l"], [], [int_type, int_type], int_type))
+  , (DivPrimOp, (["l"], [], [int_type, int_type], int_type))
+  , (NegPrimOp, (["l"], [], [int_type], int_type))
+
+  , (PrimPrintOp, (["l"], [], [string_type], unit_type))
+  , (PrimIntToStringOp, (["l"], [], [int_type], string_type))
+  , (PrimConcatOp, (["l"], [], [string_type,string_type], string_type))
+
+  , (PrimRefCreateOp,
+      let l1 = "l1" in
+      let a  = "a"  in                 
+      let tyvar_a = TypeVarType a in
+      let locvar_l1 = LocVar l1 in
+        ([l1], [a], [tyvar_a], ConType refType [locvar_l1] [tyvar_a]))
+    
+  , (PrimRefReadOp,
+      let l1 = "l1" in
+      let a  = "a"  in
+      let tyvar_a = TypeVarType a in
+      let locvar_l1 = LocVar l1 in
+        ([l1], [a], [ConType refType [locvar_l1] [tyvar_a]], tyvar_a))
+    
+  , (PrimRefWriteOp,
+     let l1 = "l1" in
+     let a  = "a"  in
+     let tyvar_a = TypeVarType a in
+     let locvar_l1 = LocVar l1 in
+        ([l1], [a], [ConType refType [locvar_l1] [tyvar_a], tyvar_a], unit_type))
+
   ]
 
 lookupPrimOpType primop =
-  [ (tys,ty) | (primop1,(tys,ty)) <- primOpTypes, primop==primop1]
+  [ (locvars,tyvars,tys,ty)
+  | (primop1,(locvars, tyvars, tys,ty)) <- primOpTypes, primop==primop1]
 
 lookupConstr :: GlobalTypeInfo -> String -> [([Type], String, [String], [String])]
 lookupConstr gti x = [z | (con, z) <- _conTypeInfo gti, x==con]
@@ -196,7 +226,7 @@ fvExpr (Case val _ alts) = fvValue val `Set.union` Set.unions (map fvAlt alts)
 fvExpr (App left _ right) = fvValue left `Set.union` fvValue right
 fvExpr (TypeApp left _ _) = fvValue left
 fvExpr (LocApp left _ _) = fvValue left
-fvExpr (Prim primop vs) = Set.unions (map fvValue vs)
+fvExpr (Prim primop locs tys vs) = Set.unions (map fvValue vs)
 
 
 fvAlt :: Alternative -> Set.Set String

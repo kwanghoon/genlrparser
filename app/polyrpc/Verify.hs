@@ -215,17 +215,28 @@ verifyExpr gtigci loc env ty (LocApp left (CloType (LocAbsType locvars bodyty)) 
   assert (equalType substed_bodyty ty)
     ("[verifyExpr] Not equal type: " ++ show substed_bodyty ++ " != " ++ show ty)
 
-verifyExpr gtigci loc env ty (Prim MkRecOp vs) = do
+verifyExpr gtigci loc env ty (Prim MkRecOp locs tys vs) = do -- locs=[], tys=[]
   return ()
   
-verifyExpr gtigci loc env ty (Prim prim vs) = do
+verifyExpr gtigci loc env ty (Prim prim op_locs op_tys vs) = do
   case lookupPrimOpType prim of
     [] -> error $ "[verifyExpr] Not found prim: " ++ show prim
-    ((argtys,resty):_) -> do
+    ((locvars, tyvars, argtys,resty):_) -> do
+       let substTy  = zip tyvars op_tys
+       let substLoc = zip locvars op_locs
+       let substed_argtys = map (doSubstLoc substLoc . doSubst substTy) argtys
+
+       assert (length vs==length argtys
+               && length locvars==length op_locs
+               && length tyvars==length op_tys)
+              ("[verifyExpr] unexpected: "
+                 ++ show prim ++ " " ++ show op_locs ++ " " ++ show op_tys ++ " " ++  show vs
+                 ++ "\n   " ++ show locvars ++ " " ++ show tyvars)
+
        mapM_ (\ (argty, v) -> verifyValue gtigci loc env argty v) (zip argtys vs)
        assert (equalType ty resty)  --   (1) ty == resty
-         ("[verifyExpr] Not equal types: " ++ show ty ++ " != " ++ show resty)
-
+          ("[verifyExpr] Not equal types: " ++ show ty ++ " != " ++ show resty)
+       
 verifyExpr gtigci loc env ty expr = 
   error $ "[verifyExpr]: not well-typed: " ++ show expr ++ " : " ++ show ty
 

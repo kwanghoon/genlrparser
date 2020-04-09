@@ -337,54 +337,54 @@ parserSpec = ParserSpec
 
       {- Expression operations -}
       ("LogicOr -> LogicOr or LogicAnd",
-        \rhs -> toASTExpr (Prim OrPrimOp [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
+        \rhs -> toASTExpr (Prim OrPrimOp [] [] [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
 
       ("LogicOr -> LogicAnd", \rhs -> get rhs 1),
 
       ("LogicAnd -> LogicAnd and CompEqNeq",
-        \rhs -> toASTExpr (Prim AndPrimOp [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
+        \rhs -> toASTExpr (Prim AndPrimOp [] [] [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
 
       ("LogicAnd -> CompEqNeq", \rhs -> get rhs 1),
 
       ("CompEqNeq -> CompEqNeq == Comp",
-        \rhs -> toASTExpr (Prim EqPrimOp [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
+        \rhs -> toASTExpr (Prim EqPrimOp [] [] [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
 
       ("CompEqNeq -> CompEqNeq != Comp",
-        \rhs -> toASTExpr (Prim NeqPrimOp [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
+        \rhs -> toASTExpr (Prim NeqPrimOp [] [] [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
 
       ("CompEqNeq -> Comp", \rhs -> get rhs 1 ),
 
       ("Comp -> Comp < ArithAddSub",
-        \rhs -> toASTExpr (Prim LtPrimOp [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
+        \rhs -> toASTExpr (Prim LtPrimOp [] [] [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
 
       ("Comp -> Comp <= ArithAddSub",
-        \rhs -> toASTExpr (Prim LePrimOp [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
+        \rhs -> toASTExpr (Prim LePrimOp [] [] [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
 
       ("Comp -> Comp > ArithAddSub",
-        \rhs -> toASTExpr (Prim GtPrimOp [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
+        \rhs -> toASTExpr (Prim GtPrimOp [] [] [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
 
       ("Comp -> Comp >= ArithAddSub",
-        \rhs -> toASTExpr (Prim GePrimOp [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
+        \rhs -> toASTExpr (Prim GePrimOp [] [] [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
 
       ("Comp -> ArithAddSub", \rhs -> get rhs 1 ),
 
       ("ArithAddSub -> ArithAddSub + ArithMulDiv",
-        \rhs -> toASTExpr (Prim AddPrimOp [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
+        \rhs -> toASTExpr (Prim AddPrimOp [] [] [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
 
       ("ArithAddSub -> ArithAddSub - ArithMulDiv",
-        \rhs -> toASTExpr (Prim SubPrimOp [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
+        \rhs -> toASTExpr (Prim SubPrimOp [] [] [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
 
       ("ArithAddSub -> ArithMulDiv", \rhs -> get rhs 1 ),
 
       ("ArithMulDiv -> ArithMulDiv * ArithUnary",
-        \rhs -> toASTExpr (Prim MulPrimOp [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
+        \rhs -> toASTExpr (Prim MulPrimOp [] [] [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
 
       ("ArithMulDiv -> ArithMulDiv / ArithUnary",
-        \rhs -> toASTExpr (Prim DivPrimOp [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
+        \rhs -> toASTExpr (Prim DivPrimOp [] [] [fromASTExpr (get rhs 1), fromASTExpr (get rhs 3)]) ),
 
       ("ArithMulDiv -> ArithUnary", \rhs -> get rhs 1 ),
 
-      ("ArithUnary -> - Term", \rhs -> toASTExpr (Prim NegPrimOp [fromASTExpr (get rhs 2)]) ),
+      ("ArithUnary -> - Term", \rhs -> toASTExpr (Prim NegPrimOp [] [] [fromASTExpr (get rhs 2)]) ),
 
       ("ArithUnary -> Term", \rhs -> get rhs 1 ),
 
