@@ -53,8 +53,11 @@ addA
       (arr_par_fun {client server client client client} [Int Int Int] f g)
       (arr_plus {client})
 
+;
 
-
-
-
+main : Unit
+  = print {client}
+      (intToString {client} 
+         (addA (\x : Int @ client . x+1) (\x : Int @ server . x-1) 10))
+	 
 
