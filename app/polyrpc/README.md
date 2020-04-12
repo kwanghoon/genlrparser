@@ -164,11 +164,11 @@ main : Stream {client} [Int] = serverToclient server_stream1
 
 - Create a server reference to "one two three" from the client, update it with "four five six", and then read the referenced string. 
 ~~~~
-x : Ref {server} [String] = ref {server} [String] "one two three" ;
+addr : Ref {server} [String] = ref {server} [String] "one two three" ;
 
-y : Unit = x := {server} [String] "four five six" ;
+unit1 : Unit = addr := {server} [String] "four five six" ;
 
-z : Unit = print {client} ( ! {server} [String] x )
+unit2 : Unit = print {client} ( ! {server} [String] addr )
 ~~~~
 
 
