@@ -226,11 +226,11 @@ elabType typeInfo tyvars locvars (FunType ty1 (LocVar _) ty2) =
   error $ "[TypeCheck] elabType: FunType: LocVar"
 
 elabType typeInfo tyvars locvars (TypeAbsType abs_tyvars ty) = do
-  elab_ty <- elabType typeInfo (tyvars ++ abs_tyvars) locvars ty
+  elab_ty <- elabType typeInfo (abs_tyvars ++ tyvars) locvars ty
   return (TypeAbsType abs_tyvars elab_ty)
 
 elabType typeInfo tyvars locvars (LocAbsType abs_locvars ty) = do
-  elab_ty <- elabType typeInfo tyvars (locvars ++ abs_locvars) ty
+  elab_ty <- elabType typeInfo tyvars (abs_locvars ++ locvars) ty
   return (LocAbsType abs_locvars elab_ty)
 
 elabType typeInfo tyvars locvars (ConType name locs tys) = do

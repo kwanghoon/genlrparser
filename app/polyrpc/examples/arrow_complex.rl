@@ -13,20 +13,20 @@ arr_fun
 
 // f >>> g
 arr_seq_fun
-  : {l1 l2 l3}. [a b c]. ( (a -l1-> b) -l3-> (b -l2-> c) -l3-> a -l3-> c )
-  = {l1 l2 l3}. [a b c].
+  : {l1 l2 l3 l4 l5}. [a b c]. ( (a -l1-> b) -l3-> (b -l2-> c) -l4-> a -l5-> c )
+  = {l1 l2 l3 l4 l5}. [a b c].
       \f : a -l1->b @ l3
-       g : b -l2->c @ l3
-       x : a @ l3 .        g (f x)
+       g : b -l2->c @ l4 
+       x : a @ l5 .        g (f x)
 ;
 
 // f &&& g
 arr_par_fun 
-  : {l1 l2 l3}. [a b c]. ( (a -l1-> b) -l3-> (a -l2-> c) -l3-> a -l3-> (b,c) )
-  = {l1 l2 l3}. [a b c].
+  : {l1 l2 l3 l4 l5}. [a b c]. ( (a -l1-> b) -l3-> (a -l2-> c) -l4-> a -l5-> (b,c) )
+  = {l1 l2 l3 l4 l5}. [a b c].
       \f : a -l1->b @ l3
-       g : a -l2->c @ l3
-       x : a @ l3 . (f x, g x)
+       g : a -l2->c @ l4 
+       x : a @ l5 . (f x, g x)
 ;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -49,8 +49,8 @@ addA
   : (Int -client-> Int) -client-> (Int -server-> Int) -client-> Int -client-> Int
   = \f : Int -client-> Int @ client 
      g : Int -server-> Int @ client  .
-     arr_seq_fun {client client client} [Int (Int,Int) Int]
-      (arr_par_fun {client server client} [Int Int Int] f g)
+     arr_seq_fun {client client client client client} [Int (Int,Int) Int]
+      (arr_par_fun {client server client client client} [Int Int Int] f g)
       (arr_plus {client})
 
 ;
