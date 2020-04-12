@@ -1,9 +1,9 @@
 ## PolyRPC: A programming language for developing client-server unified programs
 
-Main features
-- Locative functions, such as Int -client->String, Int -server->String, {l}. Int -l->String
-- Locative datatypes, such as Streams {client} [Int] or Streams {server} [Int]
-- Locative reference types, Ref {client} [String] or Ref {server} [String]
+### Main features
+- Locative function types
+- Locative datatypes
+- Locative reference types
 
 ### (1) How to setup and run helloworld.rl
 
@@ -20,4 +20,43 @@ Main features
   $
 ~~~~
 
-### (2) 
+### (2) Examples for the main features
+
+- A client identity function 
+~~~~
+f : Int -client-> Int
+  = \x : Int @ client . x
+~~~~
+
+- A polymorphic identity function 
+~~~~
+id : {l}. [a]. (a -l-> a)
+   = {l}. [a].
+     \x : a @ l. x
+~~~~
+
+- A server identity function 
+~~~~
+g : Int-server-> Int
+  = id {server}
+~~~~
+
+
+- A client factorial function
+~~~~
+fac : Int -client-> Int
+    = \n : Int @ client .
+        if n <= 0 then 0
+	else n * (fac (n-1))
+
+;
+
+main : Int = fac 3
+~~~~
+
+- A polymorphic identity function 
+~~~~
+id : {l}. [a]. (a -l-> a)
+   = {l}. [a].
+     \x : a @ l. x
+~~~~
