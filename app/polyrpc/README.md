@@ -38,7 +38,7 @@ id : {l}. [a]. (a -l-> a)
 - A server identity function 
 ~~~~
 g : Int-server-> Int
-  = id {server}
+  = id {server} [Int]
 ~~~~
 
 
@@ -54,9 +54,22 @@ fac : Int -client-> Int
 main : Int = fac 3
 ~~~~
 
-- A polymorphic identity function 
+- A polymorphic map function: An example of running a server map function 
+with the application of a client function to elements of a list
 ~~~~
-id : {l}. [a]. (a -l-> a)
-   = {l}. [a].
-     \x : a @ l. x
+
+data List = [a]. Nil | Cons a (List [a])  ;
+
+map : {l1 l2}. [a b]. ((a -l1-> b) -l2-> List [a] -l2-> List [b])
+    = {l1 l2}. [a b].
+      \f:a -l1->b @l2 xs:List [a] @l2 .
+        case xs {
+	 Nil => Nil [b];
+         Cons y ys => Cons [b] (f y) (map {l1 l2} [a b] f ys)
+	};
+	
+	
+main : List [Int] 
+     = map {client server} [Int Int]
+         (\x:Int @client . x + 5) (Cons [Int] 1 (Cons [Int] 2 (Cons [Int] 3 (Nil [Int]))))
 ~~~~
