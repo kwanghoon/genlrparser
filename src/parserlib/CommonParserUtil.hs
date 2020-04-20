@@ -187,21 +187,21 @@ currentState _                    = error "No state found in the stack top"
 tokenTextFromTerminal :: TokenInterface token => Terminal token -> String
 tokenTextFromTerminal (Terminal _ _ _ token) = fromToken token
 
-lookupActionTable :: TokenInterface token => ActionTable -> Int -> (Terminal token) -> Action
+lookupActionTable :: TokenInterface token => ActionTable -> Int -> (Terminal token) -> Maybe Action
 lookupActionTable actionTbl state terminal =
   lookupTable actionTbl (state,tokenTextFromTerminal terminal)
      ("Not found in the action table: " ++ terminalToString terminal) 
 
-lookupGotoTable :: GotoTable -> Int -> String -> Int
+lookupGotoTable :: GotoTable -> Int -> String -> Maybe Int
 lookupGotoTable gotoTbl state nonterminalStr =
   lookupTable gotoTbl (state,nonterminalStr)
      ("Not found in the goto table: ")
 
-lookupTable :: (Eq a, Show a) => [(a,b)] -> a -> String -> b
+lookupTable :: (Eq a, Show a) => [(a,b)] -> a -> String -> Maybe b
 lookupTable tbl key msg =   
   case [ val | (key', val) <- tbl, key==key' ] of
-    [] -> error $ msg ++ " : " ++ show key
-    (h:_) -> h
+    [] -> Nothing -- error $ msg ++ " : " ++ show key
+    (h:_) -> Just h
 
 
 -- Note: take 1th, 3rd, 5th, ... of 2*len elements from stack and reverse it!
@@ -230,7 +230,10 @@ runAutomaton actionTbl gotoTbl prodRules pFunList terminalList = do
       let state = currentState stack
       let terminal = head terminalList
       let text  = tokenTextFromTerminal terminal
-      let action = lookupActionTable actionTbl state terminal
+      let action =
+           case lookupActionTable actionTbl state terminal of
+             Just action -> action
+             Nothing -> error $ ("Not found in the action table: " ++ terminalToString terminal) ++ " : " ++ show (state, tokenTextFromTerminal terminal) ++ "\n" ++ prStack stack ++ "\n"
       
       debug ("\nState " ++ show state)
       debug ("Token " ++ text)
@@ -265,7 +268,11 @@ runAutomaton actionTbl gotoTbl prodRules pFunList terminalList = do
           let ast = builderFun rhsAst
           let stack1 = drop (rhsLength*2) stack
           let topState = currentState stack1
-          let toState = lookupGotoTable gotoTbl topState lhs
+          let toState =
+               case lookupGotoTable gotoTbl topState lhs of
+                 Just state -> state
+                 Nothing -> error $ ("Not found in the goto table: ") ++ " : " ++ show (topState,lhs) ++ "\n" ++ prStack stack ++ "\n"
+  
           let stack2 = push (StkNonterminal ast lhs) stack1
           let stack3 = push (StkState toState) stack2
           run terminalList stack3
