@@ -1,0 +1,12 @@
+CFG "Start'" [
+ ProductionRule "Start'" [Nonterminal "Start"],
+ ProductionRule "Start" [Nonterminal "Exp"],
+ ProductionRule "Exp" [Nonterminal "AppExp"],
+ ProductionRule "Exp" [Terminal "fn", Terminal "identifier", Terminal "=>", Nonterminal "Exp"],
+ ProductionRule "AppExp" [Nonterminal "AtExp"],
+ ProductionRule "AppExp" [Nonterminal "AppExp", Nonterminal "AtExp"],
+ ProductionRule "AtExp" [Terminal "identifier"],
+ ProductionRule "AtExp" [Terminal "(", Nonterminal "Exp", Terminal ")"],
+ ProductionRule "AtExp" [Terminal "let", Nonterminal "Dec", Terminal "in", Nonterminal "Exp", Terminal "end"],
+ ProductionRule "Dec" [Terminal "val", Terminal "identifier", Terminal "=", Nonterminal "Exp"]
+]

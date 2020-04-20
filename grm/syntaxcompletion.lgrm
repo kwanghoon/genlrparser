@@ -1,0 +1,24 @@
+; The example grammar in PEPM2020 paper.
+;  $ stack exec conv-exe grm/polyrpc.lgrm
+
+@start Start
+
+Start
+  = Exp
+
+Exp
+  = AppExp
+  | fn identifier => Exp
+
+AppExp
+  = AtExp
+  | AppExp AtExp
+
+AtExp
+  = identifier
+  | ( Exp )
+  | let Dec in Exp end
+
+Dec
+  = val identifier = Exp
+
