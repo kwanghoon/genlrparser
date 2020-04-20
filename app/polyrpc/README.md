@@ -1,7 +1,7 @@
 ## PolyRPC: A multi-tier programming language for client-server model
 
 ### Main features
-- Locative function 
+- Locative functions
 - Locative datatypes
 - Locative references
 
