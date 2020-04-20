@@ -1,4 +1,4 @@
-## PolyRPC: A programming language for developing client-server unified programs
+## PolyRPC: A multi-tier programming language for client-server model
 
 ### Main features
 - Locative function 
