@@ -73,11 +73,13 @@ executable parser-exe
 executable syncomp-exe
   hs-source-dirs:      app/syntaxcompletion
   main-is:             Main.hs
-  other-modules:       Token, Lexer, Parser
+  other-modules:       Token, Lexer, Parser, EmacsServer
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -O2
   build-depends:       base
                      , regex-tdfa
                      , genlrparser
+                     , network >= 3.1.1.1
+                     , bytestring
   default-language:    Haskell2010
 
 test-suite genlrparser-test

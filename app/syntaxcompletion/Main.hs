@@ -5,14 +5,23 @@ import CommonParserUtil
 import Lexer
 import Terminal
 import Parser
-
+import EmacsServer
 import System.IO
 
 main :: IO ()
 main = do
-  text <- readline "Enter text to parse: "
-  doProcess text
+  emacsServer computeCand
+  
+  -- text <- readline "Enter text to parse: "
+  -- doProcess text
 
+--
+computeCand :: String -> Int -> IO [String]
+computeCand str cursorPos = do 
+  return ["test"]
+
+
+-- The normal parser
 doProcess text = do
   putStrLn "Lexing..."
   terminalList <- lexing lexerSpec text
