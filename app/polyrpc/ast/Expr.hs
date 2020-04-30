@@ -201,6 +201,9 @@ data AST =
   | ASTLit { fromASTLit :: Literal }
 
   | ASTTriple { fromASTTriple :: ([String], [String], [TypeConDecl]) }
+
+instance Show AST where
+  showsPrec p _ = (++) "AST ..."
   
 toASTExprSeq exprs = ASTExprSeq exprs
 toASTExpr expr     = ASTExpr expr

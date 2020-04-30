@@ -2,11 +2,15 @@ module Main where
 
 import CommonParserUtil
 
+import Token
 import Lexer
 import Terminal
 import Parser
 import EmacsServer
 import System.IO
+
+import Data.Typeable
+import Control.Exception
 
 main :: IO ()
 main = do
@@ -17,8 +21,12 @@ main = do
 
 --
 computeCand :: String -> Int -> IO [String]
-computeCand str cursorPos = do 
-  return ["test"]
+computeCand str cursorPos = (do
+  terminalList <- lexing lexerSpec str 
+  ast <- parsing parserSpec terminalList 
+  return ["successfully parsed"])
+  `catch` \e -> case e :: LexError of _ -> return ["lex error"]
+  `catch` \e -> case e :: ParseError Token AST of _ -> return ["candidates"]
 
 
 -- The normal parser

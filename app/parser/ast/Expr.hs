@@ -4,6 +4,9 @@ data AST =
     ASTSeq  { fromAstSeq  :: [Expr] } -- Expr Sequence: Expr1; ... ; Exprn
   | ASTExpr { fromAstExpr :: Expr   }
 
+instance Show AST where
+  showsPrec p _ = (++) "AST ..."
+
 toAstSeq :: [Expr] -> AST
 toAstSeq exprs = ASTSeq exprs
 

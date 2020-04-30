@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 module CommonParserUtil where
 
 import Terminal
@@ -7,6 +8,9 @@ import Text.Regex.TDFA
 import System.Exit
 import System.Process
 import Control.Monad
+
+import Data.Typeable
+import Control.Exception
 
 import SaveProdRules
 import AutomatonType
@@ -48,6 +52,20 @@ data Spec token ast =
 type Line = Int
 type Column = Int
 
+--
+data LexError = LexError Int Int String  -- Line, Col, Text
+  deriving (Typeable, Show)
+
+instance Exception LexError
+
+prLexError (LexError line col text) = do
+  putStr $ "No matching lexer spec at "
+  putStr $ "Line " ++ show line
+  putStr $ "Column " ++ show col
+  putStr $ " : "
+  putStr $ take 10 text
+
+--
 lexing :: TokenInterface token =>
           LexerSpec token -> String -> IO [Terminal token]
 lexing lexerspec text = lexing_ lexerspec 1 1 text
@@ -73,12 +91,13 @@ matchLexSpec :: TokenInterface token =>
                 Line -> Column -> LexerSpecList token -> String
              -> IO (String, String, Maybe token)
 matchLexSpec line col [] text = do
-  putStr $ "No matching lexer spec at "
-  putStr $ "Line " ++ show line
-  putStr $ "Column " ++ show col
-  putStr $ " : "
-  putStr $ take 10 text
-  exitWith (ExitFailure (-1))
+  throw (LexError line col text)
+  -- putStr $ "No matching lexer spec at "
+  -- putStr $ "Line " ++ show line
+  -- putStr $ "Column " ++ show col
+  -- putStr $ " : "
+  -- putStr $ take 10 text
+  -- exitWith (ExitFailure (-1))
 
 matchLexSpec line col ((aSpec,tokenBuilder):lexerspec) text = do
   let (pre, matched, post) = text =~ aSpec :: (String,String,String)
@@ -97,7 +116,43 @@ moveLineCol line col (ch:text)   = moveLineCol line (col+1) text
 --------------------------------------------------------------------------------
 
 --
-parsing :: TokenInterface token =>
+data ParseError token ast where
+    -- teminal, state, stack actiontbl, gototbl
+    NotFoundAction :: (TokenInterface token, Typeable token, Typeable ast, Show token, Show ast) =>
+      (Terminal token) -> Int -> (Stack token ast) -> ActionTable -> GotoTable -> ParseError token ast
+    
+    -- topState, lhs, stack, actiontbl, gototbl,
+    NotFoundGoto :: (TokenInterface token, Typeable token, Typeable ast, Show token, Show ast) =>
+       Int -> String -> (Stack token ast) -> ActionTable -> GotoTable -> ParseError token ast
+
+  deriving (Typeable)
+
+instance (Show token, Show ast) => Show (ParseError token ast) where
+  showsPrec p (NotFoundAction terminal state stack _ _) =
+    (++) "NotFoundAction" . (++) (terminalToString terminal) . (++) (show state) -- . (++) (show stack)
+  showsPrec p (NotFoundGoto topstate lhs stack _ _) =
+    (++) "NotFoundGoto" . (++) (show topstate) . (++) lhs -- . (++) (show stack)
+
+instance (TokenInterface token, Typeable token, Show token, Typeable ast, Show ast)
+  => Exception (ParseError token ast)
+
+prParseError (NotFoundAction terminal state stack actiontbl gototbl) = do
+  putStrLn $
+    ("Not found in the action table: "
+     ++ terminalToString terminal)
+     ++ " : "
+     ++ show (state, tokenTextFromTerminal terminal)
+     ++ "\n" ++ prStack stack ++ "\n"
+     
+prParseError (NotFoundGoto topState lhs stack actiontbl gototbl) = do
+  putStrLn $
+    ("Not found in the goto table: ")
+     ++ " : "
+     ++ show (topState,lhs) ++ "\n"
+     ++ prStack stack ++ "\n"
+
+--
+parsing :: (TokenInterface token, Typeable token, Typeable ast, Show token, Show ast) =>
            ParserSpec token ast -> [Terminal token] -> IO ast
 parsing parserSpec terminalList = do
   -- 1. Save the production rules in the parser spec (Parser.hs).
@@ -213,7 +268,7 @@ revTakeRhs n (_:nt:stack) = revTakeRhs (n-1) stack ++ [nt]
 
 -- Automaton
 
-runAutomaton :: TokenInterface token =>
+runAutomaton :: (TokenInterface token, Typeable token, Typeable ast, Show token, Show ast) =>
   {- static part -}
   ActionTable -> GotoTable -> ProdRules -> [ParseFun token ast] -> 
   {- dynamic part -}
@@ -233,7 +288,12 @@ runAutomaton actionTbl gotoTbl prodRules pFunList terminalList = do
       let action =
            case lookupActionTable actionTbl state terminal of
              Just action -> action
-             Nothing -> error $ ("Not found in the action table: " ++ terminalToString terminal) ++ " : " ++ show (state, tokenTextFromTerminal terminal) ++ "\n" ++ prStack stack ++ "\n"
+             Nothing -> throw (NotFoundAction terminal state stack actionTbl gotoTbl)
+                        -- error $ ("Not found in the action table: "
+                        --          ++ terminalToString terminal)
+                        --          ++ " : "
+                        --          ++ show (state, tokenTextFromTerminal terminal)
+                        --          ++ "\n" ++ prStack stack ++ "\n"
       
       debug ("\nState " ++ show state)
       debug ("Token " ++ text)
@@ -271,7 +331,11 @@ runAutomaton actionTbl gotoTbl prodRules pFunList terminalList = do
           let toState =
                case lookupGotoTable gotoTbl topState lhs of
                  Just state -> state
-                 Nothing -> error $ ("Not found in the goto table: ") ++ " : " ++ show (topState,lhs) ++ "\n" ++ prStack stack ++ "\n"
+                 Nothing -> throw (NotFoundGoto topState lhs stack actionTbl gotoTbl)
+                            -- error $ ("Not found in the goto table: ")
+                            --         ++ " : "
+                            --         ++ show (topState,lhs) ++ "\n"
+                            --         ++ prStack stack ++ "\n"
   
           let stack2 = push (StkNonterminal ast lhs) stack1
           let stack3 = push (StkState toState) stack2
