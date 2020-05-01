@@ -348,8 +348,8 @@ debug msg = if flag then putStrLn msg else return ()
 
 --
 data Candidate =
-    TerminalCandidate String
-  | NonterminalCandidate String
+    TerminalSymbol String
+  | NonterminalSymbol String
   deriving Show
 
 compCandidates :: [Candidate] -> Int -> ActionTable -> GotoTable -> IO [[Candidate]]
@@ -358,12 +358,13 @@ compCandidates symbols state actTbl gotoTbl = do
   case [prnum | ((s,lookahead),Reduce prnum) <- actTbl, state==s] of
     [] -> do listOfList1 <-
                mapM
-                 (\(terminal,snext)-> compCandidates (symbols++[TerminalCandidate terminal]) snext actTbl gotoTbl)
-                 [(terminal,snext) | ((s,terminal),Shift snext) <- actTbl, state==s]
+                 (\(nonterminal,snext)-> compCandidates (symbols++[NonterminalSymbol nonterminal]) snext actTbl gotoTbl)
+                 [(nonterminal,snext) | ((s,nonterminal),snext) <- gotoTbl, state==s]
              listOfList2 <-
                mapM
-                 (\(nonterminal,snext)-> compCandidates (symbols++[NonterminalCandidate  nonterminal]) snext actTbl gotoTbl)
-                 [(nonterminal,snext) | ((s,nonterminal),snext) <- gotoTbl, state==s]
-             return $ concat listOfList1 ++ concat listOfList2
-    _  -> return [symbols]
+                 (\(terminal,snext)-> compCandidates (symbols++[TerminalSymbol  terminal]) snext actTbl gotoTbl)
+                 [(terminal,snext) | ((s,terminal),Shift snext) <- actTbl, state==s]
+             return $ if null listOfList1 then concat listOfList2 else concat listOfList1
+    _  -> do putStrLn $ "CANDIDATE: " ++ show [symbols]
+             return [symbols]
 
