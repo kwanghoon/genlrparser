@@ -21,12 +21,20 @@ main = do
 
 --
 computeCand :: String -> Int -> IO [String]
-computeCand str cursorPos = (do
+computeCand str cursorPos = ((do
   terminalList <- lexing lexerSpec str 
   ast <- parsing parserSpec terminalList 
   return ["successfully parsed"])
-  `catch` \e -> case e :: LexError of _ -> return ["lex error"]
-  `catch` \e -> case e :: ParseError Token AST of _ -> return ["candidates"]
+  `catch` \e -> case e :: LexError of _ -> return ["lex error"])
+  `catch` \e -> case e :: ParseError Token AST of
+                  NotFoundAction _ state _ actTbl gotoTbl -> do
+                    candidates <- compCandidates [] state actTbl gotoTbl -- return ["candidates"]
+                    putStrLn (show candidates)
+                    return (map show candidates)
+                  NotFoundGoto state _ _ actTbl gotoTbl -> do
+                    candidates <- compCandidates [] state actTbl gotoTbl
+                    putStrLn (show candidates)
+                    return (map show candidates)
 
 
 -- The normal parser

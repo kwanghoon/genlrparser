@@ -345,3 +345,25 @@ flag = False
 
 debug :: String -> IO ()
 debug msg = if flag then putStrLn msg else return ()
+
+--
+data Candidate =
+    TerminalCandidate String
+  | NonterminalCandidate String
+  deriving Show
+
+compCandidates :: [Candidate] -> Int -> ActionTable -> GotoTable -> IO [[Candidate]]
+compCandidates symbols state actTbl gotoTbl = do
+  putStrLn (show symbols)
+  case [prnum | ((s,lookahead),Reduce prnum) <- actTbl, state==s] of
+    [] -> do listOfList1 <-
+               mapM
+                 (\(terminal,snext)-> compCandidates (symbols++[TerminalCandidate terminal]) snext actTbl gotoTbl)
+                 [(terminal,snext) | ((s,terminal),Shift snext) <- actTbl, state==s]
+             listOfList2 <-
+               mapM
+                 (\(nonterminal,snext)-> compCandidates (symbols++[NonterminalCandidate  nonterminal]) snext actTbl gotoTbl)
+                 [(nonterminal,snext) | ((s,nonterminal),snext) <- gotoTbl, state==s]
+             return $ concat listOfList1 ++ concat listOfList2
+    _  -> return [symbols]
+
