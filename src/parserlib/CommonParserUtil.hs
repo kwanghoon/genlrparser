@@ -355,17 +355,33 @@ data Candidate =
 compCandidates :: [Candidate] -> Int -> ActionTable -> GotoTable -> IO [[Candidate]]
 compCandidates symbols state actTbl gotoTbl = do
   putStrLn (show symbols)
-  case [prnum | ((s,lookahead),Reduce prnum) <- actTbl, state==s] of
+  case [(lookahead,prnum) | ((s,lookahead),Reduce prnum) <- actTbl, state==s] of
     [] -> do let cand1 = [(nonterminal,snext) | ((s,nonterminal),snext) <- gotoTbl, state==s]
              let cand2 = [(terminal,snext) | ((s,terminal),Shift snext) <- actTbl, state==s]
              if null cand1
-               then do listOfList <-
-                          mapM (\(terminal,snext)-> compCandidates (symbols++[TerminalSymbol terminal]) snext actTbl gotoTbl) cand2
-                       return $ concat listOfList
-               else do listOfList <-
-                          mapM (\(nonterminal,snext)-> compCandidates (symbols++[NonterminalSymbol nonterminal]) snext actTbl gotoTbl) cand1
-                       return $ concat listOfList
+               then
+                 do listOfList <-
+                      mapM (\(terminal,snext)-> do
+                        putStrLn $ "state " ++ show state ++
+                                   ": shift to " ++ show snext ++
+                                   " on " ++ terminal
+                        compCandidates
+                          (symbols++[TerminalSymbol terminal]) snext actTbl gotoTbl) cand2
+                    return $ concat listOfList
+               else
+                 do listOfList <-
+                      mapM (\(nonterminal,snext)-> do
+                        putStrLn $ "state " ++ show state ++
+                                   ": go to " ++ show snext ++
+                                   " on " ++ nonterminal
+   
+                        compCandidates
+                          (symbols++[NonterminalSymbol nonterminal]) snext actTbl gotoTbl) cand1
+                    return $ concat listOfList
 
-    _  -> do putStrLn $ "CANDIDATE: " ++ show [symbols]
+    l  -> do putStrLn $ "state " ++ show state ++
+                        ": found reduce prodrule #" ++ show (snd (head l)) ++
+                        " on " ++ fst (head l)
+             putStrLn $ "CANDIDATE: " ++ show [symbols]
              return [symbols]
 
