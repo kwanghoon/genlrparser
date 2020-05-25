@@ -27,12 +27,12 @@ computeCand str cursorPos = ((do
   return ["successfully parsed"])
   `catch` \e -> case e :: LexError of _ -> return ["lex error"])
   `catch` \e -> case e :: ParseError Token AST of
-                  NotFoundAction _ state _ actTbl gotoTbl -> do
-                    candidates <- compCandidates [] state actTbl gotoTbl -- return ["candidates"]
+                  NotFoundAction _ state stk actTbl gotoTbl prodRules pFunList -> do
+                    candidates <- compCandidates [] state actTbl gotoTbl prodRules pFunList stk -- return ["candidates"]
                     putStrLn (show candidates)
                     return (map show candidates)
-                  NotFoundGoto state _ _ actTbl gotoTbl -> do
-                    candidates <- compCandidates [] state actTbl gotoTbl
+                  NotFoundGoto state _ stk actTbl gotoTbl prodRules pFunList -> do
+                    candidates <- compCandidates [] state actTbl gotoTbl prodRules pFunList stk
                     putStrLn (show candidates)
                     return (map show candidates)
 

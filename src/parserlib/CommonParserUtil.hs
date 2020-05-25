@@ -119,24 +119,24 @@ moveLineCol line col (ch:text)   = moveLineCol line (col+1) text
 data ParseError token ast where
     -- teminal, state, stack actiontbl, gototbl
     NotFoundAction :: (TokenInterface token, Typeable token, Typeable ast, Show token, Show ast) =>
-      (Terminal token) -> Int -> (Stack token ast) -> ActionTable -> GotoTable -> ParseError token ast
+      (Terminal token) -> Int -> (Stack token ast) -> ActionTable -> GotoTable -> ProdRules -> ParseFunList token ast -> ParseError token ast
     
     -- topState, lhs, stack, actiontbl, gototbl,
     NotFoundGoto :: (TokenInterface token, Typeable token, Typeable ast, Show token, Show ast) =>
-       Int -> String -> (Stack token ast) -> ActionTable -> GotoTable -> ParseError token ast
+       Int -> String -> (Stack token ast) -> ActionTable -> GotoTable -> ProdRules -> ParseFunList token ast -> ParseError token ast
 
   deriving (Typeable)
 
 instance (Show token, Show ast) => Show (ParseError token ast) where
-  showsPrec p (NotFoundAction terminal state stack _ _) =
+  showsPrec p (NotFoundAction terminal state stack _ _ _ _) =
     (++) "NotFoundAction" . (++) (terminalToString terminal) . (++) (show state) -- . (++) (show stack)
-  showsPrec p (NotFoundGoto topstate lhs stack _ _) =
+  showsPrec p (NotFoundGoto topstate lhs stack _ _ _ _) =
     (++) "NotFoundGoto" . (++) (show topstate) . (++) lhs -- . (++) (show stack)
 
 instance (TokenInterface token, Typeable token, Show token, Typeable ast, Show ast)
   => Exception (ParseError token ast)
 
-prParseError (NotFoundAction terminal state stack actiontbl gototbl) = do
+prParseError (NotFoundAction terminal state stack actiontbl gototbl prodRules pFunList) = do
   putStrLn $
     ("Not found in the action table: "
      ++ terminalToString terminal)
@@ -144,7 +144,7 @@ prParseError (NotFoundAction terminal state stack actiontbl gototbl) = do
      ++ show (state, tokenTextFromTerminal terminal)
      ++ "\n" ++ prStack stack ++ "\n"
      
-prParseError (NotFoundGoto topState lhs stack actiontbl gototbl) = do
+prParseError (NotFoundGoto topState lhs stack actiontbl gototbl prodRules pFunList) = do
   putStrLn $
     ("Not found in the goto table: ")
      ++ " : "
@@ -268,15 +268,19 @@ revTakeRhs n (_:nt:stack) = revTakeRhs (n-1) stack ++ [nt]
 
 -- Automaton
 
+initState = 0
+
+type ParseFunList token ast = [ParseFun token ast]
+
 runAutomaton :: (TokenInterface token, Typeable token, Typeable ast, Show token, Show ast) =>
   {- static part -}
-  ActionTable -> GotoTable -> ProdRules -> [ParseFun token ast] -> 
+  ActionTable -> GotoTable -> ProdRules -> ParseFunList token ast -> 
   {- dynamic part -}
   [Terminal token] ->
   {- AST -}
   IO ast
 runAutomaton actionTbl gotoTbl prodRules pFunList terminalList = do
-  let initStack = push (StkState 0) emptyStack
+  let initStack = push (StkState initState) emptyStack
   run terminalList initStack
   
   where
@@ -288,7 +292,7 @@ runAutomaton actionTbl gotoTbl prodRules pFunList terminalList = do
       let action =
            case lookupActionTable actionTbl state terminal of
              Just action -> action
-             Nothing -> throw (NotFoundAction terminal state stack actionTbl gotoTbl)
+             Nothing -> throw (NotFoundAction terminal state stack actionTbl gotoTbl prodRules pFunList)
                         -- error $ ("Not found in the action table: "
                         --          ++ terminalToString terminal)
                         --          ++ " : "
@@ -331,7 +335,7 @@ runAutomaton actionTbl gotoTbl prodRules pFunList terminalList = do
           let toState =
                case lookupGotoTable gotoTbl topState lhs of
                  Just state -> state
-                 Nothing -> throw (NotFoundGoto topState lhs stack actionTbl gotoTbl)
+                 Nothing -> throw (NotFoundGoto topState lhs stack actionTbl gotoTbl prodRules pFunList)
                             -- error $ ("Not found in the goto table: ")
                             --         ++ " : "
                             --         ++ show (topState,lhs) ++ "\n"
@@ -352,20 +356,49 @@ data Candidate =
   | NonterminalSymbol String
   deriving Show
 
-compCandidates :: [Candidate] -> Int -> ActionTable -> GotoTable -> IO [[Candidate]]
-compCandidates symbols state actTbl gotoTbl = do
+compCandidates :: (TokenInterface token, Typeable token, Typeable ast, Show token, Show ast) =>
+  [Candidate] -> Int -> ActionTable -> GotoTable -> ProdRules -> ParseFunList token ast -> Stack token ast -> IO [[Candidate]]
+  
+compCandidates symbols state actTbl gotoTbl prodRules pFunList stk = do
   putStrLn (show symbols)
-  case [prnum | ((s,lookahead),Reduce prnum) <- actTbl, state==s] of
-    [] -> do let cand1 = [(nonterminal,snext) | ((s,nonterminal),snext) <- gotoTbl, state==s]
-             let cand2 = [(terminal,snext) | ((s,terminal),Shift snext) <- actTbl, state==s]
-             if null cand1
-               then do listOfList <-
-                          mapM (\(terminal,snext)-> compCandidates (symbols++[TerminalSymbol terminal]) snext actTbl gotoTbl) cand2
-                       return $ concat listOfList
-               else do listOfList <-
-                          mapM (\(nonterminal,snext)-> compCandidates (symbols++[NonterminalSymbol nonterminal]) snext actTbl gotoTbl) cand1
-                       return $ concat listOfList
+  if length [True | ((s,lookahead),Accept) <- actTbl, state==s] >= 1
+    then do
+      putStrLn $ "CANDIDATE: " ++ show [symbols]
+      return [symbols] -- symbols == [')',')',')']
+       
+    else do
+      case [prnum | ((s,lookahead),Reduce prnum) <- actTbl, state==s] of
+       [] -> do
+         let cand2 = [(terminal,snext) | ((s,terminal),Shift snext) <- actTbl, state==s]
+         listOfList <-
+           mapM (\(terminal,snext)->
+             let stk1 = push (StkTerminal (Terminal terminal 0 0 (toToken terminal))) stk in
+             let stk2 = push (StkState snext) stk1 in
+                    compCandidates (symbols++[TerminalSymbol terminal]) snext actTbl gotoTbl prodRules pFunList stk2) cand2 
+         return $ concat listOfList
 
-    _  -> do putStrLn $ "CANDIDATE: " ++ show [symbols]
-             return [symbols]
-
+       prnumList -> do
+         listOfList <-
+              mapM (compCandidatesForReduce symbols state actTbl gotoTbl prodRules pFunList stk) prnumList
+         return $ concat listOfList
+         
+compCandidatesForReduce symbols state actTbl gotoTbl prodRules pFunList stk prnum = do
+  putStrLn $ "State: " ++ show state
+  putStrLn $ "Production rule " ++ show prnum
+  
+  let prodrule = prodRules !! prnum
+  let builderFun = pFunList !! prnum
+  let lhs = fst prodrule
+  let rhsLength = length (snd prodrule)
+  let rhsAst = revTakeRhs rhsLength stk
+  let ast = builderFun rhsAst
+  let stk1 = drop (rhsLength*2) stk
+  let topState = currentState stk1
+  let toState =
+       case lookupGotoTable gotoTbl topState lhs of
+         Just state -> state
+         Nothing -> error $ "[compCandidatesForReduce] Must not happen: lhs: " ++ lhs ++ " state: " ++ show topState
+  let stk2 = push (StkNonterminal ast lhs) stk1
+  let stk3 = push (StkState toState) stk2
+  putStrLn $ "toState: " ++ show toState
+  compCandidates symbols toState actTbl gotoTbl prodRules pFunList stk3
