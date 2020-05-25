@@ -19,7 +19,8 @@ main = do
   -- text <- readline "Enter text to parse: "
   -- doProcess text
 
---
+-- Computing candidates for syntax completion
+
 computeCand :: String -> Int -> IO [String]
 computeCand str cursorPos = ((do
   terminalList <- lexing lexerSpec str 
