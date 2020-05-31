@@ -16,6 +16,8 @@ import SaveProdRules
 import AutomatonType
 import LoadAutomaton
 
+import Data.List (nub)
+
 -- Lexer Specification
 type RegExpStr    = String
 type LexFun token = String -> Maybe token 
@@ -363,28 +365,33 @@ compCandidates symbols state actTbl gotoTbl prodRules pFunList stk = do
   putStrLn (show symbols)
   if length [True | ((s,lookahead),Accept) <- actTbl, state==s] >= 1
     then do
-      putStrLn $ "CANDIDATE: " ++ show [symbols]
+      putStrLn $ "CANDIDATE: " ++ show [symbols] ++ "\n"
       return [symbols] -- symbols == [')',')',')']
        
     else do
-      case [prnum | ((s,lookahead),Reduce prnum) <- actTbl, state==s] of
+      case nub [prnum | ((s,lookahead),Reduce prnum) <- actTbl, state==s] of
        [] -> do
-         let cand2 = [(terminal,snext) | ((s,terminal),Shift snext) <- actTbl, state==s]
+         let cand2 = nub [(terminal,snext) | ((s,terminal),Shift snext) <- actTbl, state==s]
          listOfList <-
            mapM (\(terminal,snext)->
              let stk1 = push (StkTerminal (Terminal terminal 0 0 (toToken terminal))) stk in
-             let stk2 = push (StkState snext) stk1 in
-                    compCandidates (symbols++[TerminalSymbol terminal]) snext actTbl gotoTbl prodRules pFunList stk2) cand2 
+             let stk2 = push (StkState snext) stk1 in do
+                 putStrLn $ "shift: " ++ show state ++ " " ++ terminal ++ " " ++ show snext
+                 compCandidates (symbols++[TerminalSymbol terminal]) snext actTbl gotoTbl prodRules pFunList stk2) cand2 
          return $ concat listOfList
 
        prnumList -> do
+         putStrLn $ "CANDIDATE: " ++ show [symbols] ++ "\n"
          listOfList <-
-              mapM (compCandidatesForReduce symbols state actTbl gotoTbl prodRules pFunList stk) prnumList
-         return $ concat listOfList
+              mapM (\prnum -> do
+                       putStrLn $ "reduce: " ++ show state ++ " " ++ "lookahead" ++ " prod #" ++ show prnum
+                       compCandidatesForReduce symbols state actTbl gotoTbl prodRules pFunList stk prnum) prnumList
+         return $ [symbols] ++ concat listOfList
          
 compCandidatesForReduce symbols state actTbl gotoTbl prodRules pFunList stk prnum = do
   putStrLn $ "State: " ++ show state
   putStrLn $ "Production rule " ++ show prnum
+  putStrLn $ show (prodRules !! prnum)
   
   let prodrule = prodRules !! prnum
   let builderFun = pFunList !! prnum
@@ -400,5 +407,5 @@ compCandidatesForReduce symbols state actTbl gotoTbl prodRules pFunList stk prnu
          Nothing -> error $ "[compCandidatesForReduce] Must not happen: lhs: " ++ lhs ++ " state: " ++ show topState
   let stk2 = push (StkNonterminal ast lhs) stk1
   let stk3 = push (StkState toState) stk2
-  putStrLn $ "toState: " ++ show toState
+  putStrLn $ "goto: " ++ show topState ++ " " ++ lhs ++ " " ++ show toState
   compCandidates symbols toState actTbl gotoTbl prodRules pFunList stk3
