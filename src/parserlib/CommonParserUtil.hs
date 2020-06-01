@@ -365,34 +365,40 @@ compCandidates symbols state actTbl gotoTbl prodRules pFunList stk = do
   putStrLn (show symbols)
   if length [True | ((s,lookahead),Accept) <- actTbl, state==s] >= 1
     then do
-      putStrLn $ "CANDIDATE: " ++ show [symbols] ++ "\n"
-      return [symbols] -- symbols == [')',')',')']
+      putStrLn $ "DONE: " ++ show [symbols] ++ "\n"
+      return [] -- symbols == [')',')',')']
        
     else do
       case nub [prnum | ((s,lookahead),Reduce prnum) <- actTbl, state==s] of
        [] -> do
-         let cand2 = nub [(terminal,snext) | ((s,terminal),Shift snext) <- actTbl, state==s]
-         listOfList <-
-           mapM (\(terminal,snext)->
-             let stk1 = push (StkTerminal (Terminal terminal 0 0 (toToken terminal))) stk in
-             let stk2 = push (StkState snext) stk1 in do
-                 putStrLn $ "shift: " ++ show state ++ " " ++ terminal ++ " " ++ show snext
-                 compCandidates (symbols++[TerminalSymbol terminal]) snext actTbl gotoTbl prodRules pFunList stk2) cand2 
-         return $ concat listOfList
+         case [(nonterminal,toState) | ((fromState,nonterminal),toState) <- gotoTbl, state==fromState] of
+           [] -> do
+             let cand2 = [(terminal,snext) | ((s,terminal),Shift snext) <- actTbl, state==s]
+             listOfList <-
+                mapM (\(terminal,snext)->
+                  let stk1 = push (StkTerminal (Terminal terminal 0 0 (toToken terminal))) stk in
+                  let stk2 = push (StkState snext) stk1 in do
+                        putStrLn $ "shift: " ++ show state ++ " " ++ terminal ++ " " ++ show snext
+                        compCandidates (symbols++[TerminalSymbol terminal]) snext actTbl gotoTbl prodRules pFunList stk2) cand2 
+             return $ concat listOfList
+           nontermStateList -> do
+             listOfList <-
+               mapM (\(nonterminal,snext) ->
+                  let stk1 = push (StkState snext) stk in   --- This is just for matching with the arity of rhs of production rules to reduce later!!
+                  let stk2 = push (StkState snext) stk1 in 
+                  compCandidates (symbols++[NonterminalSymbol nonterminal]) snext actTbl gotoTbl prodRules pFunList stk2) nontermStateList
+             return $ concat listOfList
 
        prnumList -> do
          putStrLn $ "CANDIDATE: " ++ show [symbols] ++ "\n"
          listOfList <-
               mapM (\prnum -> do
                        putStrLn $ "reduce: " ++ show state ++ " " ++ "lookahead" ++ " prod #" ++ show prnum
+                       putStrLn $ show (prodRules !! prnum)
                        compCandidatesForReduce symbols state actTbl gotoTbl prodRules pFunList stk prnum) prnumList
          return $ [symbols] ++ concat listOfList
          
 compCandidatesForReduce symbols state actTbl gotoTbl prodRules pFunList stk prnum = do
-  putStrLn $ "State: " ++ show state
-  putStrLn $ "Production rule " ++ show prnum
-  putStrLn $ show (prodRules !! prnum)
-  
   let prodrule = prodRules !! prnum
   let builderFun = pFunList !! prnum
   let lhs = fst prodrule
