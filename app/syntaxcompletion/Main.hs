@@ -11,6 +11,7 @@ import System.IO
 
 import Data.Typeable
 import Control.Exception
+import Data.List (nub)
 
 main :: IO ()
 main = do
@@ -25,18 +26,28 @@ computeCand :: String -> Int -> IO [String]
 computeCand str cursorPos = ((do
   terminalList <- lexing lexerSpec str 
   ast <- parsing parserSpec terminalList 
-  return ["successfully parsed"])
-  `catch` \e -> case e :: LexError of _ -> return ["lex error"])
+  return ["SuccessfullyParsed"])
+  `catch` \e -> case e :: LexError of _ -> return ["Lexerror"])
   `catch` \e -> case e :: ParseError Token AST of
                   NotFoundAction _ state stk actTbl gotoTbl prodRules pFunList -> do
                     candidates <- compCandidates [] state actTbl gotoTbl prodRules pFunList stk -- return ["candidates"]
-                    putStrLn (show candidates)
-                    return (map show candidates)
+                    let cands = candidates
+                    let strs = nub [ concatStrList strList | strList <- map (map showSymbol) cands ]
+                    -- mapM_ putStr strs
+                    return strs
                   NotFoundGoto state _ stk actTbl gotoTbl prodRules pFunList -> do
                     candidates <- compCandidates [] state actTbl gotoTbl prodRules pFunList stk
-                    putStrLn (show candidates)
-                    return (map show candidates)
+                    let cands = candidates
+                    let strs = nub [ concatStrList strList | strList <- map (map showSymbol) cands ]
+                    -- mapM_ putStr strs
+                    return strs
 
+showSymbol (TerminalSymbol s) = s
+showSymbol (NonterminalSymbol _) = "..."
+
+concatStrList [] = error "The empty candidate?"
+concatStrList [str] = str
+concatStrList (str:strs) = str ++ " " ++ concatStrList strs
 
 -- The normal parser
 doProcess text = do

@@ -356,16 +356,16 @@ debug msg = if flag then putStrLn msg else return ()
 data Candidate =
     TerminalSymbol String
   | NonterminalSymbol String
-  deriving Show
+  deriving (Show,Eq)
 
 compCandidates :: (TokenInterface token, Typeable token, Typeable ast, Show token, Show ast) =>
   [Candidate] -> Int -> ActionTable -> GotoTable -> ProdRules -> ParseFunList token ast -> Stack token ast -> IO [[Candidate]]
   
 compCandidates symbols state actTbl gotoTbl prodRules pFunList stk = do
-  putStrLn (show symbols)
+  debug (show symbols)
   if length [True | ((s,lookahead),Accept) <- actTbl, state==s] >= 1
     then do
-      putStrLn $ "DONE: " ++ show [symbols] ++ "\n"
+      debug $ "DONE: " ++ show [symbols] ++ "\n"
       return [] -- symbols == [')',')',')']
        
     else do
@@ -378,7 +378,7 @@ compCandidates symbols state actTbl gotoTbl prodRules pFunList stk = do
                 mapM (\(terminal,snext)->
                   let stk1 = push (StkTerminal (Terminal terminal 0 0 (toToken terminal))) stk in
                   let stk2 = push (StkState snext) stk1 in do
-                        putStrLn $ "shift: " ++ show state ++ " " ++ terminal ++ " " ++ show snext
+                        debug $ "shift: " ++ show state ++ " " ++ terminal ++ " " ++ show snext
                         compCandidates (symbols++[TerminalSymbol terminal]) snext actTbl gotoTbl prodRules pFunList stk2) cand2 
              return $ concat listOfList
            nontermStateList -> do
@@ -390,11 +390,11 @@ compCandidates symbols state actTbl gotoTbl prodRules pFunList stk = do
              return $ concat listOfList
 
        prnumList -> do
-         putStrLn $ "CANDIDATE: " ++ show [symbols] ++ "\n"
+         debug $ "CANDIDATE: " ++ show [symbols] ++ "\n"
          listOfList <-
               mapM (\prnum -> do
-                       putStrLn $ "reduce: " ++ show state ++ " " ++ "lookahead" ++ " prod #" ++ show prnum
-                       putStrLn $ show (prodRules !! prnum)
+                       debug $ "reduce: " ++ show state ++ " " ++ "lookahead" ++ " prod #" ++ show prnum
+                       debug $ show (prodRules !! prnum)
                        compCandidatesForReduce symbols state actTbl gotoTbl prodRules pFunList stk prnum) prnumList
          return $ [symbols] ++ concat listOfList
          
@@ -404,14 +404,15 @@ compCandidatesForReduce symbols state actTbl gotoTbl prodRules pFunList stk prnu
   let lhs = fst prodrule
   let rhsLength = length (snd prodrule)
   let rhsAst = revTakeRhs rhsLength stk
-  let ast = builderFun rhsAst
+  -- let ast = builderFun rhsAst
   let stk1 = drop (rhsLength*2) stk
   let topState = currentState stk1
   let toState =
        case lookupGotoTable gotoTbl topState lhs of
          Just state -> state
          Nothing -> error $ "[compCandidatesForReduce] Must not happen: lhs: " ++ lhs ++ " state: " ++ show topState
-  let stk2 = push (StkNonterminal ast lhs) stk1
+  -- let stk2 = push (StkNonterminal ast lhs) stk1
+  let stk2 = push (StkState toState) stk1  -- This is just for matching with the arity of rhs production rules to reduce later!!
   let stk3 = push (StkState toState) stk2
-  putStrLn $ "goto: " ++ show topState ++ " " ++ lhs ++ " " ++ show toState
+  debug $ "goto: " ++ show topState ++ " " ++ lhs ++ " " ++ show toState
   compCandidates symbols toState actTbl gotoTbl prodRules pFunList stk3
