@@ -28,6 +28,7 @@ acceptLoop computeCand sock = forever $ do
     print candidateList
     (conn, _) <- accept sock
     sendCandidateList conn candidateList
+    close conn
 
 str2int :: String -> Int
 str2int str = read str :: Int
@@ -46,14 +47,13 @@ getSource conn = do
       aaa <- getSource conn
       return ((unpack str) ++ aaa)
 
--- computeCand :: String -> Int -> IO [String]
--- computeCand str cursorPos = do 
---     return ["test"]
-
 sendCandidateList :: Socket -> [String] -> IO ()
-sendCandidateList conn [] = close conn
-sendCandidateList conn (x:xs) = do
-    _ <- send conn (pack ("\n" ++ x))
-    print x
-    sendCandidateList conn xs
-
+sendCandidateList conn xs = do
+    let
+      f [] = ""
+      f (x:xs) = "\n" ++ x ++ f xs
+    let
+      s = f xs
+    do
+      _ <- send conn (pack s)
+      print s
