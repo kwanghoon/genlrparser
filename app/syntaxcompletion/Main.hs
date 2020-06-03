@@ -45,7 +45,7 @@ computeCand str cursorPos = ((do
 showSymbol (TerminalSymbol s) = s
 showSymbol (NonterminalSymbol _) = "..."
 
-concatStrList [] = error "The empty candidate?"
+concatStrList [] = "" -- error "The empty candidate?"
 concatStrList [str] = str
 concatStrList (str:strs) = str ++ " " ++ concatStrList strs
 
