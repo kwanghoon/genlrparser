@@ -396,7 +396,8 @@ compCandidates symbols state actTbl gotoTbl prodRules pFunList stk = do
                        debug $ "reduce: " ++ show state ++ " " ++ "lookahead" ++ " prod #" ++ show prnum
                        debug $ show (prodRules !! prnum)
                        compCandidatesForReduce symbols state actTbl gotoTbl prodRules pFunList stk prnum) prnumList
-         return $ [symbols] ++ concat listOfList
+         let aCandidate = if null symbols then [] else [symbols]
+         return $ aCandidate ++ concat listOfList
          
 compCandidatesForReduce symbols state actTbl gotoTbl prodRules pFunList stk prnum = do
   let prodrule = prodRules !! prnum
