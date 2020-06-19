@@ -24,10 +24,14 @@ z : Int
       let {
 
         w : {l}. [b]. b -l-> b
-	  = {l}. [b]. \z : b @ l. id {l} [b] z 
+	  = {l}. [b]. \z : b @ l.
+	      let {
+	        r : Ref {l} [b] = ref {l} [b] z
+	      } id {l} [b] z
+	      end
 
       } w {client} [Int] 3
       end
       
-    end
+    end 
 

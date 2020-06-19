@@ -25,7 +25,7 @@ typeCheck toplevelDecls = do
   conTypeInfo <- elabConTypeDecls elab_datatypeDecls
   
   -- 5. elaborate types declared in the bindings
-  partial_elab_bindingDecls <- elabBindingTypes typeInfo bindingDecls
+  partial_elab_bindingDecls <- elabBindingTypes typeInfo [] [] bindingDecls
 
 --------------------------------
 -- for fully recursive bindings:
@@ -162,10 +162,10 @@ elabConTypeDecl (DataType name locvars tyvars typeConDecls) = do
 
 -- type BindingTypeInfo = [(String, Type)]
 
-elabBindingTypes :: Monad m => TypeInfo -> [BindingDecl] -> m [BindingDecl]
-elabBindingTypes typeInfo bindingDecls =
+elabBindingTypes :: Monad m => TypeInfo -> [String] -> [String] -> [BindingDecl] -> m [BindingDecl]
+elabBindingTypes typeInfo tyvars locvars bindingDecls =
   mapM (\(Binding f ty expr)-> do
-           elab_ty <- elabType typeInfo [] [] ty
+           elab_ty <- elabType typeInfo tyvars locvars ty
            return (Binding f elab_ty expr)) bindingDecls
 
 bindingTypes :: Monad m => [BindingDecl] -> m [(String,Type)]
@@ -361,7 +361,8 @@ elabExpr gti env loc_0 (Abs [] expr)  =
 
 elabExpr gti env loc (Let letBindingDecls expr) = do
   let typeInfo = _typeInfo gti
-  partial_elab_letBindingDecls <- elabBindingTypes typeInfo letBindingDecls
+  partial_elab_letBindingDecls
+     <- elabBindingTypes typeInfo (_typeVarEnv env) (_locVarEnv env) letBindingDecls
 
 --------------------------------
 -- for fully recursive bindings:  
