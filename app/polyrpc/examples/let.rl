@@ -18,15 +18,15 @@ x : Int
 z : Int
   = let {
 
-      id : [a]. a -client-> a
-         = [a]. \x : a @ client. x
+      id : {l}. [a]. a -l-> a
+         = {l}. [a]. \x : a @ l. x
     }
       let {
 
-        w : [b]. b -client-> b
-	  = [b]. \z : b @ client. id [b] z 
+        w : {l}. [b]. b -l-> b
+	  = {l}. [b]. \z : b @ l. id {l} [b] z 
 
-      } w [Int] 3
+      } w {client} [Int] 3
       end
       
     end
