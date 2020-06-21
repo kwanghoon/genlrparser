@@ -73,7 +73,7 @@ executable parser-exe
 executable syncomp-exe
   hs-source-dirs:      app/syntaxcompletion
   main-is:             Main.hs
-  other-modules:       Token, Lexer, Parser, EmacsServer
+  other-modules:       Token, Lexer, Parser, SynCompInterface, EmacsServer
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -O2
   build-depends:       base
                      , regex-tdfa

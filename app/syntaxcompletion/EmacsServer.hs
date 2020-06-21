@@ -1,12 +1,14 @@
 module EmacsServer where
 
+import SynCompInterface
+  
 import Network.Socket hiding (recv,send)
 import Network.Socket.ByteString
 import Data.ByteString.Char8
 import Control.Monad
 import Control.Exception
 
-type ComputeCandidate = String -> Int -> IO [String]
+type ComputeCandidate = String -> Int -> IO [EmacsDataItem]
 
 emacsServer :: ComputeCandidate -> IO ()
 emacsServer f = do
@@ -25,7 +27,7 @@ acceptLoop computeCand sock = forever $ do
     str <- getSource conn
     print str
     candidateList <- computeCand str cursorPos
-    print candidateList
+    print (Prelude.map show candidateList)
     (conn, _) <- accept sock
     sendCandidateList conn candidateList
     close conn
@@ -47,11 +49,13 @@ getSource conn = do
       aaa <- getSource conn
       return ((unpack str) ++ aaa)
 
-sendCandidateList :: Socket -> [String] -> IO ()
+sendCandidateList :: Socket -> [EmacsDataItem] -> IO ()
 sendCandidateList conn xs = do
     let
       f [] = ""
-      f (x:xs) = "\n" ++ x ++ f xs
+      f ((Candidate x) : xs)      = "\n" ++ x ++ f xs
+      f (LexError : xs)           = "LexError" ++ f xs
+      f (SuccessfullyParsed : xs) = "SuccessfullyParsed" ++ f xs
     let
       s = f xs
     do
