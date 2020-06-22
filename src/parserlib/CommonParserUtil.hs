@@ -121,36 +121,38 @@ moveLineCol line col (ch:text)   = moveLineCol line (col+1) text
 data ParseError token ast where
     -- teminal, state, stack actiontbl, gototbl
     NotFoundAction :: (TokenInterface token, Typeable token, Typeable ast, Show token, Show ast) =>
-      (Terminal token) -> Int -> (Stack token ast) -> ActionTable -> GotoTable -> ProdRules -> ParseFunList token ast -> ParseError token ast
+      (Terminal token) -> Int -> (Stack token ast) -> ActionTable -> GotoTable -> ProdRules -> ParseFunList token ast -> [Terminal token] -> ParseError token ast
     
     -- topState, lhs, stack, actiontbl, gototbl,
     NotFoundGoto :: (TokenInterface token, Typeable token, Typeable ast, Show token, Show ast) =>
-       Int -> String -> (Stack token ast) -> ActionTable -> GotoTable -> ProdRules -> ParseFunList token ast -> ParseError token ast
+       Int -> String -> (Stack token ast) -> ActionTable -> GotoTable -> ProdRules -> ParseFunList token ast -> [Terminal token] -> ParseError token ast
 
   deriving (Typeable)
 
 instance (Show token, Show ast) => Show (ParseError token ast) where
-  showsPrec p (NotFoundAction terminal state stack _ _ _ _) =
+  showsPrec p (NotFoundAction terminal state stack _ _ _ _ _) =
     (++) "NotFoundAction" . (++) (terminalToString terminal) . (++) (show state) -- . (++) (show stack)
-  showsPrec p (NotFoundGoto topstate lhs stack _ _ _ _) =
+  showsPrec p (NotFoundGoto topstate lhs stack _ _ _ _ _) =
     (++) "NotFoundGoto" . (++) (show topstate) . (++) lhs -- . (++) (show stack)
 
 instance (TokenInterface token, Typeable token, Show token, Typeable ast, Show ast)
   => Exception (ParseError token ast)
 
-prParseError (NotFoundAction terminal state stack actiontbl gototbl prodRules pFunList) = do
+prParseError (NotFoundAction terminal state stack actiontbl gototbl prodRules pFunList terminalList) = do
   putStrLn $
     ("Not found in the action table: "
      ++ terminalToString terminal)
      ++ " : "
      ++ show (state, tokenTextFromTerminal terminal)
+     ++ " (" ++ show (length terminalList) ++ ")"
      ++ "\n" ++ prStack stack ++ "\n"
      
-prParseError (NotFoundGoto topState lhs stack actiontbl gototbl prodRules pFunList) = do
+prParseError (NotFoundGoto topState lhs stack actiontbl gototbl prodRules pFunList terminalList) = do
   putStrLn $
     ("Not found in the goto table: ")
      ++ " : "
      ++ show (topState,lhs) ++ "\n"
+     ++ " (" ++ show (length terminalList) ++ ")"
      ++ prStack stack ++ "\n"
 
 --
@@ -294,7 +296,7 @@ runAutomaton actionTbl gotoTbl prodRules pFunList terminalList = do
       let action =
            case lookupActionTable actionTbl state terminal of
              Just action -> action
-             Nothing -> throw (NotFoundAction terminal state stack actionTbl gotoTbl prodRules pFunList)
+             Nothing -> throw (NotFoundAction terminal state stack actionTbl gotoTbl prodRules pFunList terminalList)
                         -- error $ ("Not found in the action table: "
                         --          ++ terminalToString terminal)
                         --          ++ " : "
@@ -337,7 +339,7 @@ runAutomaton actionTbl gotoTbl prodRules pFunList terminalList = do
           let toState =
                case lookupGotoTable gotoTbl topState lhs of
                  Just state -> state
-                 Nothing -> throw (NotFoundGoto topState lhs stack actionTbl gotoTbl prodRules pFunList)
+                 Nothing -> throw (NotFoundGoto topState lhs stack actionTbl gotoTbl prodRules pFunList terminalList)
                             -- error $ ("Not found in the goto table: ")
                             --         ++ " : "
                             --         ++ show (topState,lhs) ++ "\n"

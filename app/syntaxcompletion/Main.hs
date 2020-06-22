@@ -30,19 +30,25 @@ computeCand str cursorPos = ((do
   return [SuccessfullyParsed])
   `catch` \e -> case e :: LexError of _ -> return [SynCompInterface.LexError])
   `catch` \e -> case e :: ParseError Token AST of
-                  NotFoundAction _ state stk actTbl gotoTbl prodRules pFunList -> do
-                    candidates <- compCandidates [] state actTbl gotoTbl prodRules pFunList stk -- return ["candidates"]
-                    let cands = candidates
-                    let strs = nub [ concatStrList strList | strList <- map (map showSymbol) cands ]
-                    -- mapM_ putStr strs
-                    return $ map Candidate strs
-                  NotFoundGoto state _ stk actTbl gotoTbl prodRules pFunList -> do
-                    candidates <- compCandidates [] state actTbl gotoTbl prodRules pFunList stk
-                    let cands = candidates
-                    let strs = nub [ concatStrList strList | strList <- map (map showSymbol) cands ]
-                    -- mapM_ putStr strs
-                    return $ map Candidate strs
-
+                  NotFoundAction _ state stk actTbl gotoTbl prodRules pFunList terminalList ->
+                    if length terminalList  == 1 then do -- [$]
+                      candidates <- compCandidates [] state actTbl gotoTbl prodRules pFunList stk -- return ["candidates"]
+                      let cands = candidates
+                      let strs = nub [ concatStrList strList | strList <- map (map showSymbol) cands ]
+                      -- mapM_ putStr strs
+                      return $ map Candidate strs
+                    else
+                      return [SynCompInterface.ParseError (map terminalToString terminalList)]
+                  NotFoundGoto state _ stk actTbl gotoTbl prodRules pFunList terminalList ->
+                    if length terminalList == 1 then do -- [$]
+                      candidates <- compCandidates [] state actTbl gotoTbl prodRules pFunList stk
+                      let cands = candidates
+                      let strs = nub [ concatStrList strList | strList <- map (map showSymbol) cands ]
+                      -- mapM_ putStr strs
+                      return $ map Candidate strs
+                    else
+                      return [SynCompInterface.ParseError (map terminalToString terminalList)]
+                      
 showSymbol (TerminalSymbol s) = s
 showSymbol (NonterminalSymbol _) = "..."
 

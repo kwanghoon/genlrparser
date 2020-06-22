@@ -55,6 +55,7 @@ sendCandidateList conn xs = do
       f [] = ""
       f ((Candidate x) : xs)      = "\n" ++ x ++ f xs
       f (LexError : xs)           = "LexError" ++ f xs
+      f ((ParseError _) : xs)     = "ParseError" ++ f xs
       f (SuccessfullyParsed : xs) = "SuccessfullyParsed" ++ f xs
     let
       s = f xs
